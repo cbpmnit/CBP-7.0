@@ -1,3 +1,6 @@
+"use client"
+
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import Reveal from "@/components/animations/RevealOnScroll"
 
@@ -33,6 +36,24 @@ const testimonials = [
 ]
 
 export default function FeedbackSection() {
+  const [currentIndex, setCurrentIndex] = useState(0)
+
+  const handleNext = () => {
+    setCurrentIndex((prev) => (prev + 1) % testimonials.length)
+  }
+
+  const handlePrev = () => {
+    setCurrentIndex((prev) => (prev - 1 + testimonials.length) % testimonials.length)
+  }
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      handleNext()
+    }, 4500) // Slide automatically every 4.5 seconds
+
+    return () => clearInterval(timer)
+  }, [])
+
   return (
     <section className="bg-mnit-light py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-5 lg:px-8">
@@ -55,7 +76,8 @@ export default function FeedbackSection() {
           </Reveal>
         </div>
 
-        <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        {/* 1. Desktop Layout (Static Grid) */}
+        <div className="hidden md:grid mt-14 gap-6 md:grid-cols-2 lg:grid-cols-4">
           {testimonials.map((t, i) => (
             <Reveal key={t.name} delay={i * 100}>
               <div className="flex h-full flex-col rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition duration-300 hover:shadow-lg hover:border-mnit-blue/20">
@@ -107,6 +129,113 @@ export default function FeedbackSection() {
             </Reveal>
           ))}
         </div>
+
+        {/* 2. Mobile Layout (Slider Carousel) */}
+        <div className="block md:hidden mt-10 relative px-4">
+          <div className="overflow-hidden min-h-[350px] flex items-center justify-center">
+            {testimonials.map((t, idx) => (
+              <div
+                key={t.name}
+                className={`w-full transition-all duration-500 ease-in-out transform ${
+                  idx === currentIndex
+                    ? "opacity-100 translate-x-0 relative"
+                    : "opacity-0 absolute translate-x-12 pointer-events-none"
+                }`}
+              >
+                <div className="flex flex-col rounded-2xl border border-gray-100 bg-white p-6 shadow-md">
+                  <div className="flex items-center gap-4">
+                    <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full border-2 border-mnit-light shadow-sm">
+                      <Image
+                        src={t.image}
+                        alt={t.name}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="text-sm font-bold text-mnit-navy truncate">
+                        {t.name}
+                      </h3>
+                      <p className="text-xs text-gray-500 truncate">
+                        {t.rollNumber}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex-1">
+                    <svg
+                      className="h-5 w-5 text-mnit-gold/60"
+                      fill="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4.995v10h-9.983zm-14.017 0v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4.995v10h-9.983z" />
+                    </svg>
+                    <p className="mt-2.5 text-xs sm:text-sm leading-relaxed text-gray-600">
+                      {t.quote}
+                    </p>
+                  </div>
+
+                  <div className="mt-4 flex items-center justify-between">
+                    <div className="flex items-center gap-1">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <svg
+                          key={star}
+                          className="h-3.5 w-3.5 text-mnit-gold"
+                          fill="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                        </svg>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Navigation Controls */}
+          <div className="mt-6 flex items-center justify-between">
+            {/* Prev Button */}
+            <button
+              onClick={handlePrev}
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white shadow-sm transition hover:bg-gray-50 hover:scale-105 active:scale-95"
+              aria-label="Previous slide"
+            >
+              <svg className="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+
+            {/* Pagination Dots */}
+            <div className="flex gap-2">
+              {testimonials.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setCurrentIndex(idx)}
+                  className={`h-2 rounded-full transition-all duration-300 ${
+                    idx === currentIndex
+                      ? "w-6 bg-mnit-gold"
+                      : "w-2 bg-gray-300 hover:bg-gray-400"
+                  }`}
+                  aria-label={`Go to slide ${idx + 1}`}
+                />
+              ))}
+            </div>
+
+            {/* Next Button */}
+            <button
+              onClick={handleNext}
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white shadow-sm transition hover:bg-gray-50 hover:scale-105 active:scale-95"
+              aria-label="Next slide"
+            >
+              <svg className="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
       </div>
     </section>
   )

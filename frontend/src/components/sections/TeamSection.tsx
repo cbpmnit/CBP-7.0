@@ -33,10 +33,10 @@ export default function TeamSection() {
       <div className="mx-auto max-w-7xl px-5 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
           <span className="inline-block rounded-full bg-mnit-light px-3 py-1 text-xs font-semibold text-mnit-accent uppercase tracking-wider">
-            Our Team
+            Our Advisers
           </span>
           <h2 className="mt-4 text-3xl font-bold tracking-tight text-mnit-navy sm:text-4xl">
-            Meet the Organizers
+            Meet the Advisers
           </h2>
           <p className="mt-4 text-base leading-relaxed text-gray-600">
             The CBP 7.0 is spearheaded by dedicated faculty members and the
