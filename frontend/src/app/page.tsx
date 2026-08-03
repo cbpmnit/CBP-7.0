@@ -1,5 +1,5 @@
 import Hero from "@/components/hero/Hero"
-import FeaturesSection from "@/components/sections/FeaturesSection"
+import CountdownSection from "@/components/sections/CountdownSection"
 import FeedbackSection from "@/components/sections/FeedbackSection"
 import ObjectivesSection from "@/components/sections/ObjectivesSection"
 import StatsSection from "@/components/sections/StatsSection"
@@ -76,6 +76,7 @@ export default function Home() {
     <PageTransition>
       <main className="min-h-screen bg-white">
         <Hero />
+        <CountdownSection />
 
         <StatsSection />
 
@@ -127,7 +128,6 @@ export default function Home() {
           </div>
         </section>
 
-        <FeaturesSection />
         <FeedbackSection />
         <ObjectivesSection />
         <TeamSection />
