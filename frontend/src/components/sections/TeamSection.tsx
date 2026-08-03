@@ -39,11 +39,11 @@ export default function TeamSection() {
           </p>
         </div>
 
-        <div className="mt-14 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-14 flex flex-wrap justify-center gap-12 lg:gap-20">
           {team.map((member) => (
             <div
               key={member.name}
-              className="group flex flex-col items-center text-center"
+              className="group flex flex-col items-center text-center w-60"
             >
               <div className="relative h-40 w-40 overflow-hidden rounded-full border-4 border-mnit-light shadow-lg transition duration-500 group-hover:border-mnit-blue/30 group-hover:shadow-xl">
                 <Image
