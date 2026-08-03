@@ -26,14 +26,11 @@ export default function TopBanner() {
         {/* Center Intro Text */}
         <div className="flex-1 text-center min-w-0 px-2">
           <span className="inline-block text-[8px] md:text-xs font-bold tracking-widest text-mnit-gold uppercase bg-mnit-blue/50 px-2 md:px-3 py-0.5 rounded-full border border-mnit-gold/30 truncate max-w-full">
-            Capacity Building Program 2026
+            CBP 7.0 2026
           </span>
           <h1 className="mt-0.5 md:mt-1 text-lg sm:text-2xl md:text-4xl font-extrabold tracking-tight text-white drop-shadow-sm font-serif">
-            CBP 7.0
+            Capacity Building Program
           </h1>
-          <p className="hidden md:block mt-1 text-xs md:text-sm font-semibold text-gray-300 tracking-wide">
-            Department of Humanities &amp; Social Sciences &amp; Training &amp; Placement Cell
-          </p>
           <p className="text-[8px] sm:text-[10px] md:text-xs font-bold text-mnit-gold/95 mt-0.5 uppercase tracking-wider">
             Malaviya National Institute of Technology Jaipur
           </p>
