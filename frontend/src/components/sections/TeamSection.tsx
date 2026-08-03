@@ -14,12 +14,6 @@ const team = [
     image: "/assets/mnit-staff/prof-nupur-tandon-head-bg-removed.webp",
   },
   {
-    name: "Nupur",
-    role: "Student Coordinator",
-    department: "Dept. of Humanities & Social Sciences",
-    image: "/assets/mnit-staff/nupur.webp",
-  },
-  {
     name: "Rakesh",
     role: "Technical Lead",
     department: "Training & Placement Cell, MNIT Jaipur",
