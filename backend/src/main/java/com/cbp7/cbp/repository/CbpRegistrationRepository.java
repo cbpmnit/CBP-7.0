@@ -13,6 +13,8 @@ public interface CbpRegistrationRepository extends JpaRepository<CbpRegistration
     Optional<CbpRegistration> findByUser(User user);
     Optional<CbpRegistration> findByUserId(UUID userId);
     Optional<CbpRegistration> findByRegistrationId(String registrationId);
+    Optional<CbpRegistration> findByUserStudentIdIgnoreCase(String studentId);
     boolean existsByUser(User user);
     boolean existsByUserId(UUID userId);
+    boolean existsByUserStudentIdIgnoreCase(String studentId);
 }

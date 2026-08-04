@@ -33,14 +33,14 @@ public class CbpRegistrationService {
     public CbpRegistrationResponse registerStudent(User user) {
         validateStudentRole(user);
 
-        if (cbpRegistrationRepository.existsByUser(user)) {
+        if (cbpRegistrationRepository.existsByUserStudentIdIgnoreCase(user.getStudentId())) {
             throw new RegistrationAlreadyExistsException("You are already registered for CBP.");
         }
 
-        UserProfile profile = userProfileRepository.findByUser(user)
+        UserProfile profile = userProfileRepository.findByUserStudentIdIgnoreCase(user.getStudentId())
                 .orElseThrow(() -> new ProfileIncompleteException("Please complete your profile before registering."));
 
-        ProfileCompletion completion = profileCompletionRepository.findByUser(user)
+        ProfileCompletion completion = profileCompletionRepository.findByUserStudentIdIgnoreCase(user.getStudentId())
                 .orElseThrow(() -> new ProfileIncompleteException("Please complete your profile before registering."));
 
         if (!Boolean.TRUE.equals(completion.getProfileCompleted())) {
@@ -84,7 +84,7 @@ public class CbpRegistrationService {
     public CbpRegistrationDetailResponse getMyRegistration(User user) {
         validateStudentRole(user);
 
-        CbpRegistration registration = cbpRegistrationRepository.findByUser(user)
+        CbpRegistration registration = cbpRegistrationRepository.findByUserStudentIdIgnoreCase(user.getStudentId())
                 .orElseThrow(() -> new ResourceNotFoundException("No CBP registration found for current user."));
 
         ProfileSnapshotDto snapshot = new ProfileSnapshotDto(

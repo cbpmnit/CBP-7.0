@@ -10,10 +10,10 @@ spring:
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
-      connection-init-sql: CREATE SCHEMA IF NOT EXISTS cbp; CREATE SCHEMA IF NOT EXISTS profile;
+      connection-init-sql: CREATE SCHEMA IF NOT EXISTS cbp; CREATE SCHEMA IF NOT EXISTS profile; CREATE SCHEMA IF NOT EXISTS payment;
   flyway:
     enabled: true
-    schemas: cbp, profile, public
+    schemas: cbp, profile, payment, public
     create-schemas: true
     baseline-on-migrate: true
   jpa:
