@@ -9,10 +9,25 @@ spring:
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      connection-init-sql: CREATE SCHEMA IF NOT EXISTS cbp;
+  flyway:
+    enabled: true
+    schemas: cbp, public
+    create-schemas: true
+    baseline-on-migrate: true
   jpa:
     hibernate:
-      ddl-auto: none
+      ddl-auto: update
     show-sql: false
+    properties:
+      hibernate:
+        default_schema: cbp
+  devtools:
+    restart:
+      enabled: true
+    livereload:
+      enabled: true
 
 jwt:
   secret: ${JWT_SECRET}
