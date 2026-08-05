@@ -15,6 +15,11 @@ export default function Header() {
   const theme = useAppSelector((state) => state.theme.theme)
   const isMenuOpen = useAppSelector((state) => state.ui.mobileMenuOpen)
   const [scrolled, setScrolled] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     document.body.style.overflow = isMenuOpen ? "hidden" : ""
@@ -112,9 +117,10 @@ export default function Header() {
                 onClick={() => dispatch(toggleTheme())}
                 className="header-theme-btn flex h-10 w-10 items-center justify-center rounded-xl border border-cyan-500/40 bg-black/60 text-cyan-400 text-lg transition duration-300 hover:scale-105 hover:bg-cyan-500/20 shadow-[0_0_10px_rgba(0,240,255,0.2)]"
                 aria-label="Toggle Light/Dark Theme"
-                title={`Switch to ${theme === "dark" ? "Light" : "Dark"} Mode`}
+                title={mounted ? `Switch to ${theme === "dark" ? "Light" : "Dark"} Mode` : "Toggle Theme"}
+                suppressHydrationWarning
               >
-                {theme === "dark" ? <FiSun /> : <FiMoon />}
+                {mounted ? (theme === "dark" ? <FiSun /> : <FiMoon />) : <FiSun />}
               </button>
 
               <Link
@@ -135,8 +141,10 @@ export default function Header() {
                 onClick={() => dispatch(toggleTheme())}
                 className="header-theme-btn flex h-9 w-9 items-center justify-center rounded-xl border border-cyan-500/40 bg-black/60 text-cyan-400 text-base"
                 aria-label="Toggle Light/Dark Theme"
+                title={mounted ? `Switch to ${theme === "dark" ? "Light" : "Dark"} Mode` : "Toggle Theme"}
+                suppressHydrationWarning
               >
-                {theme === "dark" ? <FiSun /> : <FiMoon />}
+                {mounted ? (theme === "dark" ? <FiSun /> : <FiMoon />) : <FiSun />}
               </button>
 
               <Link
