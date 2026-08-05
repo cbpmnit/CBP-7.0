@@ -5,6 +5,7 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import TopBanner from "@/components/layout/TopBanner";
 import StoreProvider from "@/store/StoreProvider";
+import AuthGuard from "@/components/layout/AuthGuard";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -48,10 +49,12 @@ export default function RootLayout({
       <html lang="en" className={`${inter.variable} h-full antialiased light`} suppressHydrationWarning>
         <body className="min-h-full flex flex-col font-sans transition-colors duration-300 bg-slate-50 text-slate-900 bg-grid-cyber selection:bg-cyan-600 selection:text-white" suppressHydrationWarning>
           <StoreProvider>
-            <TopBanner />
-            <Header />
-            {children}
-            <Footer />
+            <AuthGuard>
+              <TopBanner />
+              <Header />
+              {children}
+              <Footer />
+            </AuthGuard>
           </StoreProvider>
         </body>
       </html>
