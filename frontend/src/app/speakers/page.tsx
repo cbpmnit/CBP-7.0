@@ -96,24 +96,18 @@ export const metadata = {
 export default function SpeakersPage() {
   return (
     <PageTransition>
-      <main className="min-h-screen bg-black text-gray-100 bg-grid-cyber">
-        <section className="bg-black py-24 sm:py-32 relative overflow-hidden border-b border-white/10">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-cyan-500/15 rounded-full blur-[160px] pointer-events-none" />
+      <main className="min-h-screen bg-slate-50 text-slate-900 bg-grid-cyber">
+        <section className="bg-gradient-to-b from-white via-slate-50 to-slate-100/60 py-24 sm:py-32 relative overflow-hidden border-b border-slate-200">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-cyan-500/10 rounded-full blur-[160px] pointer-events-none" />
 
           <div className="mx-auto max-w-7xl px-5 lg:px-8 text-center relative z-10">
-            <Reveal>
-              <span className="inline-flex items-center gap-2 rounded-full bg-cyan-500/10 border border-cyan-500/30 px-4 py-1.5 text-xs font-bold text-cyan-300 uppercase tracking-widest backdrop-blur-md">
-                <span className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_#00f0ff]" />
-                Past Speakers
-              </span>
-            </Reveal>
             <Reveal delay={80}>
-              <h1 className="mt-4 text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl">
+              <h1 className="mt-4 text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl lg:text-6xl">
                 Our <span className="gradient-text-cyan">Speakers</span>
               </h1>
             </Reveal>
             <Reveal delay={120}>
-              <p className="mt-4 max-w-2xl mx-auto text-base text-gray-300">
+              <p className="mt-4 max-w-2xl mx-auto text-base text-slate-600">
                 Distinguished academicians, industry leaders, and spiritual
                 mentors who have graced CBP programs from 2021 to 2025.
               </p>

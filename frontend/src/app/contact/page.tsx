@@ -1,91 +1,98 @@
 "use client"
 
+import { useState } from "react"
 import Reveal from "@/components/animations/RevealOnScroll"
 import PageTransition from "@/components/animations/PageTransition"
+import {
+  FiUser,
+  FiMail,
+  FiHelpCircle,
+  FiMessageSquare,
+  FiSend,
+  FiMapPin,
+  FiPhone,
+  FiCheckCircle,
+} from "react-icons/fi"
+import { HiOutlineAcademicCap } from "react-icons/hi2"
 
 const contactInfo = [
   {
     title: "Department",
     value: "Dept. of Humanities & Social Sciences",
     sub: "MNIT Jaipur",
-    icon: (
-      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.636 50.636 0 00-2.658-.813A59.906 59.906 0 0112 3.818a59.906 59.906 0 0110.402 4.768 50.636 50.636 0 00-2.658.813M12 10.875a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25-2.625a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0z" />
-      </svg>
-    ),
+    icon: <HiOutlineAcademicCap className="h-6 w-6 text-cyan-600" />,
   },
   {
     title: "Address",
     value: "Jawaharlal Nehru Marg, Jaipur",
     sub: "Rajasthan - 302017",
-    icon: (
-      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
-      </svg>
-    ),
+    icon: <FiMapPin className="h-6 w-6 text-cyan-600" />,
   },
   {
     title: "Email",
     value: "cbp@mnit.ac.in",
     sub: "We typically respond within 24 hours",
-    icon: (
-      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
-      </svg>
-    ),
+    icon: <FiMail className="h-6 w-6 text-cyan-600" />,
   },
   {
     title: "Phone",
     value: "+91-141-XXX-XXXX",
     sub: "Mon - Fri, 10:00 AM - 5:00 PM",
-    icon: (
-      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.04 12.04 0 01-7.143-7.143c-.162-.441.004-.928.38-1.211l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
-      </svg>
-    ),
+    icon: <FiPhone className="h-6 w-6 text-cyan-600" />,
   },
 ]
 
 export default function ContactPage() {
+  const [submitted, setSubmitted] = useState(false)
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    subject: "General Inquiry",
+    message: "",
+  })
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }))
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    setSubmitted(true)
+  }
+
   return (
     <PageTransition>
-      <main className="min-h-screen bg-black text-gray-100 bg-grid-cyber">
-        <section className="bg-black py-24 sm:py-32 relative overflow-hidden border-b border-white/10">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-cyan-500/15 rounded-full blur-[160px] pointer-events-none" />
-
+      <main className="min-h-screen bg-slate-50 text-slate-900 bg-grid-cyber">
+        {/* Banner */}
+        <section className="bg-gradient-to-b from-white via-slate-50 to-slate-100/60 py-20 sm:py-28 relative overflow-hidden border-b border-slate-200">
           <div className="mx-auto max-w-7xl px-5 lg:px-8 text-center relative z-10">
-            <Reveal>
-              <span className="inline-flex items-center gap-2 rounded-full bg-cyan-500/10 border border-cyan-500/30 px-4 py-1.5 text-xs font-bold text-cyan-300 uppercase tracking-widest backdrop-blur-md">
-                <span className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_#00f0ff]" />
-                Contact Us
-              </span>
-            </Reveal>
             <Reveal delay={80}>
-              <h1 className="mt-4 text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl">
+              <h1 className="mt-4 text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl lg:text-6xl">
                 Get in <span className="gradient-text-cyan">Touch</span>
               </h1>
             </Reveal>
             <Reveal delay={120}>
-              <p className="mt-4 max-w-2xl mx-auto text-base text-gray-300">
+              <p className="mt-3.5 max-w-2xl mx-auto text-base text-slate-600 leading-relaxed">
                 Have questions about CBP 7.0? We are here to help. Reach out to
-                our organizing team for any queries.
+                our organizing team for any queries or assistance.
               </p>
             </Reveal>
           </div>
         </section>
 
-        <section className="py-24 sm:py-32">
+        <section className="py-16 sm:py-24">
           <div className="mx-auto max-w-7xl px-5 lg:px-8">
-            <div className="grid gap-12 lg:grid-cols-2 lg:gap-16">
+            <div className="grid gap-12 lg:grid-cols-2 lg:gap-16 items-start">
+              
+              {/* Left Column: Contact Info Cards */}
               <div>
                 <Reveal>
-                  <h2 className="text-3xl font-extrabold text-white">
+                  <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">
                     Contact <span className="gradient-text-cyan">Information</span>
                   </h2>
                 </Reveal>
                 <Reveal delay={80}>
-                  <p className="mt-3 text-sm leading-relaxed text-gray-400">
+                  <p className="mt-3 text-sm leading-relaxed text-slate-600">
                     Reach out to us for any queries regarding CBP 7.0 — whether
                     it is about registration, the program schedule, or general
                     information, we are happy to assist you.
@@ -95,16 +102,18 @@ export default function ContactPage() {
                 <div className="mt-8 space-y-4">
                   {contactInfo.map((item, i) => (
                     <Reveal key={item.title} delay={120 + i * 60}>
-                      <div className="glass-card glass-card-hover rounded-2xl p-5 flex gap-4 items-center">
-                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 shadow-[0_0_12px_rgba(0,240,255,0.3)]">
+                      <div className="glass-card glass-card-hover rounded-2xl p-5 flex gap-4 items-center bg-white border border-slate-200 shadow-sm transition duration-300">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-cyan-50 border border-cyan-200 text-cyan-600 shadow-sm">
                           {item.icon}
                         </div>
                         <div>
-                          <p className="text-xs text-gray-400 uppercase font-mono">{item.title}</p>
-                          <p className="text-base font-bold text-white">
+                          <p className="text-[10px] font-bold text-cyan-800 uppercase tracking-widest font-mono">
+                            {item.title}
+                          </p>
+                          <p className="text-base font-extrabold text-slate-900">
                             {item.value}
                           </p>
-                          <p className="text-xs text-gray-400">{item.sub}</p>
+                          <p className="text-xs text-slate-500 mt-0.5">{item.sub}</p>
                         </div>
                       </div>
                     </Reveal>
@@ -112,73 +121,134 @@ export default function ContactPage() {
                 </div>
               </div>
 
+              {/* Right Column: Clean Form UI */}
               <Reveal delay={100} variant="right">
-                <div className="glass-card rounded-3xl p-8 sm:p-10 border-cyan-500/30">
-                  <div className="flex items-center gap-3 mb-8">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-500 text-black text-sm font-extrabold shadow-[0_0_15px_#00f0ff]">
-                      ✉
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-extrabold text-white">
-                        Send us a Message
+                <div className="glass-card rounded-3xl p-8 sm:p-10 border-slate-200 bg-white shadow-xl">
+                  {submitted ? (
+                    <div className="py-12 text-center">
+                      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-cyan-50 border border-cyan-300 text-cyan-600 shadow-md">
+                        <FiCheckCircle className="h-9 w-9" />
+                      </div>
+                      <h3 className="mt-5 text-2xl font-extrabold text-slate-900">
+                        Message Sent <span className="gradient-text-cyan">Successfully!</span>
                       </h3>
-                      <p className="text-xs text-gray-400 font-mono">
-                        We will get back to you within 24 hours.
+                      <p className="mt-3 text-sm text-slate-600 leading-relaxed max-w-md mx-auto">
+                        Thank you for reaching out, <strong className="text-slate-900">{formData.name}</strong>.
+                        Our team will review your message and respond to{" "}
+                        <strong className="text-cyan-700">{formData.email}</strong> within 24 hours.
                       </p>
+                      <button
+                        onClick={() => {
+                          setSubmitted(false)
+                          setFormData({ name: "", email: "", subject: "General Inquiry", message: "" })
+                        }}
+                        className="mt-8 inline-flex items-center justify-center rounded-xl neon-button-cyan px-7 py-3 text-xs font-bold uppercase tracking-wider"
+                      >
+                        Send Another Message
+                      </button>
                     </div>
-                  </div>
-                  <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-cyan-300">
-                        Your Name <span className="text-cyan-400">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        className="mt-2 block w-full rounded-xl bg-black/60 border border-white/10 px-4 py-3 text-sm text-white transition duration-200 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-cyan-300">
-                        Your Email <span className="text-cyan-400">*</span>
-                      </label>
-                      <input
-                        type="email"
-                        required
-                        className="mt-2 block w-full rounded-xl bg-black/60 border border-white/10 px-4 py-3 text-sm text-white transition duration-200 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-cyan-300">
-                        Subject <span className="text-cyan-400">*</span>
-                      </label>
-                      <select className="mt-2 block w-full rounded-xl bg-black/80 border border-white/10 px-4 py-3 text-sm text-white transition duration-200 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400">
-                        <option>General Inquiry</option>
-                        <option>Registration Help</option>
-                        <option>Technical Support</option>
-                        <option>Feedback</option>
-                        <option>Speaker / Volunteer Inquiry</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-cyan-300">
-                        Message <span className="text-cyan-400">*</span>
-                      </label>
-                      <textarea
-                        rows={5}
-                        required
-                        className="mt-2 block w-full rounded-xl bg-black/60 border border-white/10 px-4 py-3 text-sm text-white transition duration-200 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400"
-                      />
-                    </div>
-                    <button
-                      type="submit"
-                      className="w-full rounded-xl neon-button-cyan py-4 text-sm font-extrabold uppercase tracking-wider"
-                    >
-                      Send Message
-                    </button>
-                  </form>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-3.5 mb-8 pb-6 border-b border-slate-200">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-r from-cyan-600 to-blue-600 text-white text-base font-extrabold shadow-md">
+                          <FiSend className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-extrabold text-slate-900">
+                            Send us a Message
+                          </h3>
+                          <p className="text-xs text-slate-500 font-mono mt-0.5">
+                            We usually get back to you within 24 hours.
+                          </p>
+                        </div>
+                      </div>
+
+                      <form className="space-y-5" onSubmit={handleSubmit}>
+                        {/* Name */}
+                        <div>
+                          <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                            <FiUser className="text-cyan-600" />
+                            Your Name <span className="text-cyan-600">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            name="name"
+                            required
+                            value={formData.name}
+                            onChange={handleChange}
+                            placeholder="e.g. Rahul Sharma"
+                            className="block w-full rounded-xl bg-slate-50 border border-slate-300 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 transition duration-200 focus:bg-white focus:border-cyan-600 focus:outline-none focus:ring-1 focus:ring-cyan-600 shadow-xs"
+                          />
+                        </div>
+
+                        {/* Email */}
+                        <div>
+                          <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                            <FiMail className="text-cyan-600" />
+                            Your Email <span className="text-cyan-600">*</span>
+                          </label>
+                          <input
+                            type="email"
+                            name="email"
+                            required
+                            value={formData.email}
+                            onChange={handleChange}
+                            placeholder="you@mnit.ac.in"
+                            className="block w-full rounded-xl bg-slate-50 border border-slate-300 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 transition duration-200 focus:bg-white focus:border-cyan-600 focus:outline-none focus:ring-1 focus:ring-cyan-600 shadow-xs"
+                          />
+                        </div>
+
+                        {/* Subject */}
+                        <div>
+                          <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                            <FiHelpCircle className="text-cyan-600" />
+                            Subject <span className="text-cyan-600">*</span>
+                          </label>
+                          <select
+                            name="subject"
+                            value={formData.subject}
+                            onChange={handleChange}
+                            className="block w-full rounded-xl bg-slate-50 border border-slate-300 px-4 py-3 text-sm text-slate-900 transition duration-200 focus:bg-white focus:border-cyan-600 focus:outline-none focus:ring-1 focus:ring-cyan-600 shadow-xs cursor-pointer"
+                          >
+                            <option>General Inquiry</option>
+                            <option>Registration Help</option>
+                            <option>Technical Support</option>
+                            <option>Feedback</option>
+                            <option>Speaker / Volunteer Inquiry</option>
+                          </select>
+                        </div>
+
+                        {/* Message */}
+                        <div>
+                          <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                            <FiMessageSquare className="text-cyan-600" />
+                            Message <span className="text-cyan-600">*</span>
+                          </label>
+                          <textarea
+                            name="message"
+                            rows={4}
+                            required
+                            value={formData.message}
+                            onChange={handleChange}
+                            placeholder="Type your query or message here..."
+                            className="block w-full rounded-xl bg-slate-50 border border-slate-300 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 transition duration-200 focus:bg-white focus:border-cyan-600 focus:outline-none focus:ring-1 focus:ring-cyan-600 shadow-xs"
+                          />
+                        </div>
+
+                        {/* Submit Button */}
+                        <button
+                          type="submit"
+                          className="group inline-flex w-full items-center justify-center gap-2 rounded-xl neon-button-cyan py-3.5 text-sm font-bold uppercase tracking-wider shadow-md"
+                        >
+                          <span>Send Message</span>
+                          <FiSend className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+                        </button>
+                      </form>
+                    </>
+                  )}
                 </div>
               </Reveal>
+
             </div>
           </div>
         </section>

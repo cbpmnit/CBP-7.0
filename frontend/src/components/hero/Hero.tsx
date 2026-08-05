@@ -58,7 +58,7 @@ function HeroComponent() {
   const active = slides[current]
 
   return (
-    <section className="hero-section relative min-h-[75vh] w-full overflow-hidden bg-slate-50 text-slate-900 bg-grid-cyber flex items-center transition-colors duration-300 py-16 sm:py-24">
+    <section className="hero-section relative min-h-[75vh] w-full overflow-hidden bg-transparent text-slate-900 bg-grid-cyber flex items-center transition-colors duration-300 py-16 sm:py-24">
       {/* Ambient Light Glowing Orbs */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 h-96 w-96 rounded-full bg-cyan-500/10 blur-[140px] pointer-events-none" />
       <div className="absolute bottom-1/3 left-1/2 -translate-x-1/2 h-96 w-96 rounded-full bg-blue-600/10 blur-[140px] pointer-events-none" />

@@ -50,7 +50,7 @@ const objectivesList = [
 export default function AboutPage() {
   return (
     <PageTransition>
-      <main className="min-h-screen bg-slate-50 text-slate-900">
+      <main className="min-h-screen bg-slate-50 text-slate-900 bg-grid-cyber">
         {/* Banner - Center Aligned */}
         <section className="relative bg-gradient-to-b from-white to-slate-100/60 py-24 sm:py-32 overflow-hidden border-b border-slate-200">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-cyan-500/10 rounded-full blur-[160px] pointer-events-none" />

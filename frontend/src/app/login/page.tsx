@@ -76,7 +76,7 @@ export default function LoginPage() {
 
   return (
     <PageTransition>
-      <main className="min-h-screen bg-slate-50 text-slate-900">
+      <main className="min-h-screen bg-slate-50 text-slate-900 bg-grid-cyber">
         {/* Header Hero Section */}
         <section className="bg-gradient-to-b from-white to-slate-100/60 py-16 sm:py-20 border-b border-slate-200 relative overflow-hidden">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-cyan-500/10 rounded-full blur-[140px] pointer-events-none" />

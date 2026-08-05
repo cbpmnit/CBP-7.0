@@ -16,7 +16,7 @@ const footerLinks = {
 
 export default function Footer() {
   return (
-    <footer className="bg-black border-t border-white/10 text-gray-300 relative overflow-hidden">
+    <footer className="bg-white border-t border-slate-200 text-slate-600 relative overflow-hidden">
       {/* Background Radial Ambient Light */}
       <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-cyan-500/10 blur-[120px] pointer-events-none rounded-full" />
       

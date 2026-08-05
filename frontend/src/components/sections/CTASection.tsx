@@ -4,21 +4,21 @@ import { HiOutlineAcademicCap } from "react-icons/hi2"
 
 function CTASectionComponent() {
   return (
-    <section className="relative overflow-hidden bg-black py-24 sm:py-32 border-t border-white/10 bg-grid-cyber">
+    <section className="relative overflow-hidden bg-slate-50 py-24 sm:py-32 border-t border-slate-200 bg-grid-cyber">
       {/* Ambient Glowing Orbs */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-cyan-500/15 rounded-full blur-[160px] pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-cyan-500/10 rounded-full blur-[160px] pointer-events-none" />
 
       <div className="relative z-10 mx-auto max-w-7xl px-5 lg:px-8">
-        <div className="mx-auto max-w-3xl text-center glass-card rounded-3xl p-10 sm:p-16 border-cyan-500/30">
-          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-cyan-500/10 border border-cyan-500/40 text-cyan-400 shadow-[0_0_20px_rgba(0,240,255,0.4)] transition-all duration-300 hover:scale-105">
+        <div className="mx-auto max-w-3xl text-center glass-card rounded-3xl p-10 sm:p-16 border-slate-200 bg-white shadow-xl">
+          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-cyan-50 border border-cyan-200 text-cyan-600 shadow-sm transition-all duration-300 hover:scale-105">
             <HiOutlineAcademicCap className="h-9 w-9" />
           </div>
 
-          <h2 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl lg:text-5xl">
+          <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
             Ready to Build Your <span className="gradient-text-cyan">Future?</span>
           </h2>
           
-          <p className="mt-5 text-base leading-relaxed text-gray-300 sm:text-lg">
+          <p className="mt-5 text-base leading-relaxed text-slate-600 sm:text-lg">
             Join CBP 7.0 and take the first step toward becoming a confident,
             skilled, and industry-ready professional. Registration is now open
             for all first-year students at MNIT Jaipur.
