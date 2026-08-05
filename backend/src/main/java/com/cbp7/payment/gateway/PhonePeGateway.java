@@ -25,7 +25,11 @@ import java.util.Map;
 public class PhonePeGateway implements PaymentGateway {
 
     private final PhonePeConfig phonePeConfig;
-    private final RestClient phonepeRestClient;
+    
+    @lombok.Setter
+    @lombok.NonNull
+    private RestClient phonepeRestClient;
+    
     private final ObjectMapper objectMapper;
 
     @Override

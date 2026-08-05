@@ -15,6 +15,7 @@ import com.cbp7.profile.dto.CreateProfileRequest;
 import com.cbp7.profile.entity.Branch;
 import com.cbp7.profile.entity.Course;
 import com.cbp7.profile.entity.Gender;
+import com.cbp7.payment.gateway.PhonePeGateway;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -70,14 +71,18 @@ public class PhonePePaymentInitiationTest {
     private PaymentRepository paymentRepository;
 
     @Autowired
-    private RestClient phonepeRestClient;
+    private RestClient.Builder phonepeRestClientBuilder;
+
+    @Autowired
+    private PhonePeGateway phonePeGateway;
 
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext)
                 .apply(springSecurity())
                 .build();
-        mockServer = MockRestServiceServer.bindTo(phonepeRestClient).build();
+        mockServer = MockRestServiceServer.bindTo(phonepeRestClientBuilder).build();
+        phonePeGateway.setPhonepeRestClient(phonepeRestClientBuilder.build());
     }
 
     // Helper methods

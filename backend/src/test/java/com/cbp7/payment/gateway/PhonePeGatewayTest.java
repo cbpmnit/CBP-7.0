@@ -38,7 +38,7 @@ class PhonePeGatewayTest {
     private PhonePeConfig phonePeConfig;
 
     @Autowired
-    private RestClient phonepeRestClient;
+    private RestClient.Builder phonepeRestClientBuilder;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -47,7 +47,8 @@ class PhonePeGatewayTest {
 
     @BeforeEach
     void setUp() {
-        mockServer = MockRestServiceServer.bindTo(phonepeRestClient).build();
+        mockServer = MockRestServiceServer.bindTo(phonepeRestClientBuilder).build();
+        phonePeGateway.setPhonepeRestClient(phonepeRestClientBuilder.build());
     }
 
     @Test
