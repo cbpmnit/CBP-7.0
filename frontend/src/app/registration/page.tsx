@@ -4,6 +4,16 @@ import { useState } from "react"
 import Link from "next/link"
 import Reveal from "@/components/animations/RevealOnScroll"
 import PageTransition from "@/components/animations/PageTransition"
+import {
+  FiUser,
+  FiMail,
+  FiHash,
+  FiBookOpen,
+  FiPhone,
+  FiCalendar,
+  FiCheckCircle,
+  FiArrowRight,
+} from "react-icons/fi"
 
 type Step = "form" | "success"
 
@@ -30,44 +40,45 @@ export default function RegistrationPage() {
   if (step === "success") {
     return (
       <PageTransition>
-        <main className="min-h-screen bg-black text-gray-100 bg-grid-cyber">
-          <section className="flex min-h-[60vh] items-center justify-center py-20">
-            <div className="mx-auto max-w-lg px-5 text-center">
-              <Reveal>
-                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-cyan-500/20 border border-cyan-400 text-cyan-400 shadow-[0_0_25px_rgba(0,240,255,0.4)]">
-                  ✓
+        <main className="min-h-screen bg-slate-50 text-slate-900 py-16 px-4 sm:px-6 lg:px-8">
+          <section className="flex min-h-[65vh] items-center justify-center">
+            <div className="mx-auto max-w-xl w-full text-center">
+              <Reveal variant="scale">
+                <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-tr from-cyan-600 to-blue-600 text-white shadow-xl shadow-cyan-600/30">
+                  <FiCheckCircle className="h-10 w-10" />
                 </div>
               </Reveal>
               <Reveal delay={80}>
-                <h1 className="mt-6 text-3xl font-extrabold text-white">
+                <h1 className="mt-6 text-3xl font-extrabold text-slate-900 sm:text-4xl">
                   Registration <span className="gradient-text-cyan">Successful!</span>
                 </h1>
               </Reveal>
               <Reveal delay={120}>
-                <p className="mt-3 text-sm leading-relaxed text-gray-300">
-                  Welcome, <strong className="text-cyan-300 font-semibold">{formData.name}</strong>!
+                <p className="mt-3 text-sm leading-relaxed text-slate-600">
+                  Welcome, <strong className="text-cyan-700 font-semibold">{formData.name}</strong>!
                   Your registration for CBP 7.0 has been received. A confirmation
                   email will be sent to{" "}
-                  <strong className="text-cyan-300 font-semibold">{formData.email}</strong> with
+                  <strong className="text-cyan-700 font-semibold">{formData.email}</strong> with
                   the program schedule, payment details, and further instructions.
                 </p>
               </Reveal>
               <Reveal delay={160}>
-                <div className="mt-8 glass-card rounded-2xl p-6 text-left border-cyan-500/30">
-                  <p className="text-xs font-bold uppercase tracking-widest text-cyan-400 mb-4">
+                <div className="mt-8 bg-white rounded-3xl p-6 sm:p-8 text-left border border-slate-200 shadow-xl shadow-slate-200/50">
+                  <p className="text-xs font-bold uppercase tracking-widest text-cyan-700 mb-4 flex items-center gap-2">
                     Registration Summary
                   </p>
-                  <dl className="space-y-3 text-sm">
+                  <dl className="space-y-3.5 text-sm">
                     {[
-                      ["Name", formData.name],
-                      ["Email", formData.email],
+                      ["Full Name", formData.name],
+                      ["MNIT Email", formData.email],
                       ["Roll Number", formData.rollNumber],
                       ["Department", formData.department],
-                      ["Year", formData.year],
+                      ["Year of Study", formData.year],
+                      ["Phone Number", formData.phone || "Not provided"],
                     ].map(([label, value]) => (
-                      <div key={label} className="flex justify-between gap-4 border-b border-white/5 pb-2">
-                        <dt className="text-gray-400 font-mono text-xs">{label}</dt>
-                        <dd className="font-bold text-white text-right">{value}</dd>
+                      <div key={label} className="flex justify-between items-center gap-4 border-b border-slate-100 pb-2.5">
+                        <dt className="text-slate-500 text-xs font-medium uppercase tracking-wider">{label}</dt>
+                        <dd className="font-semibold text-slate-900 text-right">{value}</dd>
                       </div>
                     ))}
                   </dl>
@@ -76,7 +87,7 @@ export default function RegistrationPage() {
               <Reveal delay={200}>
                 <Link
                   href="/"
-                  className="mt-8 inline-flex items-center justify-center rounded-xl neon-button-cyan px-8 py-3.5 text-sm font-extrabold uppercase tracking-wider"
+                  className="mt-8 inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white px-8 py-4 text-sm font-semibold uppercase tracking-wider shadow-lg shadow-cyan-600/30 transition duration-300 transform hover:-translate-y-0.5"
                 >
                   Back to Home
                 </Link>
@@ -90,53 +101,52 @@ export default function RegistrationPage() {
 
   return (
     <PageTransition>
-      <main className="min-h-screen bg-black text-gray-100 bg-grid-cyber">
-        <section className="bg-black py-24 sm:py-32 relative overflow-hidden border-b border-white/10">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-cyan-500/15 rounded-full blur-[160px] pointer-events-none" />
+      <main className="min-h-screen bg-slate-50 text-slate-900">
+        {/* Header Hero Section */}
+        <section className="bg-gradient-to-b from-white to-slate-100/60 py-16 sm:py-20 border-b border-slate-200 relative overflow-hidden">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-cyan-500/10 rounded-full blur-[140px] pointer-events-none" />
 
-          <div className="mx-auto max-w-7xl px-5 lg:px-8 text-center relative z-10">
-            <Reveal>
-              <span className="inline-flex items-center gap-2 rounded-full bg-cyan-500/10 border border-cyan-500/30 px-4 py-1.5 text-xs font-bold text-cyan-300 uppercase tracking-widest backdrop-blur-md">
-                <span className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_#00f0ff]" />
-                Join CBP 7.0
-              </span>
-            </Reveal>
-            <Reveal delay={80}>
-              <h1 className="mt-4 text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center relative z-10">
+            <Reveal variant="up">
+              <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-5xl lg:text-6xl">
                 Register for <span className="gradient-text-cyan">CBP 7.0</span>
               </h1>
             </Reveal>
-            <Reveal delay={120}>
-              <p className="mt-4 max-w-2xl mx-auto text-base text-gray-300">
-                Fill in your details below to secure your spot in the 5-day
+            <Reveal delay={80}>
+              <p className="mt-3.5 max-w-xl mx-auto text-sm sm:text-base text-slate-600 leading-relaxed">
+                Fill in your official details below to secure your spot in the 5-day
                 Capacity Building Program at MNIT Jaipur.
               </p>
             </Reveal>
           </div>
         </section>
 
-        <section className="py-24 sm:py-32">
-          <div className="mx-auto max-w-2xl px-5 lg:px-8">
-            <Reveal>
+        {/* Form Container Section */}
+        <section className="py-12 sm:py-16">
+          <div className="mx-auto max-w-2xl px-4 sm:px-6 lg:px-8">
+            <Reveal variant="up">
               <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="glass-card rounded-3xl p-8 sm:p-10 border-cyan-500/30">
-                  <div className="flex items-center gap-3 mb-8">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-500 text-black text-sm font-extrabold shadow-[0_0_15px_#00f0ff]">
+                <div className="bg-white rounded-3xl p-6 sm:p-10 border border-slate-200 shadow-xl shadow-slate-200/60 transition-all duration-300">
+                  <div className="flex items-center gap-3.5 mb-8 pb-6 border-b border-slate-100">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-600 to-blue-600 text-white text-base font-bold shadow-md shadow-cyan-600/30">
                       1
                     </div>
                     <div>
-                      <h2 className="text-xl font-extrabold text-white">
-                        Personal Information
+                      <h2 className="text-xl font-bold text-slate-900">
+                        Student Information
                       </h2>
-                      <p className="text-xs text-gray-400 font-mono">
+                      <p className="text-xs text-slate-500 mt-0.5">
                         Please use your official MNIT credentials.
                       </p>
                     </div>
                   </div>
-                  <div className="space-y-6">
+
+                  <div className="space-y-5">
+                    {/* Full Name */}
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-cyan-300">
-                        Full Name <span className="text-cyan-400">*</span>
+                      <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-700">
+                        <FiUser className="text-cyan-600" />
+                        Full Name <span className="text-cyan-600">*</span>
                       </label>
                       <input
                         type="text"
@@ -144,14 +154,17 @@ export default function RegistrationPage() {
                         required
                         value={formData.name}
                         onChange={handleChange}
-                        className="mt-2 block w-full rounded-xl bg-black/60 border border-white/10 px-4 py-3 text-sm text-white transition duration-200 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400"
+                        className="mt-2 block w-full rounded-xl bg-slate-50 border border-slate-200 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 transition duration-200 focus:bg-white focus:border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
                         placeholder="Enter your full name as per records"
                       />
                     </div>
-                    <div className="grid gap-6 sm:grid-cols-2">
+
+                    {/* Email & Roll Number Grid */}
+                    <div className="grid gap-5 sm:grid-cols-2">
                       <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-cyan-300">
-                          MNIT Email <span className="text-cyan-400">*</span>
+                        <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-700">
+                          <FiMail className="text-cyan-600" />
+                          MNIT Email <span className="text-cyan-600">*</span>
                         </label>
                         <input
                           type="email"
@@ -159,13 +172,15 @@ export default function RegistrationPage() {
                           required
                           value={formData.email}
                           onChange={handleChange}
-                          className="mt-2 block w-full rounded-xl bg-black/60 border border-white/10 px-4 py-3 text-sm text-white transition duration-200 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400"
+                          className="mt-2 block w-full rounded-xl bg-slate-50 border border-slate-200 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 transition duration-200 focus:bg-white focus:border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
                           placeholder="you@mnit.ac.in"
                         />
                       </div>
+
                       <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-cyan-300">
-                          Roll Number <span className="text-cyan-400">*</span>
+                        <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-700">
+                          <FiHash className="text-cyan-600" />
+                          Roll Number <span className="text-cyan-600">*</span>
                         </label>
                         <input
                           type="text"
@@ -173,15 +188,18 @@ export default function RegistrationPage() {
                           required
                           value={formData.rollNumber}
                           onChange={handleChange}
-                          className="mt-2 block w-full rounded-xl bg-black/60 border border-white/10 px-4 py-3 text-sm text-white transition duration-200 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400"
+                          className="mt-2 block w-full rounded-xl bg-slate-50 border border-slate-200 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 transition duration-200 focus:bg-white focus:border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
                           placeholder="e.g. 2024XXXXX"
                         />
                       </div>
                     </div>
-                    <div className="grid gap-6 sm:grid-cols-2">
+
+                    {/* Department & Phone Grid */}
+                    <div className="grid gap-5 sm:grid-cols-2">
                       <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-cyan-300">
-                          Department <span className="text-cyan-400">*</span>
+                        <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-700">
+                          <FiBookOpen className="text-cyan-600" />
+                          Department <span className="text-cyan-600">*</span>
                         </label>
                         <input
                           type="text"
@@ -189,12 +207,14 @@ export default function RegistrationPage() {
                           required
                           value={formData.department}
                           onChange={handleChange}
-                          className="mt-2 block w-full rounded-xl bg-black/60 border border-white/10 px-4 py-3 text-sm text-white transition duration-200 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400"
+                          className="mt-2 block w-full rounded-xl bg-slate-50 border border-slate-200 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 transition duration-200 focus:bg-white focus:border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
                           placeholder="e.g. Computer Science"
                         />
                       </div>
+
                       <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-cyan-300">
+                        <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-700">
+                          <FiPhone className="text-cyan-600" />
                           Phone Number
                         </label>
                         <input
@@ -202,20 +222,23 @@ export default function RegistrationPage() {
                           name="phone"
                           value={formData.phone}
                           onChange={handleChange}
-                          className="mt-2 block w-full rounded-xl bg-black/60 border border-white/10 px-4 py-3 text-sm text-white transition duration-200 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400"
+                          className="mt-2 block w-full rounded-xl bg-slate-50 border border-slate-200 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 transition duration-200 focus:bg-white focus:border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
                           placeholder="+91 98765 43210"
                         />
                       </div>
                     </div>
+
+                    {/* Year of Study Select */}
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-cyan-300">
+                      <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-700">
+                        <FiCalendar className="text-cyan-600" />
                         Year of Study
                       </label>
                       <select
                         name="year"
                         value={formData.year}
                         onChange={handleChange}
-                        className="mt-2 block w-full rounded-xl bg-black/80 border border-white/10 px-4 py-3 text-sm text-white transition duration-200 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400"
+                        className="mt-2 block w-full rounded-xl bg-slate-50 border border-slate-200 px-4 py-3 text-sm text-slate-900 transition duration-200 focus:bg-white focus:border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 cursor-pointer"
                       >
                         <option>1st Year</option>
                         <option>2nd Year</option>
@@ -226,15 +249,17 @@ export default function RegistrationPage() {
                   </div>
                 </div>
 
+                {/* Submit Button */}
                 <button
                   type="submit"
-                  className="w-full rounded-xl neon-button-cyan py-4 text-sm font-extrabold uppercase tracking-wider"
+                  className="group flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white py-4 text-sm font-bold uppercase tracking-wider shadow-lg shadow-cyan-600/30 transition-all duration-300 transform hover:-translate-y-0.5"
                 >
-                  Complete Registration
+                  <span>Complete Registration</span>
+                  <FiArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
                 </button>
 
-                <p className="text-center text-xs text-gray-400 font-mono">
-                  By registering, you agree to the terms and conditions of the
+                <p className="text-center text-xs text-slate-500">
+                  By registering, you agree to the official terms and conditions of the
                   CBP 7.0 program at MNIT Jaipur.
                 </p>
               </form>

@@ -56,22 +56,16 @@ export default function FeedbackSection() {
   }, [])
 
   return (
-    <section className="bg-black py-24 sm:py-32 relative overflow-hidden bg-grid-cyber border-t border-b border-white/10">
+    <section className="bg-slate-50 py-24 sm:py-32 relative overflow-hidden bg-grid-cyber border-t border-b border-slate-200">
       <div className="mx-auto max-w-7xl px-5 lg:px-8 relative z-10">
         <div className="mx-auto max-w-2xl text-center">
           <Reveal>
-            <span className="inline-flex items-center gap-2 rounded-full bg-cyan-500/10 border border-cyan-500/30 px-4 py-1.5 text-xs font-medium text-cyan-300 uppercase tracking-widest backdrop-blur-md">
-              <span className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_#00f0ff]" />
-              Student Feedback
-            </span>
-          </Reveal>
-          <Reveal delay={80}>
-            <h2 className="mt-4 text-3xl font-semibold tracking-tight text-white sm:text-4xl lg:text-5xl">
+            <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
               What Our Alumni <span className="gradient-text-cyan">Say</span>
             </h2>
           </Reveal>
-          <Reveal delay={120}>
-            <p className="mt-4 text-base leading-relaxed text-gray-400">
+          <Reveal delay={80}>
+            <p className="mt-4 text-base leading-relaxed text-slate-600">
               Real stories from students whose lives were transformed by the
               Capacity Building Program.
             </p>
@@ -85,7 +79,7 @@ export default function FeedbackSection() {
               <div className="glass-card glass-card-hover rounded-2xl p-7 flex flex-col justify-between h-full group">
                 <div>
                   <div className="flex items-center gap-4">
-                    <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full border-2 border-cyan-500/40 shadow-[0_0_12px_rgba(0,240,255,0.3)]">
+                    <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full border-2 border-cyan-600/40 shadow-sm">
                       <Image
                         src={t.image}
                         alt={t.name}
@@ -94,10 +88,10 @@ export default function FeedbackSection() {
                       />
                     </div>
                     <div className="min-w-0">
-                      <h3 className="text-sm font-medium text-white group-hover:text-cyan-300 transition duration-300 truncate">
+                      <h3 className="text-sm font-bold text-slate-900 group-hover:text-cyan-700 transition duration-300 truncate">
                         {t.name}
                       </h3>
-                      <p className="text-xs text-gray-400 font-sans truncate">
+                      <p className="text-xs text-slate-500 font-sans truncate">
                         {t.rollNumber}
                       </p>
                     </div>
@@ -105,13 +99,13 @@ export default function FeedbackSection() {
 
                   <div className="mt-5">
                     <svg
-                      className="h-6 w-6 text-cyan-400/60"
+                      className="h-6 w-6 text-cyan-600/60"
                       fill="currentColor"
                       viewBox="0 0 24 24"
                     >
                       <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4.995v10h-9.983zm-14.017 0v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4.995v10h-9.983z" />
                     </svg>
-                    <p className="mt-3 text-sm leading-relaxed text-gray-300">
+                    <p className="mt-3 text-sm leading-relaxed text-slate-600">
                       {t.quote}
                     </p>
                   </div>
@@ -121,7 +115,7 @@ export default function FeedbackSection() {
                   {[1, 2, 3, 4, 5].map((star) => (
                     <svg
                       key={star}
-                      className="h-4 w-4 text-cyan-400 drop-shadow-[0_0_6px_rgba(0,240,255,0.6)]"
+                      className="h-4 w-4 text-cyan-600"
                       fill="currentColor"
                       viewBox="0 0 24 24"
                     >
@@ -149,7 +143,7 @@ export default function FeedbackSection() {
                 <div className="glass-card rounded-2xl p-6 flex flex-col justify-between">
                   <div>
                     <div className="flex items-center gap-4">
-                      <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full border-2 border-cyan-500/40">
+                      <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full border-2 border-cyan-600/40">
                         <Image
                           src={t.image}
                           alt={t.name}
@@ -158,16 +152,16 @@ export default function FeedbackSection() {
                         />
                       </div>
                       <div className="min-w-0">
-                        <h3 className="text-sm font-medium text-white truncate">
+                        <h3 className="text-sm font-bold text-slate-900 truncate">
                           {t.name}
                         </h3>
-                        <p className="text-xs text-gray-400 font-sans truncate">
+                        <p className="text-xs text-slate-500 font-sans truncate">
                           {t.rollNumber}
                         </p>
                       </div>
                     </div>
 
-                    <p className="mt-4 text-sm leading-relaxed text-gray-300">
+                    <p className="mt-4 text-sm leading-relaxed text-slate-600">
                       {t.quote}
                     </p>
                   </div>
@@ -176,7 +170,7 @@ export default function FeedbackSection() {
                     {[1, 2, 3, 4, 5].map((star) => (
                       <svg
                         key={star}
-                        className="h-4 w-4 text-cyan-400"
+                        className="h-4 w-4 text-cyan-600"
                         fill="currentColor"
                         viewBox="0 0 24 24"
                       >
@@ -192,7 +186,7 @@ export default function FeedbackSection() {
           <div className="mt-6 flex items-center justify-between">
             <button
               onClick={handlePrev}
-              className="flex h-10 w-10 items-center justify-center rounded-xl border border-cyan-500/30 bg-black/60 text-cyan-400 text-lg"
+              className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-cyan-700 text-lg shadow-sm"
               aria-label="Previous Testimonial"
             >
               <FiChevronLeft />
@@ -205,8 +199,8 @@ export default function FeedbackSection() {
                   onClick={() => setCurrentIndex(idx)}
                   className={`h-2 rounded-full transition-all duration-300 ${
                     idx === currentIndex
-                      ? "w-6 bg-cyan-400 shadow-[0_0_8px_#00f0ff]"
-                      : "w-2 bg-white/20"
+                      ? "w-6 bg-cyan-600"
+                      : "w-2 bg-slate-300"
                   }`}
                 />
               ))}
@@ -214,7 +208,7 @@ export default function FeedbackSection() {
 
             <button
               onClick={handleNext}
-              className="flex h-10 w-10 items-center justify-center rounded-xl border border-cyan-500/30 bg-black/60 text-cyan-400 text-lg"
+              className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-cyan-700 text-lg shadow-sm"
               aria-label="Next Testimonial"
             >
               <FiChevronRight />

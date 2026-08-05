@@ -50,25 +50,19 @@ const objectivesList = [
 export default function AboutPage() {
   return (
     <PageTransition>
-      <main className="min-h-screen bg-black text-gray-100 bg-grid-cyber">
-        {/* Banner */}
-        <section className="relative bg-black py-24 sm:py-32 overflow-hidden border-b border-white/10">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-cyan-500/15 rounded-full blur-[160px] pointer-events-none" />
+      <main className="min-h-screen bg-slate-50 text-slate-900">
+        {/* Banner - Center Aligned */}
+        <section className="relative bg-gradient-to-b from-white to-slate-100/60 py-24 sm:py-32 overflow-hidden border-b border-slate-200">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-cyan-500/10 rounded-full blur-[160px] pointer-events-none" />
 
-          <div className="relative mx-auto max-w-7xl px-5 lg:px-8 z-10">
+          <div className="relative mx-auto max-w-3xl px-5 lg:px-8 text-center z-10">
             <Reveal>
-              <span className="inline-flex items-center gap-2 rounded-full bg-cyan-500/10 border border-cyan-500/30 px-4 py-1.5 text-xs font-medium text-cyan-300 uppercase tracking-widest backdrop-blur-md">
-                <span className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_#00f0ff]" />
-                About the Program
-              </span>
-            </Reveal>
-            <Reveal delay={100}>
-              <h1 className="mt-4 text-4xl font-semibold tracking-tight text-white sm:text-5xl md:text-6xl lg:text-7xl">
+              <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl md:text-6xl lg:text-7xl">
                 About CBP <span className="gradient-text-cyan">7.0</span>
               </h1>
             </Reveal>
-            <Reveal delay={200}>
-              <p className="mt-6 max-w-2xl text-base leading-relaxed text-gray-300 sm:text-lg">
+            <Reveal delay={100}>
+              <p className="mt-6 max-w-2xl mx-auto text-base leading-relaxed text-slate-600 sm:text-lg">
                 A centralized platform built to manage the entire Capacity
                 Building Program lifecycle — from registration to certification.
                 Serving 400+ first-year students with a seamless digital
@@ -83,18 +77,15 @@ export default function AboutPage() {
           <div className="mx-auto max-w-7xl px-5 lg:px-8">
             <div className="grid gap-12 lg:grid-cols-2 lg:gap-16 items-center">
               <Reveal variant="left">
-                <span className="inline-block rounded-full bg-cyan-500/10 border border-cyan-500/30 px-3.5 py-1 text-xs font-medium text-cyan-300 uppercase tracking-wider">
-                  Overview &amp; Highlights
-                </span>
-                <h2 className="mt-4 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+                <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
                   A Centralized Event <span className="gradient-text-cyan">Management System</span>
                 </h2>
-                <div className="mt-6 space-y-4 text-sm leading-relaxed text-gray-300">
+                <div className="mt-6 space-y-4 text-sm leading-relaxed text-slate-600">
                   <p>
                     The CBP 7.0 website is a comprehensive centralized event
                     management system designed specifically for managing the
                     Capacity Building Program at MNIT Jaipur. Built to serve{" "}
-                    <strong className="text-cyan-300 font-medium">400+ first-year students</strong>,
+                    <strong className="text-cyan-700 font-semibold">400+ first-year students</strong>,
                     the platform streamlines every aspect of program
                     administration and student participation.
                   </p>
@@ -107,11 +98,11 @@ export default function AboutPage() {
                   </p>
                   <p>
                     Developed in partnership between the{" "}
-                    <strong className="text-cyan-300 font-medium">
+                    <strong className="text-cyan-700 font-semibold">
                       Department of Humanities and Social Sciences
                     </strong>{" "}
                     and the{" "}
-                    <strong className="text-cyan-300 font-medium">
+                    <strong className="text-cyan-700 font-semibold">
                       Training &amp; Placement Cell
                     </strong>{" "}
                     at MNIT Jaipur.
@@ -123,9 +114,9 @@ export default function AboutPage() {
               <Reveal variant="right" delay={100}>
                 <div className="relative group">
                   {/* Glowing backdrop frame */}
-                  <div className="absolute -inset-1 rounded-3xl bg-gradient-to-r from-cyan-500 to-blue-600 opacity-40 blur-xl transition duration-500 group-hover:opacity-70" />
+                  <div className="absolute -inset-1 rounded-3xl bg-gradient-to-r from-cyan-600 to-blue-600 opacity-30 blur-xl transition duration-500 group-hover:opacity-50" />
                   
-                  <div className="relative aspect-video overflow-hidden rounded-3xl border-2 border-cyan-500/40 bg-black shadow-[0_0_40px_rgba(0,240,255,0.3)]">
+                  <div className="relative aspect-video overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl shadow-slate-200/60">
                     <video
                       className="h-full w-full object-cover"
                       autoPlay
@@ -137,14 +128,6 @@ export default function AboutPage() {
                     >
                       <source src="/assets/main-assets/hero.webm" type="video/webm" />
                     </video>
-
-                    {/* Cyber Video Overlay Badge */}
-                    <div className="absolute top-4 left-4 flex items-center gap-2 rounded-full bg-black/75 border border-cyan-500/40 px-3.5 py-1.5 backdrop-blur-md">
-                      <span className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_#00f0ff]" />
-                      <span className="text-[10px] font-mono text-cyan-300 font-medium uppercase tracking-wider">
-                        CBP 7.0 PROMO VIDEO
-                      </span>
-                    </div>
                   </div>
                 </div>
               </Reveal>
@@ -153,21 +136,16 @@ export default function AboutPage() {
         </section>
 
         {/* Platform Features */}
-        <section className="bg-black/90 py-24 sm:py-32 border-t border-b border-white/10">
+        <section className="bg-white py-24 sm:py-32 border-t border-b border-slate-200">
           <div className="mx-auto max-w-7xl px-5 lg:px-8">
-            <div className="mx-auto max-w-2xl text-center">
+            <div className="mx-auto max-w-3xl text-center">
               <Reveal>
-                <span className="inline-flex items-center gap-2 rounded-full bg-cyan-500/10 border border-cyan-500/30 px-4 py-1.5 text-xs font-medium text-cyan-300 uppercase tracking-widest backdrop-blur-md">
-                  Platform Features
-                </span>
-              </Reveal>
-              <Reveal delay={80}>
-                <h2 className="mt-4 text-3xl font-semibold tracking-tight text-white sm:text-4xl lg:text-5xl">
+                <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
                   Built for Efficiency &amp; <span className="gradient-text-cyan">Impact</span>
                 </h2>
               </Reveal>
-              <Reveal delay={120}>
-                <p className="mt-4 text-base leading-relaxed text-gray-400">
+              <Reveal delay={80}>
+                <p className="mt-4 text-base leading-relaxed text-slate-600 max-w-2xl mx-auto">
                   Every feature is designed to make program management effortless
                   and student engagement meaningful and measurable.
                 </p>
@@ -177,12 +155,12 @@ export default function AboutPage() {
             <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {platformFeatures.map((feature, i) => (
                 <Reveal key={feature.title} delay={i * 80}>
-                  <div className="glass-card glass-card-hover rounded-2xl p-7 flex flex-col justify-between h-full group">
+                  <div className="glass-card glass-card-hover rounded-2xl p-7 flex flex-col justify-between h-full group text-center sm:text-left">
                     <div>
-                      <h3 className="text-lg font-medium text-white group-hover:text-cyan-300 transition duration-300">
+                      <h3 className="text-lg font-bold text-slate-900 group-hover:text-cyan-700 transition duration-300">
                         {feature.title}
                       </h3>
-                      <p className="mt-3 text-sm leading-relaxed text-gray-400">
+                      <p className="mt-3 text-sm leading-relaxed text-slate-600">
                         {feature.desc}
                       </p>
                     </div>
@@ -198,17 +176,12 @@ export default function AboutPage() {
           <div className="mx-auto max-w-7xl px-5 lg:px-8">
             <div className="mx-auto max-w-3xl text-center">
               <Reveal>
-                <span className="inline-flex items-center gap-2 rounded-full bg-cyan-500/10 border border-cyan-500/30 px-4 py-1.5 text-xs font-medium text-cyan-300 uppercase tracking-widest backdrop-blur-md">
-                  Key Objectives
-                </span>
-              </Reveal>
-              <Reveal delay={80}>
-                <h2 className="mt-4 text-3xl font-semibold tracking-tight text-white sm:text-4xl lg:text-5xl">
+                <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
                   Driving Digital <span className="gradient-text-cyan">Transformation</span>
                 </h2>
               </Reveal>
-              <Reveal delay={120}>
-                <p className="mt-4 text-base leading-relaxed text-gray-400">
+              <Reveal delay={80}>
+                <p className="mt-4 text-base leading-relaxed text-slate-600 max-w-2xl mx-auto">
                   The CBP platform pursues clear, measurable objectives to
                   transform how MNIT Jaipur manages its flagship soft skills
                   program for the modern era.
@@ -219,11 +192,11 @@ export default function AboutPage() {
             <div className="mt-16 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
               {objectivesList.map((item, i) => (
                 <Reveal key={item.title} delay={i * 60}>
-                  <div className="glass-card glass-card-hover rounded-2xl p-6">
-                    <h3 className="text-base font-medium text-white">
+                  <div className="glass-card glass-card-hover rounded-2xl p-6 text-center sm:text-left">
+                    <h3 className="text-base font-bold text-slate-900">
                       {item.title}
                     </h3>
-                    <p className="mt-2 text-xs leading-relaxed text-gray-400">
+                    <p className="mt-2 text-xs leading-relaxed text-slate-600">
                       {item.desc}
                     </p>
                   </div>
@@ -234,19 +207,19 @@ export default function AboutPage() {
         </section>
 
         {/* CTA */}
-        <section className="bg-black py-20 border-t border-white/10">
+        <section className="bg-white py-20 border-t border-slate-200">
           <div className="mx-auto max-w-7xl px-5 lg:px-8 text-center">
             <Reveal>
-              <h2 className="text-3xl font-semibold text-white sm:text-4xl">
+              <h2 className="text-3xl font-extrabold text-slate-900 sm:text-4xl">
                 Ready to Join <span className="gradient-text-cyan">CBP 7.0?</span>
               </h2>
-              <p className="mt-4 text-base text-gray-300 max-w-xl mx-auto">
+              <p className="mt-4 text-base text-slate-600 max-w-xl mx-auto">
                 Register now and start your journey toward becoming
                 industry-ready.
               </p>
               <Link
                 href="/registration"
-                className="mt-8 inline-flex items-center justify-center rounded-xl neon-button-cyan px-9 py-4 text-sm font-medium uppercase tracking-wider"
+                className="mt-8 inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white px-9 py-4 text-sm font-bold uppercase tracking-wider shadow-lg shadow-cyan-600/30 transition duration-300 transform hover:-translate-y-0.5"
               >
                 Register Now
               </Link>
