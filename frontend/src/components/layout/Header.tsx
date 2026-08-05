@@ -14,6 +14,7 @@ export default function Header() {
   const dispatch = useAppDispatch()
   const theme = useAppSelector((state) => state.theme.theme)
   const isMenuOpen = useAppSelector((state) => state.ui.mobileMenuOpen)
+  const { isAuthenticated } = useAppSelector((state) => state.auth)
   const [scrolled, setScrolled] = useState(false)
   const [mounted, setMounted] = useState(false)
 
@@ -42,6 +43,11 @@ export default function Header() {
     { name: "FAQ", path: "/faq" },
     { name: "Contact", path: "/contact" },
   ]
+
+  if (isAuthenticated) {
+    navLinks.unshift({ name: "Dashboard", path: "/dashboard" })
+    navLinks.unshift({ name: "Profile", path: "/profile" })
+  }
 
   return (
     <>
@@ -123,16 +129,33 @@ export default function Header() {
                 {mounted ? (theme === "dark" ? <FiSun /> : <FiMoon />) : <FiSun />}
               </button>
 
-              <Link
-                href="/registration"
-                className={`rounded-xl px-6 py-2.5 text-xs font-medium tracking-wider uppercase transition duration-300 ${
-                  pathname === "/registration"
-                    ? "neon-button-cyan scale-105 shadow-[0_0_30px_rgba(0,240,255,0.7)]"
-                    : "neon-button-cyan shadow-[0_0_20px_rgba(0,240,255,0.5)]"
-                }`}
-              >
-                Register Now
-              </Link>
+              {isAuthenticated ? (
+                <Link
+                  href="/dashboard"
+                  className={`rounded-xl px-6 py-2.5 text-xs font-medium tracking-wider uppercase transition duration-300 ${
+                    pathname === "/dashboard"
+                      ? "neon-button-cyan scale-105 shadow-[0_0_30px_rgba(0,240,255,0.7)]"
+                      : "neon-button-cyan shadow-[0_0_20px_rgba(0,240,255,0.5)]"
+                  }`}
+                >
+                  Dashboard
+                </Link>
+              ) : (
+                <div className="flex gap-2">
+                  <Link
+                    href="/login"
+                    className="rounded-xl border border-cyan-500/40 bg-black/60 text-cyan-400 hover:bg-cyan-500/20 px-4 py-2.5 text-xs font-medium tracking-wider uppercase transition duration-300"
+                  >
+                    Log In
+                  </Link>
+                  <Link
+                    href="/register"
+                    className="rounded-xl neon-button-cyan px-4 py-2.5 text-xs font-medium tracking-wider uppercase transition duration-300"
+                  >
+                    Register
+                  </Link>
+                </div>
+              )}
             </div>
 
             {/* Mobile Actions */}
@@ -147,12 +170,21 @@ export default function Header() {
                 {mounted ? (theme === "dark" ? <FiSun /> : <FiMoon />) : <FiSun />}
               </button>
 
-              <Link
-                href="/registration"
-                className="rounded-xl neon-button-cyan px-4 py-2 text-xs font-medium uppercase"
-              >
-                Register
-              </Link>
+              {isAuthenticated ? (
+                <Link
+                  href="/dashboard"
+                  className="rounded-xl neon-button-cyan px-4 py-2 text-xs font-medium uppercase"
+                >
+                  Dashboard
+                </Link>
+              ) : (
+                <Link
+                  href="/login"
+                  className="rounded-xl neon-button-cyan px-4 py-2 text-xs font-medium uppercase"
+                >
+                  Login
+                </Link>
+              )}
 
               <button
                 onClick={() => dispatch(toggleMobileMenu())}
@@ -209,13 +241,32 @@ export default function Header() {
             )
           })}
           <div className="mt-8 px-6">
-            <Link
-              href="/registration"
-              onClick={() => dispatch(setMobileMenuOpen(false))}
-              className="block w-full rounded-xl neon-button-cyan text-center px-5 py-4 text-sm font-medium uppercase tracking-wider"
-            >
-              Register Now
-            </Link>
+            {isAuthenticated ? (
+              <Link
+                href="/dashboard"
+                onClick={() => dispatch(setMobileMenuOpen(false))}
+                className="block w-full rounded-xl neon-button-cyan text-center px-5 py-4 text-sm font-medium uppercase tracking-wider"
+              >
+                Dashboard
+              </Link>
+            ) : (
+              <div className="flex flex-col gap-3">
+                <Link
+                  href="/login"
+                  onClick={() => dispatch(setMobileMenuOpen(false))}
+                  className="block w-full rounded-xl border border-cyan-500/40 bg-black/60 text-cyan-400 text-center px-5 py-3 text-sm font-medium uppercase tracking-wider"
+                >
+                  Log In
+                </Link>
+                <Link
+                  href="/register"
+                  onClick={() => dispatch(setMobileMenuOpen(false))}
+                  className="block w-full rounded-xl neon-button-cyan text-center px-5 py-3 text-sm font-medium uppercase tracking-wider"
+                >
+                  Register Now
+                </Link>
+              </div>
+            )}
           </div>
         </nav>
       </aside>
