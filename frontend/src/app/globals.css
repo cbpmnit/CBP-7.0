@@ -1,17 +1,17 @@
 @import "tailwindcss";
 
 :root {
-  --background: #030712;
-  --foreground: #f3f4f6;
-  --cyber-cyan: #00f0ff;
-  --cyber-blue: #3b82f6;
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --cyber-cyan: #0284c7;
+  --cyber-blue: #2563eb;
   --cyber-purple: #8b5cf6;
   --cyber-pink: #ec4899;
   --mnit-gold: #fbbf24;
   --mnit-blue: #2563eb;
   --mnit-navy: #0f172a;
-  --card-bg: rgba(15, 23, 42, 0.7);
-  --glass-border: rgba(255, 255, 255, 0.12);
+  --card-bg: #ffffff;
+  --glass-border: #e2e8f0;
 }
 
 @theme inline {
@@ -36,18 +36,12 @@
 
 html {
   scroll-behavior: smooth;
-  color-scheme: dark;
-}
-
-html.light {
   color-scheme: light;
-  --background: #f8fafc;
-  --foreground: #0f172a;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: #f8fafc;
+  color: #0f172a;
   font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   font-style: normal !important;
   -webkit-font-smoothing: antialiased;
@@ -55,343 +49,285 @@ body {
   overflow-x: hidden;
 }
 
-/* 🌟 CARD ICON BADGES STYLING (DARK & LIGHT MODE) 🌟 */
+/* 🌟 CARD ICON BADGES STYLING 🌟 */
 .card-icon-badge {
-  background-color: rgba(0, 240, 255, 0.10);
-  border: 1px solid rgba(0, 240, 255, 0.30);
-  color: #00f0ff;
+  background-color: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #0284c7;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
 }
 
 .group:hover .card-icon-badge {
-  background: linear-gradient(135deg, #00f0ff 0%, #3b82f6 100%);
-  color: #030712;
+  background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
+  color: #ffffff;
   border-color: transparent;
-  box-shadow: 0 0 25px rgba(0, 240, 255, 0.5);
+  box-shadow: 0 8px 25px rgba(2, 132, 199, 0.35);
   transform: scale(1.08);
 }
 
-html.light .card-icon-badge {
-  background-color: #f1f5f9 !important;
-  border: 1px solid #e2e8f0 !important;
-  color: #0284c7 !important;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04) !important;
-}
-
-html.light .group:hover .card-icon-badge {
-  background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%) !important;
-  color: #ffffff !important;
-  border-color: transparent !important;
-  box-shadow: 0 8px 25px rgba(2, 132, 199, 0.35) !important;
-  transform: scale(1.08) !important;
-}
-
-/* 🌟 PERFECT LIGHT MODE OVERRIDES 🌟 */
-html.light body,
-html.light main {
-  background-color: #f8fafc !important;
-  color: #0f172a !important;
-}
-
-/* Bulletproof Dark/Light Mode Logo Switcher */
-html.dark .header-logo-light {
-  display: none !important;
-}
-
-html.dark .header-logo-dark {
-  display: block !important;
-}
-
-html.light .header-logo-dark {
-  display: none !important;
-}
-
-html.light .header-logo-light {
-  display: block !important;
+/* 🌟 LIGHT MODE GLOBAL STYLING 🌟 */
+body, main {
+  background-color: #f8fafc;
+  color: #0f172a;
 }
 
 /* Hero Section Light Mode Adaptation */
-html.light section.hero-section {
-  background-color: #f8fafc !important;
-  color: #0f172a !important;
+section.hero-section {
+  background-color: #f8fafc;
+  color: #0f172a;
 }
 
-/* Light Mode Front White Container Overlay Opacity Reduction */
-html.light .hero-overlay-left {
-  background: linear-gradient(to right, rgba(248, 250, 252, 0.10) 0%, rgba(248, 250, 252, 0.08) 45%, transparent 100%) !important;
+/* Hero Front Overlay Opacity */
+.hero-overlay-left {
+  background: linear-gradient(to right, rgba(248, 250, 252, 0.10) 0%, rgba(248, 250, 252, 0.08) 45%, transparent 100%);
 }
 
-html.light .hero-overlay-top {
-  background: linear-gradient(to top, rgba(248, 250, 252, 0.10) 0%, transparent 60%, transparent 100%) !important;
+.hero-overlay-top {
+  background: linear-gradient(to top, rgba(248, 250, 252, 0.10) 0%, transparent 60%, transparent 100%);
 }
 
-html.light section.hero-section video {
-  opacity: 0.95 !important;
+section.hero-section video {
+  opacity: 0.95;
 }
 
-html.light section.hero-section h1 {
-  color: #0f172a !important;
-  text-shadow: none !important;
+section.hero-section h1 {
+  color: #0f172a;
+  text-shadow: none;
 }
 
-html.light section.hero-section p {
-  color: #334155 !important;
+section.hero-section p {
+  color: #334155;
 }
 
-html.light section.hero-section .hero-secondary-btn {
-  background-color: #ffffff !important;
-  border-color: #cbd5e1 !important;
-  color: #334155 !important;
-  box-shadow: 0 4px 15px rgba(15, 23, 42, 0.05) !important;
+section.hero-section .hero-secondary-btn {
+  background-color: #ffffff;
+  border-color: #cbd5e1;
+  color: #334155;
+  box-shadow: 0 4px 15px rgba(15, 23, 42, 0.05);
 }
 
-html.light section.hero-section .hero-secondary-btn:hover {
-  background-color: #f0f9ff !important;
-  border-color: #0284c7 !important;
+section.hero-section .hero-secondary-btn:hover {
+  background-color: #f0f9ff;
+  border-color: #0284c7;
+  color: #0284c7;
+}
+
+/* Hero Carousel Pagination */
+.hero-pagination-bar {
+  background-color: rgba(255, 255, 255, 0.92);
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.12);
+}
+
+.hero-pagination-dot {
+  background-color: #94a3b8;
+}
+
+.hero-pagination-dot:hover {
+  background-color: #0284c7;
+}
+
+.hero-pagination-bar button.w-8 {
+  background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
+  box-shadow: 0 0 10px rgba(2, 132, 199, 0.5);
+}
+
+.hero-counter-badge {
+  background-color: rgba(255, 255, 255, 0.92);
+  border-color: #cbd5e1;
+  color: #0284c7;
+  box-shadow: 0 4px 15px rgba(15, 23, 42, 0.10);
+  font-weight: 600;
+}
+
+/* Header & Floating Navbar */
+header .header-nav-container {
+  background-color: rgba(255, 255, 255, 0.88);
+  border-color: rgba(2, 132, 199, 0.25);
+  box-shadow: 0 10px 30px 0 rgba(15, 23, 42, 0.08);
+}
+
+/* Nav Links Base Style - Clean Minimal Text & Underline (NO PILL BOX) */
+header .header-nav-link {
+  color: #334155;
+  border-color: transparent;
+  font-weight: 500;
+  background: transparent !important;
+  box-shadow: none !important;
+  transition: color 0.2s ease;
+}
+
+header .header-nav-link:hover {
   color: #0284c7 !important;
+  background: transparent !important;
+  box-shadow: none !important;
 }
 
-/* Hero Carousel Pagination Light Mode Adaptation */
-html.light .hero-pagination-bar {
-  background-color: rgba(255, 255, 255, 0.92) !important;
-  border-color: #cbd5e1 !important;
-  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.12) !important;
-}
-
-html.light .hero-pagination-dot {
-  background-color: #94a3b8 !important;
-}
-
-html.light .hero-pagination-dot:hover {
-  background-color: #0284c7 !important;
-}
-
-html.light .hero-pagination-bar button.w-8 {
-  background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%) !important;
-  box-shadow: 0 0 10px rgba(2, 132, 199, 0.5) !important;
-}
-
-html.light .hero-counter-badge {
-  background-color: rgba(255, 255, 255, 0.92) !important;
-  border-color: #cbd5e1 !important;
+/* Active Nav Link */
+header .header-nav-link-active,
+header .header-nav-link-active:hover {
   color: #0284c7 !important;
-  box-shadow: 0 4px 15px rgba(15, 23, 42, 0.10) !important;
-  font-weight: 600 !important;
-}
-
-/* Header & Floating Navbar Light Mode Adaptation */
-html.light header .header-nav-container {
-  background-color: rgba(255, 255, 255, 0.88) !important;
-  border-color: rgba(2, 132, 199, 0.25) !important;
-  box-shadow: 0 10px 30px 0 rgba(15, 23, 42, 0.08) !important;
-}
-
-/* Nav Links Base Style in Light Mode */
-html.light header .header-nav-link {
-  color: #475569 !important;
+  font-weight: 700 !important;
+  background: transparent !important;
+  box-shadow: none !important;
   border-color: transparent !important;
-  border-radius: 0.75rem !important;
-  font-weight: 500 !important;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
-/* Hover for NON-ACTIVE links in Light Mode */
-html.light header .header-nav-link:not(.header-nav-link-active):hover {
-  color: #0284c7 !important;
-  background-color: rgba(2, 132, 199, 0.08) !important;
+header .header-menu-btn {
+  background-color: #ffffff;
+  color: #0284c7;
+  border-color: rgba(2, 132, 199, 0.3);
 }
 
-/* Active Nav Link in Light Mode — Exact Register Now Gradient (Stays White Text on Hover!) */
-html.light header .header-nav-link-active,
-html.light header .header-nav-link-active:hover {
-  background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%) !important;
-  color: #ffffff !important;
-  border-color: transparent !important;
-  box-shadow: 0 4px 15px rgba(2, 132, 199, 0.35) !important;
-  font-weight: 600 !important;
+aside.header-mobile-drawer {
+  background-color: rgba(255, 255, 255, 0.98);
+  color: #0f172a;
+  border-left-color: rgba(2, 132, 199, 0.25);
 }
 
-html.light header .header-nav-line {
-  display: none !important;
+aside.header-mobile-drawer .header-drawer-title-bar {
+  background-color: #f8fafc;
+  border-bottom-color: rgba(2, 132, 199, 0.2);
 }
 
-html.light header .header-theme-btn {
-  background-color: #f1f5f9 !important;
-  color: #0284c7 !important;
-  border-color: rgba(2, 132, 199, 0.3) !important;
-  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.1) !important;
+aside.header-mobile-drawer a {
+  color: #334155;
+  border-bottom-color: #f1f5f9;
 }
 
-html.light header .header-menu-btn {
-  background-color: #ffffff !important;
-  color: #0284c7 !important;
-  border-color: rgba(2, 132, 199, 0.3) !important;
+aside.header-mobile-drawer a:hover {
+  background-color: rgba(2, 132, 199, 0.08);
+  color: #0284c7;
 }
 
-html.light aside.header-mobile-drawer {
-  background-color: rgba(255, 255, 255, 0.98) !important;
-  color: #0f172a !important;
-  border-left-color: rgba(2, 132, 199, 0.25) !important;
+/* TopBanner */
+.top-banner-container {
+  background-color: rgba(255, 255, 255, 0.95);
+  color: #0f172a;
+  border-bottom-color: rgba(2, 132, 199, 0.25);
 }
 
-html.light aside.header-mobile-drawer .header-drawer-title-bar {
-  background-color: #f8fafc !important;
-  border-bottom-color: rgba(2, 132, 199, 0.2) !important;
+.top-banner-logo-bg {
+  background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 4px 15px rgba(2, 132, 199, 0.35);
 }
 
-html.light aside.header-mobile-drawer a {
-  color: #334155 !important;
-  border-bottom-color: #f1f5f9 !important;
+.top-banner-logo-bg img {
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.25));
 }
 
-html.light aside.header-mobile-drawer a:hover {
-  background-color: rgba(2, 132, 199, 0.08) !important;
-  color: #0284c7 !important;
+.top-banner-title {
+  color: #0f172a;
+  text-shadow: none;
 }
 
-html.light aside.header-mobile-drawer a.bg-cyan-500\/20 {
-  background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%) !important;
-  color: #ffffff !important;
+.top-banner-subtitle {
+  color: #0284c7;
 }
 
-/* TopBanner Light Mode Adaptation */
-html.light .top-banner-container {
-  background-color: rgba(255, 255, 255, 0.95) !important;
-  color: #0f172a !important;
-  border-bottom-color: rgba(2, 132, 199, 0.25) !important;
+.top-banner-ticker-bg {
+  background-color: #f0f9ff;
+  border-top-color: rgba(2, 132, 199, 0.25);
+  color: #334155;
 }
 
-/* Register-Now Button Gradient Ring for TopBanner Logos in Light Mode */
-html.light .top-banner-logo-bg {
-  background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%) !important;
-  border-color: rgba(255, 255, 255, 0.4) !important;
-  box-shadow: 0 4px 15px rgba(2, 132, 199, 0.35) !important;
+.top-banner-ticker-badge {
+  background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
+  color: #ffffff;
+  box-shadow: 4px 0 15px rgba(2, 132, 199, 0.25);
 }
 
-html.light .top-banner-logo-bg img {
-  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.25)) !important;
+.top-banner-ticker-text {
+  color: #334155;
 }
 
-html.light .top-banner-title {
-  color: #0f172a !important;
-  text-shadow: none !important;
+.top-banner-ticker-text .text-cyan-300 {
+  color: #0284c7;
 }
 
-html.light .top-banner-subtitle {
-  color: #0284c7 !important;
+/* All Sections & Cards */
+section {
+  color: #0f172a;
 }
 
-html.light .top-banner-ticker-bg {
-  background-color: #f0f9ff !important;
-  border-top-color: rgba(2, 132, 199, 0.25) !important;
-  color: #334155 !important;
+footer {
+  background-color: #ffffff;
+  border-top-color: #e2e8f0;
 }
 
-html.light .top-banner-ticker-badge {
-  background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%) !important;
-  color: #ffffff !important;
-  box-shadow: 4px 0 15px rgba(2, 132, 199, 0.25) !important;
+/* Cards & Glass Containers */
+.glass-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 8px 30px rgba(15, 23, 42, 0.05);
 }
 
-html.light .top-banner-ticker-text {
-  color: #334155 !important;
+.glass-card-hover:hover {
+  background: #ffffff;
+  border-color: #0284c7;
+  box-shadow: 0 15px 35px rgba(2, 132, 199, 0.15);
 }
 
-html.light .top-banner-ticker-text .text-cyan-300 {
-  color: #0284c7 !important;
+/* Typography */
+section h1,
+section h2,
+section h3,
+section h4,
+footer h3 {
+  color: #0f172a;
 }
 
-/* All Sections & Cards in Light Mode */
-html.light section {
-  background-color: #f8fafc !important;
-  color: #0f172a !important;
+section p,
+footer p {
+  color: #475569;
 }
 
-html.light section.bg-black,
-html.light section.bg-black\/90,
-html.light section.bg-black\/80,
-html.light div.bg-black\/90:not(.top-banner-container),
-html.light div.bg-black\/80,
-html.light div.bg-black\/60:not(.header-nav-container) {
-  background-color: #f8fafc !important;
+section .text-white,
+footer .text-white {
+  color: #0f172a;
 }
 
-html.light footer.bg-black {
-  background-color: #ffffff !important;
-  border-top-color: #e2e8f0 !important;
+section .text-gray-100,
+section .text-gray-200,
+section .text-gray-300,
+footer .text-gray-300 {
+  color: #334155;
 }
 
-/* Cards & Glass Containers in Light Mode */
-html.light .glass-card {
-  background: #ffffff !important;
-  border: 1px solid #e2e8f0 !important;
-  box-shadow: 0 8px 30px rgba(15, 23, 42, 0.05) !important;
+section .text-gray-400,
+footer .text-gray-400 {
+  color: #64748b;
 }
 
-html.light .glass-card-hover:hover {
-  background: #ffffff !important;
-  border-color: #0284c7 !important;
-  box-shadow: 0 15px 35px rgba(2, 132, 199, 0.15) !important;
+.text-cyan-300,
+.text-cyan-400 {
+  color: #0284c7;
 }
 
-/* Typography in Light Mode */
-html.light section h1,
-html.light section h2,
-html.light section h3,
-html.light section h4,
-html.light footer h3 {
-  color: #0f172a !important;
+.gradient-text-cyan {
+  background: linear-gradient(135deg, #0284c7 0%, #1d4ed8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
-html.light section p,
-html.light footer p {
-  color: #475569 !important;
+.border-white\/10,
+.border-white\/15,
+.border-white\/20 {
+  border-color: #e2e8f0;
 }
 
-html.light section .text-white,
-html.light footer .text-white {
-  color: #0f172a !important;
-}
-
-html.light section .text-gray-100,
-html.light section .text-gray-200,
-html.light section .text-gray-300,
-html.light footer .text-gray-300 {
-  color: #334155 !important;
-}
-
-html.light section .text-gray-400,
-html.light footer .text-gray-400 {
-  color: #64748b !important;
-}
-
-html.light .text-cyan-300,
-html.light .text-cyan-400 {
-  color: #0284c7 !important;
-}
-
-html.light .gradient-text-cyan {
-  background: linear-gradient(135deg, #0284c7 0%, #1d4ed8 100%) !important;
-  -webkit-background-clip: text !important;
-  -webkit-text-fill-color: transparent !important;
-}
-
-html.light .border-white\/10,
-html.light .border-white\/15,
-html.light .border-white\/20 {
-  border-color: #e2e8f0 !important;
-}
-
-html.light .bg-grid-cyber {
+.bg-grid-cyber {
   background-image: 
-    linear-gradient(to right, rgba(2, 132, 199, 0.05) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(2, 132, 199, 0.05) 1px, transparent 1px) !important;
-  background-size: 36px 36px !important;
+    linear-gradient(to right, rgba(2, 132, 199, 0.15) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(2, 132, 199, 0.15) 1px, transparent 1px);
+  background-size: 36px 36px;
 }
 
-html.light .neon-button-cyan {
-  background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%) !important;
-  color: #ffffff !important;
-  box-shadow: 0 4px 15px rgba(2, 132, 199, 0.3) !important;
+.neon-button-cyan {
+  background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 15px rgba(2, 132, 199, 0.3);
 }
 
 /* GPU Performance Acceleration */
@@ -405,22 +341,19 @@ html.light .neon-button-cyan {
   width: 7px;
 }
 ::-webkit-scrollbar-track {
-  background: #030712;
-}
-html.light ::-webkit-scrollbar-track {
   background: #f1f5f9;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(59, 130, 246, 0.4);
+  background: rgba(2, 132, 199, 0.4);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 240, 255, 0.7);
+  background: rgba(2, 132, 199, 0.7);
 }
 
 ::selection {
-  background: var(--cyber-cyan);
-  color: #030712;
+  background: #0284c7;
+  color: #ffffff;
 }
 
 /* Sphinx 3D Bi-Directional Scroll Page Unfold & Close Effect */

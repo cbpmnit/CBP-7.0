@@ -51,38 +51,31 @@ function CountdownSectionComponent() {
   }, [mounted, timeLeft])
 
   return (
-    <section className="bg-black py-20 px-5 border-t border-b border-cyan-500/20 relative overflow-hidden bg-grid-cyber">
+    <section className="bg-slate-50 py-20 px-5 border-t border-b border-slate-200 relative overflow-hidden bg-grid-cyber">
       {/* Background glowing blur effect */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-cyan-500/10 rounded-full blur-[140px] pointer-events-none" />
 
       <div className="max-w-4xl mx-auto text-center relative z-10">
-        <Reveal variant="scale">
-          <span className="inline-flex items-center gap-2 rounded-full bg-cyan-500/10 border border-cyan-500/30 px-4 py-1.5 text-xs font-medium text-cyan-300 uppercase tracking-widest backdrop-blur-md">
-            <span className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_#00f0ff]" />
-            Registration Deadline Countdown
-          </span>
-        </Reveal>
-        
-        <Reveal variant="up" delay={80}>
-          <h2 className="mt-4 text-3xl font-semibold text-white sm:text-4xl lg:text-5xl tracking-tight">
-            CBP 7.0 <span className="gradient-text-cyan">Registration</span>
+        <Reveal variant="up">
+          <h2 className="text-3xl font-extrabold text-slate-900 sm:text-4xl lg:text-5xl tracking-tight">
+            CBP 7.0 <span className="gradient-text-cyan">Registration Countdown</span>
           </h2>
-          <p className="mt-2 text-sm text-gray-400 font-sans">
+          <p className="mt-2 text-sm text-slate-600 font-sans">
             Target Date: 31 August 2026, 6:00 PM
           </p>
         </Reveal>
 
-        <Reveal variant="scale" delay={160}>
+        <Reveal variant="scale" delay={120}>
           <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 max-w-3xl mx-auto">
             {/* Days Card */}
             <div className="glass-card glass-card-hover rounded-2xl p-5 md:p-8 text-center relative group">
               <span
-                className="block text-4xl md:text-6xl font-extrabold text-cyan-400 tracking-tight drop-shadow-[0_0_15px_rgba(0,240,255,0.4)]"
+                className="block text-4xl md:text-6xl font-extrabold text-cyan-700 tracking-tight"
                 suppressHydrationWarning
               >
                 {displayTime.days}
               </span>
-              <span className="block mt-3 text-xs font-medium uppercase tracking-widest text-gray-400 group-hover:text-cyan-300">
+              <span className="block mt-3 text-xs font-semibold uppercase tracking-widest text-slate-500 group-hover:text-cyan-700">
                 Days
               </span>
             </div>
@@ -90,12 +83,12 @@ function CountdownSectionComponent() {
             {/* Hours Card */}
             <div className="glass-card glass-card-hover rounded-2xl p-5 md:p-8 text-center relative group">
               <span
-                className="block text-4xl md:text-6xl font-extrabold text-white tracking-tight"
+                className="block text-4xl md:text-6xl font-extrabold text-slate-900 tracking-tight"
                 suppressHydrationWarning
               >
                 {String(displayTime.hours).padStart(2, "0")}
               </span>
-              <span className="block mt-3 text-xs font-medium uppercase tracking-widest text-gray-400 group-hover:text-cyan-300">
+              <span className="block mt-3 text-xs font-semibold uppercase tracking-widest text-slate-500 group-hover:text-cyan-700">
                 Hours
               </span>
             </div>
@@ -103,12 +96,12 @@ function CountdownSectionComponent() {
             {/* Minutes Card */}
             <div className="glass-card glass-card-hover rounded-2xl p-5 md:p-8 text-center relative group">
               <span
-                className="block text-4xl md:text-6xl font-extrabold text-white tracking-tight"
+                className="block text-4xl md:text-6xl font-extrabold text-slate-900 tracking-tight"
                 suppressHydrationWarning
               >
                 {String(displayTime.minutes).padStart(2, "0")}
               </span>
-              <span className="block mt-3 text-xs font-medium uppercase tracking-widest text-gray-400 group-hover:text-cyan-300">
+              <span className="block mt-3 text-xs font-semibold uppercase tracking-widest text-slate-500 group-hover:text-cyan-700">
                 Minutes
               </span>
             </div>
@@ -116,23 +109,23 @@ function CountdownSectionComponent() {
             {/* Seconds Card */}
             <div className="glass-card glass-card-hover rounded-2xl p-5 md:p-8 text-center relative group">
               <span
-                className="block text-4xl md:text-6xl font-extrabold text-cyan-400 tracking-tight animate-pulse drop-shadow-[0_0_20px_rgba(0,240,255,0.6)]"
+                className="block text-4xl md:text-6xl font-extrabold text-cyan-700 tracking-tight animate-pulse"
                 suppressHydrationWarning
               >
                 {String(displayTime.seconds).padStart(2, "0")}
               </span>
-              <span className="block mt-3 text-xs font-medium uppercase tracking-widest text-gray-400 group-hover:text-cyan-300">
+              <span className="block mt-3 text-xs font-semibold uppercase tracking-widest text-slate-500 group-hover:text-cyan-700">
                 Seconds
               </span>
             </div>
           </div>
         </Reveal>
 
-        <Reveal variant="up" delay={240}>
+        <Reveal variant="up" delay={200}>
           <div className="mt-10">
             <a
               href="/registration"
-              className="inline-flex items-center justify-center rounded-xl neon-button-cyan px-8 py-4 text-sm font-medium uppercase tracking-wider"
+              className="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white px-8 py-4 text-sm font-extrabold uppercase tracking-wider shadow-lg shadow-cyan-600/30 transition duration-300 transform hover:-translate-y-0.5"
             >
               Go to Registration
             </a>

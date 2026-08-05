@@ -46,8 +46,8 @@ export default function RootLayout({
 }>) {
   return (
     <>
-      <html lang="en" className={`${inter.variable} h-full antialiased dark`} suppressHydrationWarning>
-        <body className="min-h-full flex flex-col font-sans transition-colors duration-300" suppressHydrationWarning>
+      <html lang="en" className={`${inter.variable} h-full antialiased light`} suppressHydrationWarning>
+        <body className="min-h-full flex flex-col font-sans transition-colors duration-300 bg-slate-50 text-slate-900 bg-grid-cyber selection:bg-cyan-600 selection:text-white" suppressHydrationWarning>
           <StoreProvider>
             <AuthGuard>
               <TopBanner />

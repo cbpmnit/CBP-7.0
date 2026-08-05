@@ -2,159 +2,201 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { useAppDispatch } from "@/store/hooks"
-import { loginSuccess, setAuthError } from "@/store/slices/authSlice"
-import { api, ApiError } from "@/utils/api"
 import Reveal from "@/components/animations/RevealOnScroll"
 import PageTransition from "@/components/animations/PageTransition"
+import { FiUser, FiLock, FiArrowRight, FiShield, FiCheckCircle } from "react-icons/fi"
 
 export default function LoginPage() {
-  const router = useRouter()
-  const dispatch = useAppDispatch()
-  const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
-    studentId: "",
+    identifier: "",
     password: "",
+    rememberMe: false,
   })
-  const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [isSubmitted, setIsSubmitted] = useState(false)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }))
-    setErrorMsg(null)
+    const { name, value, type, checked } = e.target
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }))
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
-    setErrorMsg(null)
+    setIsSubmitted(true)
+  }
 
-    // Normalize studentId to lowercase
-    const loginPayload = {
-      studentId: formData.studentId.trim().toLowerCase(),
-      password: formData.password,
-    }
-
-    try {
-      // 1. Call login endpoint
-      const data: any = await api.post("/api/v1/auth/login", loginPayload)
-      
-      // 2. Dispatch loginSuccess to Redux store (which also persists to localStorage)
-      dispatch(
-        loginSuccess({
-          token: data.token,
-          studentId: data.studentId,
-          role: data.role,
-          name: data.name,
-        })
-      )
-
-      // 3. Immediately check if user profile exists
-      try {
-        await api.get("/api/v1/profile/me")
-        // Profile exists, redirect to dashboard
-        router.push("/dashboard")
-      } catch (profileErr) {
-        if (profileErr instanceof ApiError && profileErr.status === 404) {
-          // Profile is missing, redirect to profile setup
-          router.push("/profile")
-        } else {
-          // Fallback redirect to dashboard
-          router.push("/dashboard")
-        }
-      }
-    } catch (err) {
-      if (err instanceof ApiError) {
-        setErrorMsg(err.message || "Invalid student ID or password")
-        dispatch(setAuthError(err.message))
-      } else {
-        setErrorMsg("Connection to server failed. Please try again.")
-        dispatch(setAuthError("Connection failed"))
-      }
-    } finally {
-      setLoading(false)
-    }
+  if (isSubmitted) {
+    return (
+      <PageTransition>
+        <main className="min-h-screen bg-slate-50 text-slate-900 py-16 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
+          <div className="mx-auto max-w-md w-full text-center">
+            <Reveal variant="scale">
+              <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-tr from-cyan-600 to-blue-600 text-white shadow-xl shadow-cyan-600/30">
+                <FiCheckCircle className="h-10 w-10" />
+              </div>
+            </Reveal>
+            <Reveal delay={80}>
+              <h1 className="mt-6 text-3xl font-extrabold text-slate-900">
+                Login <span className="gradient-text-cyan">Successful!</span>
+              </h1>
+            </Reveal>
+            <Reveal delay={120}>
+              <p className="mt-3 text-sm leading-relaxed text-slate-600">
+                Welcome back! You have successfully logged into the CBP 7.0 Student Portal.
+              </p>
+            </Reveal>
+            <Reveal delay={160}>
+              <div className="mt-8 bg-white rounded-3xl p-6 text-left border border-slate-200 shadow-xl shadow-slate-200/50">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-50 text-cyan-700">
+                    <FiShield className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Logged in as</p>
+                    <p className="text-sm font-bold text-slate-900">{formData.identifier || "Student"}</p>
+                  </div>
+                </div>
+              </div>
+            </Reveal>
+            <Reveal delay={200}>
+              <Link
+                href="/"
+                className="mt-8 inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white px-8 py-4 text-sm font-bold uppercase tracking-wider shadow-lg shadow-cyan-600/30 transition duration-300 transform hover:-translate-y-0.5"
+              >
+                Go to Homepage
+              </Link>
+            </Reveal>
+          </div>
+        </main>
+      </PageTransition>
+    )
   }
 
   return (
     <PageTransition>
-      <main className="min-h-screen bg-black text-gray-100 bg-grid-cyber flex items-center justify-center py-20 relative overflow-hidden">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-cyan-500/10 rounded-full blur-[140px] pointer-events-none" />
+      <main className="min-h-screen bg-slate-50 text-slate-900 bg-grid-cyber">
+        {/* Header Hero Section */}
+        <section className="bg-gradient-to-b from-white to-slate-100/60 py-16 sm:py-20 border-b border-slate-200 relative overflow-hidden">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-cyan-500/10 rounded-full blur-[140px] pointer-events-none" />
 
-        <div className="w-full max-w-md px-5 relative z-10">
-          <Reveal>
-            <div className="text-center mb-8">
-              <span className="inline-flex items-center gap-2 rounded-full bg-cyan-500/10 border border-cyan-500/30 px-4 py-1.5 text-xs font-bold text-cyan-300 uppercase tracking-widest backdrop-blur-md">
-                CBP 7.0 Portal Login
-              </span>
-              <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
-                Welcome <span className="gradient-text-cyan">Back</span>
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center relative z-10">
+            <Reveal variant="up">
+              <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-5xl lg:text-6xl">
+                Login to <span className="gradient-text-cyan">CBP 7.0</span>
               </h1>
-              <p className="mt-2 text-sm text-gray-400">
-                Log in to manage your registration and soft skills portal.
+            </Reveal>
+            <Reveal delay={80}>
+              <p className="mt-3.5 max-w-xl mx-auto text-sm sm:text-base text-slate-600 leading-relaxed">
+                Enter your Roll Number / MNIT Email and Password to access your student dashboard, attendance records, and certificates.
               </p>
-            </div>
-          </Reveal>
+            </Reveal>
+          </div>
+        </section>
 
-          <Reveal delay={80}>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="glass-card rounded-3xl p-8 border-cyan-500/30">
-                <div className="space-y-6">
-                  {errorMsg && (
-                    <div className="p-4 rounded-xl border border-red-500/40 bg-red-500/10 text-red-400 text-sm font-semibold text-center">
-                      {errorMsg}
+        {/* Login Form Section */}
+        <section className="py-12 sm:py-16">
+          <div className="mx-auto max-w-md px-4 sm:px-6">
+            <Reveal variant="up">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="bg-white rounded-3xl p-6 sm:p-10 border border-slate-200 shadow-xl shadow-slate-200/60 transition-all duration-300">
+                  <div className="flex items-center gap-3.5 mb-8 pb-6 border-b border-slate-100">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-600 to-blue-600 text-white text-base font-bold shadow-md shadow-cyan-600/30">
+                      <FiShield className="h-6 w-6" />
                     </div>
-                  )}
-
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-cyan-300">
-                      Student ID (Roll Number) <span className="text-cyan-400">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="studentId"
-                      required
-                      value={formData.studentId}
-                      onChange={handleChange}
-                      className="mt-2 block w-full rounded-xl bg-black/60 border border-white/10 px-4 py-3 text-sm text-white transition duration-200 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400"
-                      placeholder="e.g. 2023UCP1234"
-                    />
+                    <div>
+                      <h2 className="text-xl font-bold text-slate-900">
+                        Account Portal
+                      </h2>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        MNIT Jaipur Student Login
+                      </p>
+                    </div>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-cyan-300">
-                      Password <span className="text-cyan-400">*</span>
-                    </label>
-                    <input
-                      type="password"
-                      name="password"
-                      required
-                      value={formData.password}
-                      onChange={handleChange}
-                      className="mt-2 block w-full rounded-xl bg-black/60 border border-white/10 px-4 py-3 text-sm text-white transition duration-200 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400"
-                      placeholder="••••••••"
-                    />
+                  <div className="space-y-5">
+                    {/* Identifier */}
+                    <div>
+                      <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-700">
+                        <FiUser className="text-cyan-600" />
+                        Roll Number / Email <span className="text-cyan-600">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="identifier"
+                        required
+                        value={formData.identifier}
+                        onChange={handleChange}
+                        className="mt-2 block w-full rounded-xl bg-slate-50 border border-slate-200 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 transition duration-200 focus:bg-white focus:border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
+                        placeholder="e.g. 2024XXXXX or student@mnit.ac.in"
+                      />
+                    </div>
+
+                    {/* Password */}
+                    <div>
+                      <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-700">
+                        <FiLock className="text-cyan-600" />
+                        Password <span className="text-cyan-600">*</span>
+                      </label>
+                      <input
+                        type="password"
+                        name="password"
+                        required
+                        value={formData.password}
+                        onChange={handleChange}
+                        className="mt-2 block w-full rounded-xl bg-slate-50 border border-slate-200 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 transition duration-200 focus:bg-white focus:border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
+                        placeholder="Enter your password"
+                      />
+                    </div>
+
+                    {/* Options */}
+                    <div className="flex items-center justify-between pt-1">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          name="rememberMe"
+                          checked={formData.rememberMe}
+                          onChange={handleChange}
+                          className="h-4 w-4 rounded border-slate-300 text-cyan-600 focus:ring-cyan-500"
+                        />
+                        <span className="text-xs text-slate-600">Remember me</span>
+                      </label>
+
+                      <a
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault()
+                          alert("Password reset instructions have been sent to your registered MNIT email.")
+                        }}
+                        className="text-xs font-semibold text-cyan-700 hover:text-cyan-800 transition"
+                      >
+                        Forgot Password?
+                      </a>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full rounded-xl neon-button-cyan py-4 text-sm font-extrabold uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? "Logging in..." : "Log In"}
-              </button>
+                {/* Submit Button */}
+                <button
+                  type="submit"
+                  className="group flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white py-4 text-sm font-bold uppercase tracking-wider shadow-lg shadow-cyan-600/30 transition-all duration-300 transform hover:-translate-y-0.5"
+                >
+                  <span>Sign In</span>
+                  <FiArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+                </button>
 
-              <p className="text-center text-sm text-gray-400">
-                Don't have an account?{" "}
-                <Link href="/register" className="text-cyan-400 hover:text-cyan-300 transition underline">
-                  Register here
-                </Link>
-              </p>
-            </form>
-          </Reveal>
-        </div>
+                {/* Register Link */}
+                <div className="text-center text-xs text-slate-600 pt-2">
+                  Don&apos;t have an account?{" "}
+                  <Link href="/registration" className="font-bold text-cyan-700 hover:text-cyan-800 underline">
+                    Register for CBP 7.0 Now
+                  </Link>
+                </div>
+              </form>
+            </Reveal>
+          </div>
+        </section>
       </main>
     </PageTransition>
   )

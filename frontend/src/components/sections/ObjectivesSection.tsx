@@ -66,25 +66,19 @@ function ObjectivesSectionComponent() {
   const objectives = useMemo(() => OBJECTIVES_DATA, [])
 
   return (
-    <section className="bg-black py-24 sm:py-32 relative overflow-hidden bg-grid-cyber">
+    <section className="bg-slate-50 py-24 sm:py-32 relative overflow-hidden bg-grid-cyber">
       {/* Background Radial Light */}
       <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-[140px] pointer-events-none" />
 
       <div className="mx-auto max-w-7xl px-5 lg:px-8 relative z-10">
         <div className="mx-auto max-w-2xl text-center">
-          <Reveal variant="scale">
-            <span className="inline-flex items-center gap-2 rounded-full bg-cyan-500/10 border border-cyan-500/30 px-4 py-1.5 text-xs font-medium text-cyan-300 uppercase tracking-widest backdrop-blur-md">
-              <span className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_#00f0ff]" />
-              Key Objectives
-            </span>
-          </Reveal>
-          <Reveal variant="up" delay={80}>
-            <h2 className="mt-4 text-3xl font-semibold tracking-tight text-white sm:text-4xl lg:text-5xl">
+          <Reveal variant="up">
+            <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
               What We Aim to <span className="gradient-text-cyan">Achieve</span>
             </h2>
           </Reveal>
-          <Reveal variant="up" delay={140}>
-            <p className="mt-4 text-base leading-relaxed text-gray-400">
+          <Reveal variant="up" delay={80}>
+            <p className="mt-4 text-base leading-relaxed text-slate-600">
               The CBP 7.0 platform is built with a clear mission — to transform
               how MNIT Jaipur manages its flagship soft skills program, making it
               more efficient, engaging, and impactful for everyone involved.
@@ -104,10 +98,10 @@ function ObjectivesSectionComponent() {
                   <div className="card-icon-badge flex h-14 w-14 items-center justify-center rounded-2xl transition-all duration-300">
                     {item.icon}
                   </div>
-                  <h3 className="mt-5 text-lg font-medium text-white group-hover:text-cyan-300 transition duration-300">
+                  <h3 className="mt-5 text-lg font-bold text-slate-900 group-hover:text-cyan-700 transition duration-300">
                     {item.title}
                   </h3>
-                  <p className="mt-2.5 text-sm leading-relaxed text-gray-400">
+                  <p className="mt-2.5 text-sm leading-relaxed text-slate-600">
                     {item.description}
                   </p>
                 </div>
