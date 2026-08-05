@@ -1,0 +1,41 @@
+server:
+  port: ${SERVER_PORT}
+
+spring:
+  config:
+    import: optional:file:.env[.properties]
+  datasource:
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=${DB_SSLMODE}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      connection-init-sql: CREATE SCHEMA IF NOT EXISTS cbp; CREATE SCHEMA IF NOT EXISTS profile;
+  flyway:
+    enabled: true
+    schemas: cbp, profile, public
+    create-schemas: true
+    baseline-on-migrate: true
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        default_schema: cbp
+  devtools:
+    restart:
+      enabled: true
+    livereload:
+      enabled: true
+
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: ${JWT_EXPIRATION}
+
+cors:
+  frontend-url: ${FRONTEND_URL}
+
+logging:
+  level:
+    root: INFO
