@@ -1,6 +1,6 @@
 steps:
   # Step 1: Run Maven package to compile the backend code and generate target/*.jar
-  - name: 'maven:3.9.9-eclipse-temurin-25'
+  - name: 'maven:3.9.16-eclipse-temurin-25'
     entrypoint: 'mvn'
     args: ['clean', 'package', '-DskipTests']
     dir: 'backend'
