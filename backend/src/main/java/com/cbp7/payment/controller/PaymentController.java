@@ -6,6 +6,7 @@ import com.cbp7.payment.dto.CreatePaymentRequest;
 import com.cbp7.payment.dto.PaymentDetailResponse;
 import com.cbp7.payment.dto.PaymentResponse;
 import com.cbp7.payment.dto.PhonePePaymentResponse;
+import com.cbp7.payment.dto.PhonePeCallbackRequest;
 import com.cbp7.payment.service.PaymentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -51,5 +53,14 @@ public class PaymentController {
     public ResponseEntity<ApiResponse<PaymentDetailResponse>> getMyPayment(@AuthenticationPrincipal User user) {
         PaymentDetailResponse response = paymentService.getMyPayment(user);
         return ResponseEntity.ok(ApiResponse.success("Payment details retrieved successfully", response));
+    }
+
+    @PostMapping("/phonepe/callback")
+    public ResponseEntity<ApiResponse<Void>> handlePhonePeCallback(
+            @RequestHeader("X-VERIFY") String xVerify,
+            @Valid @RequestBody PhonePeCallbackRequest request
+    ) {
+        paymentService.processPhonePeCallback(xVerify, request);
+        return ResponseEntity.ok(ApiResponse.success("Callback processed successfully"));
     }
 }

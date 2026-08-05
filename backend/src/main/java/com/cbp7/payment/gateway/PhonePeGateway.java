@@ -61,7 +61,7 @@ public class PhonePeGateway implements PaymentGateway {
             String base64Payload = Base64.getEncoder().encodeToString(jsonPayload.getBytes(StandardCharsets.UTF_8));
 
             // Generate X-VERIFY checksum signature
-            String checksum = generateChecksum(base64Payload, apiPath, phonePeConfig.getClientSecret(), phonePeConfig.getClientVersion());
+            String checksum = PhonePeChecksumUtil.generateApiChecksum(base64Payload, apiPath, phonePeConfig.getClientSecret(), phonePeConfig.getClientVersion());
 
             // Build request body wrapper
             Map<String, String> requestBody = new HashMap<>();
@@ -104,26 +104,6 @@ public class PhonePeGateway implements PaymentGateway {
         } catch (Exception e) {
             log.error("Error communicating with PhonePe gateway: {}", e.getMessage(), e);
             throw new BadGatewayException("Unable to initiate payment");
-        }
-    }
-
-    private String generateChecksum(String base64Body, String apiPath, String saltKey, String saltIndex) {
-        try {
-            String input = base64Body + apiPath + saltKey;
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(input.getBytes(StandardCharsets.UTF_8));
-            
-            StringBuilder hexString = new StringBuilder();
-            for (byte b : hash) {
-                String hex = Integer.toHexString(0xff & b);
-                if (hex.length() == 1) {
-                    hexString.append('0');
-                }
-                hexString.append(hex);
-            }
-            return hexString.toString() + "###" + saltIndex;
-        } catch (Exception e) {
-            throw new RuntimeException("Error generating SHA-256 checksum", e);
         }
     }
 }

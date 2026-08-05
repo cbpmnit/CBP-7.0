@@ -18,9 +18,18 @@ import com.cbp7.payment.enums.PaymentMode;
 import com.cbp7.payment.enums.PaymentStatus;
 import com.cbp7.payment.gateway.PaymentGateway;
 import com.cbp7.payment.repository.PaymentRepository;
+import com.cbp7.payment.config.PhonePeConfig;
+import com.cbp7.payment.dto.PhonePeCallbackRequest;
+import com.cbp7.payment.gateway.PhonePeChecksumUtil;
+import com.cbp7.cbp.enums.RegistrationStatus;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -35,6 +44,8 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final CbpRegistrationRepository cbpRegistrationRepository;
     private final PaymentGateway paymentGateway;
+    private final PhonePeConfig phonePeConfig;
+    private final ObjectMapper objectMapper;
 
     @Transactional
     public PaymentResponse createPayment(User user, CreatePaymentRequest request) {
@@ -154,6 +165,64 @@ public class PaymentService {
         }
         if (user.getRole() != Role.ROLE_STUDENT) {
             throw new ForbiddenException("Only students can perform payment actions.");
+        }
+    }
+
+    @Transactional
+    public void processPhonePeCallback(String xVerify, PhonePeCallbackRequest request) {
+        if (request == null || request.response() == null) {
+            throw new IllegalArgumentException("Callback request payload is missing");
+        }
+
+        // 1. Verify Checksum Signature
+        String expectedChecksum = PhonePeChecksumUtil.generateCallbackChecksum(
+                request.response(), phonePeConfig.getClientSecret(), phonePeConfig.getClientVersion()
+        );
+        if (xVerify == null || !xVerify.equalsIgnoreCase(expectedChecksum)) {
+            throw new IllegalArgumentException("Invalid callback signature");
+        }
+
+        try {
+            // 2. Decode and Parse Payload
+            String decodedPayload = new String(Base64.getDecoder().decode(request.response()), StandardCharsets.UTF_8);
+            JsonNode rootNode = objectMapper.readTree(decodedPayload);
+            
+            String merchantTransactionId = rootNode.path("data").path("merchantTransactionId").asText();
+            String code = rootNode.path("code").asText();
+            boolean success = rootNode.path("success").asBoolean();
+
+            if (merchantTransactionId == null || merchantTransactionId.isBlank()) {
+                throw new IllegalArgumentException("Transaction ID not found in callback payload");
+            }
+
+            // 3. Find and Update local Payment record
+            Payment payment = paymentRepository.findByTransactionId(merchantTransactionId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Payment record not found for transaction: " + merchantTransactionId));
+
+            // 4. Idempotency Check
+            if (payment.getPaymentStatus() == PaymentStatus.SUCCESS) {
+                return;
+            }
+
+            // 5. Update Status
+            if ("PAYMENT_SUCCESS".equals(code) || success) {
+                payment.setPaymentStatus(PaymentStatus.SUCCESS);
+
+                // Update CBP registration state
+                CbpRegistration registration = cbpRegistrationRepository.findById(payment.getRegistrationId())
+                        .orElseThrow(() -> new ResourceNotFoundException("CBP registration not found for ID: " + payment.getRegistrationId()));
+                registration.setRegistrationStatus(RegistrationStatus.REGISTERED);
+                cbpRegistrationRepository.save(registration);
+            } else {
+                payment.setPaymentStatus(PaymentStatus.FAILED);
+            }
+
+            paymentRepository.save(payment);
+
+        } catch (IllegalArgumentException | ResourceNotFoundException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Error parsing callback payload: " + e.getMessage(), e);
         }
     }
 }
