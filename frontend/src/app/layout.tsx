@@ -4,7 +4,7 @@ import "./globals.css";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import TopBanner from "@/components/layout/TopBanner";
-import { ThemeProvider } from "@/context/ThemeContext";
+import StoreProvider from "@/store/StoreProvider";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -47,12 +47,12 @@ export default function RootLayout({
     <>
       <html lang="en" className={`${inter.variable} h-full antialiased dark`} suppressHydrationWarning>
         <body className="min-h-full flex flex-col font-sans transition-colors duration-300" suppressHydrationWarning>
-          <ThemeProvider>
+          <StoreProvider>
             <TopBanner />
             <Header />
             {children}
             <Footer />
-          </ThemeProvider>
+          </StoreProvider>
         </body>
       </html>
     </>

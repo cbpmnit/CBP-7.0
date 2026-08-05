@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react"
 import Image from "next/image"
-import { useTheme } from "@/context/ThemeContext"
+import { useAppSelector } from "@/store/hooks"
 
 const slides = [
   {
@@ -48,7 +48,7 @@ const slides = [
 ]
 
 export default function Hero() {
-  const { theme } = useTheme()
+  const theme = useAppSelector((state) => state.theme.theme)
   const [current, setCurrent] = useState(0)
   const [isLoaded, setIsLoaded] = useState(false)
   const [videoEnded, setVideoEnded] = useState(false)

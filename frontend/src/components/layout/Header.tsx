@@ -4,13 +4,16 @@ import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
-import { useTheme } from "@/context/ThemeContext"
+import { useAppDispatch, useAppSelector } from "@/store/hooks"
+import { toggleTheme } from "@/store/slices/themeSlice"
+import { toggleMobileMenu, setMobileMenuOpen } from "@/store/slices/uiSlice"
 import { FiSun, FiMoon, FiMenu, FiX } from "react-icons/fi"
 
 export default function Header() {
   const pathname = usePathname()
-  const { theme, toggleTheme } = useTheme()
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const dispatch = useAppDispatch()
+  const theme = useAppSelector((state) => state.theme.theme)
+  const isMenuOpen = useAppSelector((state) => state.ui.mobileMenuOpen)
   const [scrolled, setScrolled] = useState(false)
 
   useEffect(() => {
@@ -37,9 +40,7 @@ export default function Header() {
 
   return (
     <>
-      <header
-        className="sticky top-0 left-0 right-0 z-50 transition-all duration-500 py-3 px-3 sm:px-6"
-      >
+      <header className="sticky top-0 left-0 right-0 z-50 transition-all duration-500 py-3 px-3 sm:px-6">
         <div
           className={`header-nav-container mx-auto max-w-7xl rounded-2xl transition-all duration-300 ${
             scrolled
@@ -108,7 +109,7 @@ export default function Header() {
             <div className="hidden items-center gap-3 md:flex">
               {/* Theme Switcher Button */}
               <button
-                onClick={toggleTheme}
+                onClick={() => dispatch(toggleTheme())}
                 className="header-theme-btn flex h-10 w-10 items-center justify-center rounded-xl border border-cyan-500/40 bg-black/60 text-cyan-400 text-lg transition duration-300 hover:scale-105 hover:bg-cyan-500/20 shadow-[0_0_10px_rgba(0,240,255,0.2)]"
                 aria-label="Toggle Light/Dark Theme"
                 title={`Switch to ${theme === "dark" ? "Light" : "Dark"} Mode`}
@@ -131,7 +132,7 @@ export default function Header() {
             {/* Mobile Actions */}
             <div className="flex items-center gap-2.5 md:hidden">
               <button
-                onClick={toggleTheme}
+                onClick={() => dispatch(toggleTheme())}
                 className="header-theme-btn flex h-9 w-9 items-center justify-center rounded-xl border border-cyan-500/40 bg-black/60 text-cyan-400 text-base"
                 aria-label="Toggle Light/Dark Theme"
               >
@@ -146,7 +147,7 @@ export default function Header() {
               </Link>
 
               <button
-                onClick={() => setIsMenuOpen(true)}
+                onClick={() => dispatch(toggleMobileMenu())}
                 className="header-menu-btn flex h-10 w-10 items-center justify-center rounded-xl border border-cyan-500/40 bg-black/80 text-cyan-400 text-xl transition duration-200"
                 aria-label="Open menu"
               >
@@ -159,7 +160,7 @@ export default function Header() {
 
       {/* Mobile Drawer Backdrop */}
       <div
-        onClick={() => setIsMenuOpen(false)}
+        onClick={() => dispatch(setMobileMenuOpen(false))}
         className={`fixed inset-0 z-50 bg-black/80 backdrop-blur-md transition-opacity duration-300 md:hidden ${
           isMenuOpen ? "visible opacity-100" : "invisible opacity-0"
         }`}
@@ -174,7 +175,7 @@ export default function Header() {
         <div className="header-drawer-title-bar flex h-20 items-center justify-between border-b border-cyan-500/20 px-6 bg-black/50">
           <span className="text-lg font-medium gradient-text-cyan tracking-wider">NAVIGATION</span>
           <button
-            onClick={() => setIsMenuOpen(false)}
+            onClick={() => dispatch(setMobileMenuOpen(false))}
             className="flex h-9 w-9 items-center justify-center rounded-xl border border-cyan-500/30 bg-black text-cyan-400 text-xl transition hover:bg-cyan-500/20"
             aria-label="Close menu"
           >
@@ -188,7 +189,7 @@ export default function Header() {
               <Link
                 key={link.name}
                 href={link.path}
-                onClick={() => setIsMenuOpen(false)}
+                onClick={() => dispatch(setMobileMenuOpen(false))}
                 className={`flex items-center justify-between border-b border-white/5 px-6 py-4 text-base font-normal transition duration-200 ${
                   isActive
                     ? "bg-cyan-500/20 text-cyan-300 font-medium border-l-4 border-l-cyan-400 pl-8 shadow-[0_0_15px_rgba(0,240,255,0.3)]"
@@ -202,7 +203,7 @@ export default function Header() {
           <div className="mt-8 px-6">
             <Link
               href="/registration"
-              onClick={() => setIsMenuOpen(false)}
+              onClick={() => dispatch(setMobileMenuOpen(false))}
               className="block w-full rounded-xl neon-button-cyan text-center px-5 py-4 text-sm font-medium uppercase tracking-wider"
             >
               Register Now
