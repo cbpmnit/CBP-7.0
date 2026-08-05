@@ -70,7 +70,7 @@ class PhonePeGatewayTest {
         payment.setId(UUID.randomUUID());
 
         // Mock PhonePe payment success response
-        mockServer.expect(requestTo("/pg/v1/pay"))
+        mockServer.expect(requestTo("https://api-preprod.phonepe.com/pg/v1/pay"))
                 .andExpect(method(HttpMethod.POST))
                 .andExpect(request -> {
                     // Extract body and verify redirectUrl/callbackUrl in request

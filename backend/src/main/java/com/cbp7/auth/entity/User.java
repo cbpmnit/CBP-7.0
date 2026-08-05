@@ -25,11 +25,6 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 public class User extends BaseEntity implements java.security.Principal {
 
-    @Override
-    public String getName() {
-        return this.studentId;
-    }
-
     @Column(name = "student_id", unique = true, nullable = false)
     private String studentId;
 

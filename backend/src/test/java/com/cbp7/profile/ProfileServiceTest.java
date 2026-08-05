@@ -74,7 +74,7 @@ class ProfileServiceTest {
                 "Rajasthan"
         );
 
-        when(userProfileRepository.existsByUser(testUser)).thenReturn(false);
+        when(userProfileRepository.existsByUserStudentIdIgnoreCase(testUser.getStudentId())).thenReturn(false);
         when(userProfileRepository.save(any(UserProfile.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         ProfileResponse response = profileService.createProfile(testUser, request);
@@ -100,7 +100,7 @@ class ProfileServiceTest {
                 Branch.COMPUTER_SCIENCE_ENGINEERING, 3, "A", false, null, "Jaipur", "Rajasthan"
         );
 
-        when(userProfileRepository.existsByUser(testUser)).thenReturn(true);
+        when(userProfileRepository.existsByUserStudentIdIgnoreCase(testUser.getStudentId())).thenReturn(true);
 
         assertThrows(DuplicateResourceException.class, () -> profileService.createProfile(testUser, request));
     }
@@ -113,7 +113,7 @@ class ProfileServiceTest {
                 Branch.COMPUTER_SCIENCE_ENGINEERING, 3, "A", false, null, "Jaipur", "Rajasthan"
         );
 
-        when(userProfileRepository.existsByUser(testUser)).thenReturn(false);
+        when(userProfileRepository.existsByUserStudentIdIgnoreCase(testUser.getStudentId())).thenReturn(false);
 
         assertThrows(IllegalArgumentException.class, () -> profileService.createProfile(testUser, request));
     }
@@ -126,7 +126,7 @@ class ProfileServiceTest {
                 Branch.COMPUTER_SCIENCE_ENGINEERING, 3, "A", false, null, "Jaipur", "Rajasthan"
         );
 
-        when(userProfileRepository.existsByUser(testUser)).thenReturn(false);
+        when(userProfileRepository.existsByUserStudentIdIgnoreCase(testUser.getStudentId())).thenReturn(false);
 
         assertThrows(IllegalArgumentException.class, () -> profileService.createProfile(testUser, request));
     }
@@ -139,7 +139,7 @@ class ProfileServiceTest {
                 Branch.COMPUTER_SCIENCE_ENGINEERING, 3, "A", true, "   ", "Jaipur", "Rajasthan"
         );
 
-        when(userProfileRepository.existsByUser(testUser)).thenReturn(false);
+        when(userProfileRepository.existsByUserStudentIdIgnoreCase(testUser.getStudentId())).thenReturn(false);
 
         assertThrows(IllegalArgumentException.class, () -> profileService.createProfile(testUser, request));
     }
@@ -162,7 +162,7 @@ class ProfileServiceTest {
                 .hosteller(false)
                 .build();
 
-        when(userProfileRepository.findByUser(testUser)).thenReturn(Optional.of(existingProfile));
+        when(userProfileRepository.findByUserStudentIdIgnoreCase(testUser.getStudentId())).thenReturn(Optional.of(existingProfile));
         when(userProfileRepository.save(any(UserProfile.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         UpdateProfileRequest updateRequest = new UpdateProfileRequest(
@@ -189,7 +189,7 @@ class ProfileServiceTest {
                 Branch.COMPUTER_SCIENCE_ENGINEERING, 3, "A", false, null, "Jaipur", "Rajasthan"
         );
 
-        when(userProfileRepository.findByUser(testUser)).thenReturn(Optional.empty());
+        when(userProfileRepository.findByUserStudentIdIgnoreCase(testUser.getStudentId())).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () -> profileService.updateProfile(testUser, updateRequest));
     }

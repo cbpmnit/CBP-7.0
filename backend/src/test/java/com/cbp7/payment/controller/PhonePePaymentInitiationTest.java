@@ -149,7 +149,7 @@ public class PhonePePaymentInitiationTest {
         createCbpRegistration(token);
 
         // Mock PhonePe gateway API response
-        mockServer.expect(requestTo("/pg/v1/pay"))
+        mockServer.expect(requestTo("https://api-preprod.phonepe.com/pg/v1/pay"))
                 .andExpect(method(HttpMethod.POST))
                 .andRespond(withSuccess("{\"success\":true,\"code\":\"PAYMENT_INITIATED\",\"message\":\"Payment Initiated\",\"data\":{\"merchantId\":\"xxxxx\",\"merchantTransactionId\":\"tx_id\",\"instrumentResponse\":{\"type\":\"PAY_PAGE\",\"redirectInfo\":{\"url\":\"https://phonepe-payment-url\",\"method\":\"GET\"}}}}", MediaType.APPLICATION_JSON));
 
@@ -253,7 +253,7 @@ public class PhonePePaymentInitiationTest {
         createCbpRegistration(token);
 
         // Mock PhonePe API failure
-        mockServer.expect(requestTo("/pg/v1/pay"))
+        mockServer.expect(requestTo("https://api-preprod.phonepe.com/pg/v1/pay"))
                 .andExpect(method(HttpMethod.POST))
                 .andRespond(withServerError());
 

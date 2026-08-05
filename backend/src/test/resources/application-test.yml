@@ -1,0 +1,37 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1;NON_KEYWORDS=YEAR
+    username: sa
+    password: 
+    driver-class-name: org.h2.Driver
+    hikari:
+      connection-init-sql: CREATE SCHEMA IF NOT EXISTS cbp; CREATE SCHEMA IF NOT EXISTS profile; CREATE SCHEMA IF NOT EXISTS payment;
+  flyway:
+    enabled: true
+    schemas: cbp, profile, payment, public
+    create-schemas: true
+    baseline-on-migrate: true
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        default_schema: cbp
+    show-sql: false
+
+# Mock secret keys for jwt and phonepe tests
+jwt:
+  secret: mock_jwt_signing_secret_key_of_32_bytes_or_more_length
+  expiration: 3600000
+
+cors:
+  frontend-url: http://localhost:3000
+  allowed-origins: http://localhost:3000
+
+phonepe:
+  client-id: xxxxx
+  client-secret: xxxxx
+  client-version: 1
+  base-url: https://api-preprod.phonepe.com
+  redirect-url: http://localhost:3000/payment-status
+  callback-url: http://localhost:9900/api/v1/payment/phonepe/callback

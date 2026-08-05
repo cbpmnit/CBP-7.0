@@ -103,9 +103,9 @@ class CbpRegistrationServiceTest {
 
     @Test
     void registerStudent_Success() {
-        when(cbpRegistrationRepository.existsByUser(studentUser)).thenReturn(false);
-        when(userProfileRepository.findByUser(studentUser)).thenReturn(Optional.of(completedProfile));
-        when(profileCompletionRepository.findByUser(studentUser)).thenReturn(Optional.of(completedStatus));
+        when(cbpRegistrationRepository.existsByUserStudentIdIgnoreCase(studentUser.getStudentId())).thenReturn(false);
+        when(userProfileRepository.findByUserStudentIdIgnoreCase(studentUser.getStudentId())).thenReturn(Optional.of(completedProfile));
+        when(profileCompletionRepository.findByUserStudentIdIgnoreCase(studentUser.getStudentId())).thenReturn(Optional.of(completedStatus));
         when(cbpRegistrationRepository.count()).thenReturn(0L);
         when(cbpRegistrationRepository.save(any(CbpRegistration.class))).thenAnswer(i -> i.getArgument(0));
 
@@ -130,15 +130,15 @@ class CbpRegistrationServiceTest {
 
     @Test
     void registerStudent_DuplicateRegistration_ThrowsException() {
-        when(cbpRegistrationRepository.existsByUser(studentUser)).thenReturn(true);
+        when(cbpRegistrationRepository.existsByUserStudentIdIgnoreCase(studentUser.getStudentId())).thenReturn(true);
 
         assertThrows(RegistrationAlreadyExistsException.class, () -> cbpRegistrationService.registerStudent(studentUser));
     }
 
     @Test
     void registerStudent_ProfileMissing_ThrowsException() {
-        when(cbpRegistrationRepository.existsByUser(studentUser)).thenReturn(false);
-        when(userProfileRepository.findByUser(studentUser)).thenReturn(Optional.empty());
+        when(cbpRegistrationRepository.existsByUserStudentIdIgnoreCase(studentUser.getStudentId())).thenReturn(false);
+        when(userProfileRepository.findByUserStudentIdIgnoreCase(studentUser.getStudentId())).thenReturn(Optional.empty());
 
         assertThrows(ProfileIncompleteException.class, () -> cbpRegistrationService.registerStudent(studentUser));
     }
@@ -151,9 +151,9 @@ class CbpRegistrationServiceTest {
                 .completionPercentage(60)
                 .build();
 
-        when(cbpRegistrationRepository.existsByUser(studentUser)).thenReturn(false);
-        when(userProfileRepository.findByUser(studentUser)).thenReturn(Optional.of(completedProfile));
-        when(profileCompletionRepository.findByUser(studentUser)).thenReturn(Optional.of(incomplete));
+        when(cbpRegistrationRepository.existsByUserStudentIdIgnoreCase(studentUser.getStudentId())).thenReturn(false);
+        when(userProfileRepository.findByUserStudentIdIgnoreCase(studentUser.getStudentId())).thenReturn(Optional.of(completedProfile));
+        when(profileCompletionRepository.findByUserStudentIdIgnoreCase(studentUser.getStudentId())).thenReturn(Optional.of(incomplete));
 
         assertThrows(ProfileIncompleteException.class, () -> cbpRegistrationService.registerStudent(studentUser));
     }
@@ -189,7 +189,7 @@ class CbpRegistrationServiceTest {
                 .build();
         existing.setCreatedAt(LocalDateTime.now());
 
-        when(cbpRegistrationRepository.findByUser(studentUser)).thenReturn(Optional.of(existing));
+        when(cbpRegistrationRepository.findByUserStudentIdIgnoreCase(studentUser.getStudentId())).thenReturn(Optional.of(existing));
 
         CbpRegistrationDetailResponse response = cbpRegistrationService.getMyRegistration(studentUser);
 
@@ -202,7 +202,7 @@ class CbpRegistrationServiceTest {
 
     @Test
     void getMyRegistration_NotFound_ThrowsException() {
-        when(cbpRegistrationRepository.findByUser(studentUser)).thenReturn(Optional.empty());
+        when(cbpRegistrationRepository.findByUserStudentIdIgnoreCase(studentUser.getStudentId())).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () -> cbpRegistrationService.getMyRegistration(studentUser));
     }

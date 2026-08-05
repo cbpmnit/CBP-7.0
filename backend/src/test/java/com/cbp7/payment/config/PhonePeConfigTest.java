@@ -26,7 +26,7 @@ class PhonePeConfigTest {
     @Test
     void shouldNotExposeSecretInToString() {
         String toStringResult = phonePeConfig.toString();
-        assertFalse(toStringResult.contains("xxxxx") && toStringResult.contains("clientSecret"));
+        assertFalse(toStringResult.contains("clientSecret='" + phonePeConfig.getClientSecret() + "'"));
         assertTrue(toStringResult.contains("[PROTECTED]"));
     }
 }
