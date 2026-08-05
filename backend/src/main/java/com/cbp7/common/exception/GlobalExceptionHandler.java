@@ -70,6 +70,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
     }
 
+    @ExceptionHandler(BadGatewayException.class)
+    public ResponseEntity<ErrorResponse> handleBadGatewayException(BadGatewayException ex, HttpServletRequest request) {
+        ErrorResponse response = ErrorResponse.of(HttpStatus.BAD_GATEWAY.value(), "Bad Gateway", ex.getMessage(), request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(response);
+    }
+
     @ExceptionHandler({InvalidCredentialsException.class, BadCredentialsException.class, UsernameNotFoundException.class})
     public ResponseEntity<ErrorResponse> handleInvalidCredentialsException(Exception ex, HttpServletRequest request) {
         ErrorResponse response = ErrorResponse.of(HttpStatus.UNAUTHORIZED.value(), "Unauthorized", ex.getMessage(), request.getRequestURI());

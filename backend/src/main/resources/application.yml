@@ -39,3 +39,12 @@ cors:
 logging:
   level:
     root: INFO
+
+phonepe:
+  client-id: ${PHONEPE_CLIENT_ID}
+  client-secret: ${PHONEPE_CLIENT_SECRET}
+  client-version: ${PHONEPE_CLIENT_VERSION}
+  base-url: ${PHONEPE_BASE_URL}
+  redirect-url: ${PHONEPE_REDIRECT_URL}
+  callback-url: ${PHONEPE_CALLBACK_URL}
+

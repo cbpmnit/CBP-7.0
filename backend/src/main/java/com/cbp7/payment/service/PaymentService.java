@@ -12,8 +12,11 @@ import com.cbp7.common.exception.UnauthorizedException;
 import com.cbp7.payment.dto.CreatePaymentRequest;
 import com.cbp7.payment.dto.PaymentDetailResponse;
 import com.cbp7.payment.dto.PaymentResponse;
+import com.cbp7.payment.dto.PhonePePaymentResponse;
 import com.cbp7.payment.entity.Payment;
+import com.cbp7.payment.enums.PaymentMode;
 import com.cbp7.payment.enums.PaymentStatus;
+import com.cbp7.payment.gateway.PaymentGateway;
 import com.cbp7.payment.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -30,6 +34,7 @@ public class PaymentService {
 
     private final PaymentRepository paymentRepository;
     private final CbpRegistrationRepository cbpRegistrationRepository;
+    private final PaymentGateway paymentGateway;
 
     @Transactional
     public PaymentResponse createPayment(User user, CreatePaymentRequest request) {
@@ -63,6 +68,56 @@ public class PaymentService {
                 savedPayment.getPaymentMode(),
                 savedPayment.getPaymentStatus(),
                 savedPayment.getAmount()
+        );
+    }
+
+    @Transactional
+    public PhonePePaymentResponse initiatePhonePePayment(User user) {
+        validateStudentRole(user);
+
+        // Check CBP registration exists
+        CbpRegistration registration = cbpRegistrationRepository.findByUserStudentIdIgnoreCase(user.getStudentId())
+                .orElseThrow(() -> new CbpRegistrationRequiredException("Please complete CBP registration first."));
+
+        // Check existing payments
+        List<Payment> payments = paymentRepository.findByUserId(user.getId());
+        
+        boolean hasSuccessful = payments.stream().anyMatch(p -> p.getPaymentStatus() == PaymentStatus.SUCCESS);
+        if (hasSuccessful) {
+            throw new PaymentAlreadyExistsException("Payment already completed.");
+        }
+
+        // Reuse existing PENDING or FAILED payment, or create new one
+        Payment payment = payments.stream()
+                .filter(p -> p.getPaymentStatus() == PaymentStatus.PENDING || p.getPaymentStatus() == PaymentStatus.FAILED)
+                .findFirst()
+                .orElseGet(() -> {
+                    Payment newPayment = Payment.builder()
+                            .registrationId(registration.getId())
+                            .userId(user.getId())
+                            .paymentMode(PaymentMode.ONLINE)
+                            .paymentStatus(PaymentStatus.PENDING)
+                            .amount(CBP_REGISTRATION_FEE)
+                            .build();
+                    return paymentRepository.save(newPayment);
+                });
+
+        // Set/update to a new unique transaction ID for PhonePe
+        String newTxnId = "CBP_TXN_" + UUID.randomUUID().toString().replace("-", "");
+        payment.setTransactionId(newTxnId);
+        payment.setPaymentMode(PaymentMode.ONLINE);
+        payment.setPaymentStatus(PaymentStatus.PENDING);
+        
+        Payment savedPayment = paymentRepository.saveAndFlush(payment);
+
+        // Call PhonePe gateway to initiate
+        String redirectUrl = paymentGateway.initiatePayment(savedPayment);
+
+        return new PhonePePaymentResponse(
+                savedPayment.getId(),
+                savedPayment.getTransactionId(),
+                redirectUrl,
+                savedPayment.getPaymentStatus()
         );
     }
 

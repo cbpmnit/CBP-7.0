@@ -5,6 +5,7 @@ import com.cbp7.common.response.ApiResponse;
 import com.cbp7.payment.dto.CreatePaymentRequest;
 import com.cbp7.payment.dto.PaymentDetailResponse;
 import com.cbp7.payment.dto.PaymentResponse;
+import com.cbp7.payment.dto.PhonePePaymentResponse;
 import com.cbp7.payment.service.PaymentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +35,15 @@ public class PaymentController {
         PaymentResponse response = paymentService.createPayment(user, request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Payment initiated successfully", response));
+    }
+
+    @PostMapping("/phonepe/initiate")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<ApiResponse<PhonePePaymentResponse>> initiatePhonePePayment(
+            @AuthenticationPrincipal User user
+    ) {
+        PhonePePaymentResponse response = paymentService.initiatePhonePePayment(user);
+        return ResponseEntity.ok(ApiResponse.success("Payment initiated successfully", response));
     }
 
     @GetMapping("/me")
