@@ -1,10 +1,11 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { useEffect, useState, useCallback, useMemo, memo } from "react"
 import { useAppDispatch, useAppSelector } from "@/store/hooks"
 import { toggleMobileMenu, setMobileMenuOpen } from "@/store/slices/uiSlice"
+import { logout } from "@/store/slices/authSlice"
 import { FiMenu, FiX, FiUser } from "react-icons/fi"
 
 const NAV_LINKS = [
@@ -18,9 +19,17 @@ const NAV_LINKS = [
 
 function HeaderComponent() {
   const pathname = usePathname()
+  const router = useRouter()
   const dispatch = useAppDispatch()
   const isMenuOpen = useAppSelector((state) => state.ui.mobileMenuOpen)
+  const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated)
   const [scrolled, setScrolled] = useState(false)
+
+  const handleLogout = useCallback(() => {
+    dispatch(logout())
+    dispatch(setMobileMenuOpen(false))
+    router.push("/login")
+  }, [dispatch, router])
 
   useEffect(() => {
     document.body.style.overflow = isMenuOpen ? "hidden" : ""
@@ -105,42 +114,67 @@ function HeaderComponent() {
 
             {/* Right Action CTA (Login & Register Now - Desktop) */}
             <div className="hidden items-center gap-2.5 md:flex">
-              <Link
-                href="/login"
-                className={`inline-flex items-center gap-1.5 rounded-xl border border-cyan-600/30 bg-cyan-50/80 px-4.5 py-2 text-xs font-bold tracking-wider text-cyan-700 uppercase transition-all duration-300 hover:bg-gradient-to-r hover:from-cyan-600 hover:to-blue-600 hover:text-white hover:border-transparent hover:shadow-md hover:shadow-cyan-600/20 ${
-                  pathname === "/login"
-                    ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white border-transparent shadow-md shadow-cyan-600/30"
-                    : ""
-                }`}
-              >
-                <FiUser className="h-3.5 w-3.5" />
-                <span>Login</span>
-              </Link>
+              {isAuthenticated ? (
+                <>
+                  <Link
+                    href="/dashboard"
+                    className={`inline-flex items-center gap-1.5 rounded-xl border border-cyan-600/30 bg-cyan-50/80 px-4.5 py-2 text-xs font-bold tracking-wider text-cyan-700 uppercase transition-all duration-300 hover:bg-gradient-to-r hover:from-cyan-600 hover:to-blue-600 hover:text-white hover:border-transparent hover:shadow-md hover:shadow-cyan-600/20 ${
+                      pathname === "/dashboard"
+                        ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white border-transparent shadow-md shadow-cyan-600/30"
+                        : ""
+                    }`}
+                  >
+                    <FiUser className="h-3.5 w-3.5" />
+                    <span>Dashboard</span>
+                  </Link>
 
-              <Link
-                href="/registration"
-                className={`rounded-xl px-6 py-2.5 text-xs font-bold tracking-wider uppercase transition-all duration-300 ${
-                  pathname === "/registration"
-                    ? "neon-button-cyan scale-105 shadow-[0_0_30px_rgba(2,132,199,0.5)]"
-                    : "neon-button-cyan shadow-md shadow-cyan-600/30 hover:shadow-cyan-600/50"
-                }`}
-              >
-                Register Now
-              </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="rounded-xl px-6 py-2.5 text-xs font-bold tracking-wider uppercase transition-all duration-300 neon-button-cyan shadow-md shadow-cyan-600/30 hover:shadow-cyan-600/50"
+                  >
+                    Log Out
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    className={`inline-flex items-center gap-1.5 rounded-xl border border-cyan-600/30 bg-cyan-50/80 px-4.5 py-2 text-xs font-bold tracking-wider text-cyan-700 uppercase transition-all duration-300 hover:bg-gradient-to-r hover:from-cyan-600 hover:to-blue-600 hover:text-white hover:border-transparent hover:shadow-md hover:shadow-cyan-600/20 ${
+                      pathname === "/login"
+                        ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white border-transparent shadow-md shadow-cyan-600/30"
+                        : ""
+                    }`}
+                  >
+                    <FiUser className="h-3.5 w-3.5" />
+                    <span>Login</span>
+                  </Link>
+
+                  <Link
+                    href="/registration"
+                    className={`rounded-xl px-6 py-2.5 text-xs font-bold tracking-wider uppercase transition-all duration-300 ${
+                      pathname === "/registration"
+                        ? "neon-button-cyan scale-105 shadow-[0_0_30px_rgba(2,132,199,0.5)]"
+                        : "neon-button-cyan shadow-md shadow-cyan-600/30 hover:shadow-cyan-600/50"
+                    }`}
+                  >
+                    Register Now
+                  </Link>
+                </>
+              )}
             </div>
 
-            {/* Mobile Actions - ONLY LOGIN BUTTON & HAMBURGER MENU */}
+            {/* Mobile Actions - ONLY LOGIN/DASHBOARD BUTTON & HAMBURGER MENU */}
             <div className="flex items-center gap-2 md:hidden">
               <Link
-                href="/login"
+                href={isAuthenticated ? "/dashboard" : "/login"}
                 className={`inline-flex items-center gap-1.5 rounded-xl border border-cyan-600/30 bg-cyan-50 text-cyan-700 px-3.5 py-2 text-xs font-bold uppercase tracking-wider transition-all duration-300 ${
-                  pathname === "/login"
+                  pathname === "/login" || pathname === "/dashboard"
                     ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white border-transparent shadow-sm"
                     : ""
                 }`}
               >
                 <FiUser className="h-3.5 w-3.5" />
-                <span>Login</span>
+                <span>{isAuthenticated ? "Dashboard" : "Login"}</span>
               </Link>
 
               <button
@@ -198,21 +232,42 @@ function HeaderComponent() {
             )
           })}
           <div className="mt-6 sm:mt-8 px-5 sm:px-6 flex flex-col gap-3">
-            <Link
-              href="/login"
-              onClick={handleCloseMobileMenu}
-              className="inline-flex items-center justify-center gap-2 w-full rounded-xl border border-cyan-600/30 bg-cyan-50 text-cyan-700 text-center px-4 py-3 text-xs sm:text-sm font-bold uppercase tracking-wider hover:bg-gradient-to-r hover:from-cyan-600 hover:to-blue-600 hover:text-white transition duration-300"
-            >
-              <FiUser className="h-4 w-4" />
-              <span>Login</span>
-            </Link>
-            <Link
-              href="/registration"
-              onClick={handleCloseMobileMenu}
-              className="block w-full rounded-xl neon-button-cyan text-center px-4 py-3.5 sm:px-5 sm:py-4 text-xs sm:text-sm font-bold uppercase tracking-wider"
-            >
-              Register Now
-            </Link>
+            {isAuthenticated ? (
+              <>
+                <Link
+                  href="/dashboard"
+                  onClick={handleCloseMobileMenu}
+                  className="inline-flex items-center justify-center gap-2 w-full rounded-xl border border-cyan-600/30 bg-cyan-50 text-cyan-700 text-center px-4 py-3 text-xs sm:text-sm font-bold uppercase tracking-wider hover:bg-gradient-to-r hover:from-cyan-600 hover:to-blue-600 hover:text-white transition duration-300"
+                >
+                  <FiUser className="h-4 w-4" />
+                  <span>Dashboard</span>
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="block w-full rounded-xl neon-button-cyan text-center px-4 py-3.5 sm:px-5 sm:py-4 text-xs sm:text-sm font-bold uppercase tracking-wider"
+                >
+                  Log Out
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  onClick={handleCloseMobileMenu}
+                  className="inline-flex items-center justify-center gap-2 w-full rounded-xl border border-cyan-600/30 bg-cyan-50 text-cyan-700 text-center px-4 py-3 text-xs sm:text-sm font-bold uppercase tracking-wider hover:bg-gradient-to-r hover:from-cyan-600 hover:to-blue-600 hover:text-white transition duration-300"
+                >
+                  <FiUser className="h-4 w-4" />
+                  <span>Login</span>
+                </Link>
+                <Link
+                  href="/registration"
+                  onClick={handleCloseMobileMenu}
+                  className="block w-full rounded-xl neon-button-cyan text-center px-4 py-3.5 sm:px-5 sm:py-4 text-xs sm:text-sm font-bold uppercase tracking-wider"
+                >
+                  Register Now
+                </Link>
+              </>
+            )}
           </div>
         </nav>
       </aside>

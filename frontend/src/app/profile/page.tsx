@@ -261,6 +261,9 @@ export default function ProfilePage() {
                         </option>
                       ))}
                     </select>
+                    {errors.gender && (
+                      <p className="mt-1 text-xs text-red-400">{errors.gender}</p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-cyan-300">
@@ -316,6 +319,9 @@ export default function ProfilePage() {
                         </option>
                       ))}
                     </select>
+                    {errors.course && (
+                      <p className="mt-1 text-xs text-red-400">{errors.course}</p>
+                    )}
                   </div>
                 </div>
 
@@ -336,6 +342,9 @@ export default function ProfilePage() {
                         </option>
                       ))}
                     </select>
+                    {errors.branch && (
+                      <p className="mt-1 text-xs text-red-400">{errors.branch}</p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-cyan-300">
@@ -351,6 +360,9 @@ export default function ProfilePage() {
                       onChange={handleChange}
                       className="mt-2 block w-full rounded-xl bg-black/60 border border-white/10 px-4 py-3 text-sm text-white transition focus:border-cyan-400 focus:outline-none"
                     />
+                    {errors.year && (
+                      <p className="mt-1 text-xs text-red-400">{errors.year}</p>
+                    )}
                   </div>
                 </div>
 

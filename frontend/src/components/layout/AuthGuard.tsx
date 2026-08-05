@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { useAppSelector } from "@/store/hooks"
 
-const PUBLIC_ROUTES = ["/", "/login", "/register"]
+const PUBLIC_ROUTES = ["/", "/login", "/register", "/registration"]
 const PROTECTED_ROUTES = ["/dashboard", "/profile", "/payment", "/cbp"]
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
@@ -21,7 +21,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     const isProtectedRoute = PROTECTED_ROUTES.some((route) =>
       pathname.startsWith(route)
     )
-    const isPublicAuthRoute = ["/login", "/register"].includes(pathname)
+    const isPublicAuthRoute = ["/login", "/register", "/registration"].includes(pathname)
 
     if (isProtectedRoute && !isAuth) {
       router.replace("/login")

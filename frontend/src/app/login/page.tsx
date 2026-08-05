@@ -2,16 +2,24 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { useAppDispatch } from "@/store/hooks"
+import { loginSuccess } from "@/store/slices/authSlice"
+import { api, ApiError } from "@/utils/api"
 import Reveal from "@/components/animations/RevealOnScroll"
 import PageTransition from "@/components/animations/PageTransition"
 import { FiUser, FiLock, FiArrowRight, FiShield, FiCheckCircle } from "react-icons/fi"
 
 export default function LoginPage() {
+  const router = useRouter()
+  const dispatch = useAppDispatch()
   const [formData, setFormData] = useState({
     identifier: "",
     password: "",
     rememberMe: false,
   })
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [isSubmitted, setIsSubmitted] = useState(false)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -20,11 +28,60 @@ export default function LoginPage() {
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }))
+    if (error) {
+      setError(null)
+    }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsSubmitted(true)
+    setLoading(true)
+    setError(null)
+
+    try {
+      // 1. Call login endpoint
+      const response: any = await api.post("/api/v1/auth/login", {
+        studentId: formData.identifier,
+        password: formData.password,
+      })
+
+      // 2. Dispatch success state to Redux (saves to localStorage automatically)
+      dispatch(
+        loginSuccess({
+          token: response.token,
+          studentId: response.studentId,
+          name: response.name,
+          role: response.role,
+        })
+      )
+
+      // 3. Check profile completion to determine redirect path
+      let redirectPath = "/profile"
+      try {
+        const completion: any = await api.get("/api/v1/profile/completion")
+        if (completion && completion.completed) {
+          redirectPath = "/dashboard"
+        }
+      } catch (err) {
+        // Fallback to profile creation if completion check fails/404s
+        redirectPath = "/profile"
+      }
+
+      setIsSubmitted(true)
+
+      // 4. Redirect after brief delay to show successful transition card
+      setTimeout(() => {
+        router.push(redirectPath)
+      }, 1500)
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setError(err.message || "Invalid Student ID or password")
+      } else {
+        setError("An unexpected error occurred. Please try again.")
+      }
+    } finally {
+      setLoading(false)
+    }
   }
 
   if (isSubmitted) {
@@ -115,6 +172,12 @@ export default function LoginPage() {
                     </div>
                   </div>
 
+                  {error && (
+                    <div className="mb-5 p-4 rounded-xl border border-red-200 bg-red-50 text-xs font-semibold text-red-600 text-center">
+                      {error}
+                    </div>
+                  )}
+
                   <div className="space-y-5">
                     {/* Identifier */}
                     <div>
@@ -180,9 +243,10 @@ export default function LoginPage() {
                 {/* Submit Button */}
                 <button
                   type="submit"
-                  className="group flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white py-4 text-sm font-bold uppercase tracking-wider shadow-lg shadow-cyan-600/30 transition-all duration-300 transform hover:-translate-y-0.5"
+                  disabled={loading}
+                  className="group flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white py-4 text-sm font-bold uppercase tracking-wider shadow-lg shadow-cyan-600/30 transition-all duration-300 transform hover:-translate-y-0.5 disabled:opacity-50"
                 >
-                  <span>Sign In</span>
+                  <span>{loading ? "Signing In..." : "Sign In"}</span>
                   <FiArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
                 </button>
 

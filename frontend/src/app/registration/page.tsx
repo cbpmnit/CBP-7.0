@@ -2,39 +2,76 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { api, ApiError } from "@/utils/api"
 import Reveal from "@/components/animations/RevealOnScroll"
 import PageTransition from "@/components/animations/PageTransition"
 import {
   FiUser,
   FiMail,
   FiHash,
-  FiBookOpen,
   FiPhone,
-  FiCalendar,
   FiCheckCircle,
   FiArrowRight,
+  FiLock,
 } from "react-icons/fi"
 
 type Step = "form" | "success"
 
 export default function RegistrationPage() {
+  const router = useRouter()
   const [step, setStep] = useState<Step>("form")
   const [formData, setFormData] = useState({
+    studentId: "",
+    studentEmail: "",
     name: "",
-    email: "",
-    rollNumber: "",
-    department: "",
-    year: "1st Year",
-    phone: "",
+    phoneNumber: "",
+    password: "",
+    confirmPassword: "",
   })
+  const [loading, setLoading] = useState(false)
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [message, setMessage] = useState<string | null>(null)
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }))
+    if (errors[e.target.name]) {
+      setErrors((prev) => {
+        const next = { ...prev }
+        delete next[e.target.name]
+        return next
+      })
+    }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setStep("success")
+    setLoading(true)
+    setErrors({})
+    setMessage(null)
+
+    if (formData.password !== formData.confirmPassword) {
+      setErrors({ confirmPassword: "Passwords do not match" })
+      setLoading(false)
+      return
+    }
+
+    try {
+      await api.post("/api/v1/auth/register", formData)
+      setStep("success")
+    } catch (err) {
+      if (err instanceof ApiError) {
+        if (err.errorData?.errors) {
+          setErrors(err.errorData.errors)
+        } else {
+          setMessage(err.message || "Registration failed")
+        }
+      } else {
+        setMessage("An unexpected error occurred. Please try again.")
+      }
+    } finally {
+      setLoading(false)
+    }
   }
 
   if (step === "success") {
@@ -58,7 +95,7 @@ export default function RegistrationPage() {
                   Welcome, <strong className="text-cyan-700 font-semibold">{formData.name}</strong>!
                   Your registration for CBP 7.0 has been received. A confirmation
                   email will be sent to{" "}
-                  <strong className="text-cyan-700 font-semibold">{formData.email}</strong> with
+                  <strong className="text-cyan-700 font-semibold">{formData.studentEmail}</strong> with
                   the program schedule, payment details, and further instructions.
                 </p>
               </Reveal>
@@ -70,11 +107,9 @@ export default function RegistrationPage() {
                   <dl className="space-y-3.5 text-sm">
                     {[
                       ["Full Name", formData.name],
-                      ["MNIT Email", formData.email],
-                      ["Roll Number", formData.rollNumber],
-                      ["Department", formData.department],
-                      ["Year of Study", formData.year],
-                      ["Phone Number", formData.phone || "Not provided"],
+                      ["MNIT Email", formData.studentEmail],
+                      ["Roll Number", formData.studentId],
+                      ["Phone Number", formData.phoneNumber || "Not provided"],
                     ].map(([label, value]) => (
                       <div key={label} className="flex justify-between items-center gap-4 border-b border-slate-100 pb-2.5">
                         <dt className="text-slate-500 text-xs font-medium uppercase tracking-wider">{label}</dt>
@@ -86,10 +121,10 @@ export default function RegistrationPage() {
               </Reveal>
               <Reveal delay={200}>
                 <Link
-                  href="/"
+                  href="/login"
                   className="mt-8 inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white px-8 py-4 text-sm font-semibold uppercase tracking-wider shadow-lg shadow-cyan-600/30 transition duration-300 transform hover:-translate-y-0.5"
                 >
-                  Back to Home
+                  Proceed to Login
                 </Link>
               </Reveal>
             </div>
@@ -141,6 +176,12 @@ export default function RegistrationPage() {
                     </div>
                   </div>
 
+                  {message && (
+                    <div className="mb-5 p-4 rounded-xl border border-red-200 bg-red-50 text-xs font-semibold text-red-600 text-center">
+                      {message}
+                    </div>
+                  )}
+
                   <div className="space-y-5">
                     {/* Full Name */}
                     <div>
@@ -157,6 +198,9 @@ export default function RegistrationPage() {
                         className="mt-2 block w-full rounded-xl bg-slate-50 border border-slate-200 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 transition duration-200 focus:bg-white focus:border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
                         placeholder="Enter your full name as per records"
                       />
+                      {errors.name && (
+                        <p className="mt-1 text-xs text-red-500">{errors.name}</p>
+                      )}
                     </div>
 
                     {/* Email & Roll Number Grid */}
@@ -168,13 +212,16 @@ export default function RegistrationPage() {
                         </label>
                         <input
                           type="email"
-                          name="email"
+                          name="studentEmail"
                           required
-                          value={formData.email}
+                          value={formData.studentEmail}
                           onChange={handleChange}
                           className="mt-2 block w-full rounded-xl bg-slate-50 border border-slate-200 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 transition duration-200 focus:bg-white focus:border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
                           placeholder="you@mnit.ac.in"
                         />
+                        {errors.studentEmail && (
+                          <p className="mt-1 text-xs text-red-500">{errors.studentEmail}</p>
+                        )}
                       </div>
 
                       <div>
@@ -184,67 +231,77 @@ export default function RegistrationPage() {
                         </label>
                         <input
                           type="text"
-                          name="rollNumber"
+                          name="studentId"
                           required
-                          value={formData.rollNumber}
+                          value={formData.studentId}
                           onChange={handleChange}
                           className="mt-2 block w-full rounded-xl bg-slate-50 border border-slate-200 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 transition duration-200 focus:bg-white focus:border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
-                          placeholder="e.g. 2024XXXXX"
+                          placeholder="e.g. 2024UCPXXXX"
                         />
+                        {errors.studentId && (
+                          <p className="mt-1 text-xs text-red-500">{errors.studentId}</p>
+                        )}
                       </div>
                     </div>
 
-                    {/* Department & Phone Grid */}
+                    {/* Phone Number */}
+                    <div>
+                      <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-700">
+                        <FiPhone className="text-cyan-600" />
+                        Phone Number
+                      </label>
+                      <input
+                        type="tel"
+                        name="phoneNumber"
+                        value={formData.phoneNumber}
+                        onChange={handleChange}
+                        className="mt-2 block w-full rounded-xl bg-slate-50 border border-slate-200 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 transition duration-200 focus:bg-white focus:border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
+                        placeholder="e.g. 9876543210"
+                      />
+                      {errors.phoneNumber && (
+                        <p className="mt-1 text-xs text-red-500">{errors.phoneNumber}</p>
+                      )}
+                    </div>
+
+                    {/* Password & Confirm Password Grid */}
                     <div className="grid gap-5 sm:grid-cols-2">
                       <div>
                         <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-700">
-                          <FiBookOpen className="text-cyan-600" />
-                          Department <span className="text-cyan-600">*</span>
+                          <FiLock className="text-cyan-600" />
+                          Password <span className="text-cyan-600">*</span>
                         </label>
                         <input
-                          type="text"
-                          name="department"
+                          type="password"
+                          name="password"
                           required
-                          value={formData.department}
+                          value={formData.password}
                           onChange={handleChange}
                           className="mt-2 block w-full rounded-xl bg-slate-50 border border-slate-200 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 transition duration-200 focus:bg-white focus:border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
-                          placeholder="e.g. Computer Science"
+                          placeholder="••••••••"
                         />
+                        {errors.password && (
+                          <p className="mt-1 text-xs text-red-500">{errors.password}</p>
+                        )}
                       </div>
 
                       <div>
                         <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-700">
-                          <FiPhone className="text-cyan-600" />
-                          Phone Number
+                          <FiLock className="text-cyan-600" />
+                          Confirm Password <span className="text-cyan-600">*</span>
                         </label>
                         <input
-                          type="tel"
-                          name="phone"
-                          value={formData.phone}
+                          type="password"
+                          name="confirmPassword"
+                          required
+                          value={formData.confirmPassword}
                           onChange={handleChange}
                           className="mt-2 block w-full rounded-xl bg-slate-50 border border-slate-200 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 transition duration-200 focus:bg-white focus:border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
-                          placeholder="+91 98765 43210"
+                          placeholder="••••••••"
                         />
+                        {errors.confirmPassword && (
+                          <p className="mt-1 text-xs text-red-500">{errors.confirmPassword}</p>
+                        )}
                       </div>
-                    </div>
-
-                    {/* Year of Study Select */}
-                    <div>
-                      <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-700">
-                        <FiCalendar className="text-cyan-600" />
-                        Year of Study
-                      </label>
-                      <select
-                        name="year"
-                        value={formData.year}
-                        onChange={handleChange}
-                        className="mt-2 block w-full rounded-xl bg-slate-50 border border-slate-200 px-4 py-3 text-sm text-slate-900 transition duration-200 focus:bg-white focus:border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 cursor-pointer"
-                      >
-                        <option>1st Year</option>
-                        <option>2nd Year</option>
-                        <option>3rd Year</option>
-                        <option>4th Year</option>
-                      </select>
                     </div>
                   </div>
                 </div>
@@ -252,9 +309,10 @@ export default function RegistrationPage() {
                 {/* Submit Button */}
                 <button
                   type="submit"
-                  className="group flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white py-4 text-sm font-bold uppercase tracking-wider shadow-lg shadow-cyan-600/30 transition-all duration-300 transform hover:-translate-y-0.5"
+                  disabled={loading}
+                  className="group flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white py-4 text-sm font-bold uppercase tracking-wider shadow-lg shadow-cyan-600/30 transition-all duration-300 transform hover:-translate-y-0.5 disabled:opacity-50"
                 >
-                  <span>Complete Registration</span>
+                  <span>{loading ? "Registering..." : "Complete Registration"}</span>
                   <FiArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
                 </button>
 
