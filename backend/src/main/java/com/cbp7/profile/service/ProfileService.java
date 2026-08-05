@@ -32,7 +32,7 @@ public class ProfileService {
     public ProfileResponse getProfile(User user) {
         validateAuthenticatedUser(user);
 
-        UserProfile profile = userProfileRepository.findByUser(user)
+        UserProfile profile = userProfileRepository.findByUserStudentIdIgnoreCase(user.getStudentId())
                 .orElseThrow(() -> new ResourceNotFoundException("Profile not found for current user"));
 
         return mapToProfileResponse(profile);
@@ -42,7 +42,7 @@ public class ProfileService {
     public ProfileResponse createProfile(User user, CreateProfileRequest request) {
         validateAuthenticatedUser(user);
 
-        if (userProfileRepository.existsByUser(user)) {
+        if (userProfileRepository.existsByUserStudentIdIgnoreCase(user.getStudentId())) {
             throw new DuplicateResourceException("Profile already exists for current user");
         }
 
@@ -95,7 +95,7 @@ public class ProfileService {
     public ProfileResponse updateProfile(User user, UpdateProfileRequest request) {
         validateAuthenticatedUser(user);
 
-        UserProfile profile = userProfileRepository.findByUser(user)
+        UserProfile profile = userProfileRepository.findByUserStudentIdIgnoreCase(user.getStudentId())
                 .orElseThrow(() -> new ResourceNotFoundException("Profile not found for current user"));
 
         validateProfileFields(
@@ -144,9 +144,9 @@ public class ProfileService {
     public ProfileCompletionResponse getProfileCompletion(User user) {
         validateAuthenticatedUser(user);
 
-        ProfileCompletion completion = profileCompletionRepository.findByUser(user)
+        ProfileCompletion completion = profileCompletionRepository.findByUserStudentIdIgnoreCase(user.getStudentId())
                 .orElseGet(() -> {
-                    UserProfile profile = userProfileRepository.findByUser(user).orElse(null);
+                    UserProfile profile = userProfileRepository.findByUserStudentIdIgnoreCase(user.getStudentId()).orElse(null);
                     return calculateAndBuildCompletion(user, profile);
                 });
 
@@ -191,7 +191,7 @@ public class ProfileService {
     }
 
     private void updateProfileCompletion(User user, UserProfile profile) {
-        ProfileCompletion completion = profileCompletionRepository.findByUser(user)
+        ProfileCompletion completion = profileCompletionRepository.findByUserStudentIdIgnoreCase(user.getStudentId())
                 .orElseGet(() -> ProfileCompletion.builder().user(user).build());
 
         ProfileCompletion calculated = calculateAndBuildCompletion(user, profile);
