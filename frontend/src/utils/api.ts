@@ -1,7 +1,7 @@
 import { store } from "@/store/store"
 import { logout } from "@/store/slices/authSlice"
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:9900"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:9900"
 
 export interface ApiErrorResponse {
   success: boolean
