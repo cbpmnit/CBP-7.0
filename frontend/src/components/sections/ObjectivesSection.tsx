@@ -1,3 +1,4 @@
+import { memo, useMemo } from "react"
 import Reveal from "@/components/animations/RevealOnScroll"
 import {
   FiLayers,
@@ -10,7 +11,7 @@ import {
   FiSend,
 } from "react-icons/fi"
 
-const objectives = [
+const OBJECTIVES_DATA = [
   {
     icon: <FiLayers className="h-7 w-7" />,
     title: "Digitize Workflow",
@@ -61,7 +62,9 @@ const objectives = [
   },
 ]
 
-export default function ObjectivesSection() {
+function ObjectivesSectionComponent() {
+  const objectives = useMemo(() => OBJECTIVES_DATA, [])
+
   return (
     <section className="bg-black py-24 sm:py-32 relative overflow-hidden bg-grid-cyber">
       {/* Background Radial Light */}
@@ -116,3 +119,6 @@ export default function ObjectivesSection() {
     </section>
   )
 }
+
+const ObjectivesSection = memo(ObjectivesSectionComponent)
+export default ObjectivesSection

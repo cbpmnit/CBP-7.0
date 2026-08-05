@@ -13,8 +13,8 @@ import {
   FiUsers,
   FiBriefcase,
   FiHeart,
-  FiAward,
 } from "react-icons/fi"
+import { HiOutlineAcademicCap } from "react-icons/hi2"
 
 const programHighlights = [
   {
@@ -51,7 +51,7 @@ const programHighlights = [
     title: "Career Readiness",
     description:
       "Prepare for placements and internships with resume-building workshops, mock interview sessions, personal branding strategies, and LinkedIn profile optimization.",
-    icon: <FiAward className="h-7 w-7" />,
+    icon: <HiOutlineAcademicCap className="h-7 w-7" />,
   },
 ]
 

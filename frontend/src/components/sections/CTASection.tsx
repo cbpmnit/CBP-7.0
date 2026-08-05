@@ -1,6 +1,8 @@
 import Link from "next/link"
+import { memo } from "react"
+import { HiOutlineAcademicCap } from "react-icons/hi2"
 
-export default function CTASection() {
+function CTASectionComponent() {
   return (
     <section className="relative overflow-hidden bg-black py-24 sm:py-32 border-t border-white/10 bg-grid-cyber">
       {/* Ambient Glowing Orbs */}
@@ -8,10 +10,8 @@ export default function CTASection() {
 
       <div className="relative z-10 mx-auto max-w-7xl px-5 lg:px-8">
         <div className="mx-auto max-w-3xl text-center glass-card rounded-3xl p-10 sm:p-16 border-cyan-500/30">
-          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-cyan-500/10 border border-cyan-500/40 text-cyan-400 shadow-[0_0_20px_rgba(0,240,255,0.4)]">
-            <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.636 50.636 0 00-2.658-.813A59.906 59.906 0 0112 3.818a59.906 59.906 0 0110.402 4.768 50.636 50.636 0 00-2.658.813M12 10.875a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25-2.625a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0z" />
-            </svg>
+          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-cyan-500/10 border border-cyan-500/40 text-cyan-400 shadow-[0_0_20px_rgba(0,240,255,0.4)] transition-all duration-300 hover:scale-105">
+            <HiOutlineAcademicCap className="h-9 w-9" />
           </div>
 
           <h2 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl lg:text-5xl">
@@ -56,3 +56,6 @@ export default function CTASection() {
     </section>
   )
 }
+
+const CTASection = memo(CTASectionComponent)
+export default CTASection

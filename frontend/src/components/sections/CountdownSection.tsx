@@ -1,42 +1,54 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback, useMemo, memo } from "react"
 import Reveal from "@/components/animations/RevealOnScroll"
 
-export default function CountdownSection() {
-  const [timeLeft, setTimeLeft] = useState({
-    days: 0,
-    hours: 0,
-    minutes: 0,
-    seconds: 0,
-  })
+const TARGET_DATE = new Date(2026, 7, 31, 18, 0, 0) // 31 August 2026, 6:00 PM
+
+function calculateInitialTime() {
+  const now = new Date()
+  const difference = +TARGET_DATE - +now
+  if (difference > 0) {
+    return {
+      days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+      hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+      minutes: Math.floor((difference / 1000 / 60) % 60),
+      seconds: Math.floor((difference / 1000) % 60),
+    }
+  }
+  return { days: 0, hours: 0, minutes: 0, seconds: 0 }
+}
+
+function CountdownSectionComponent() {
+  const [timeLeft, setTimeLeft] = useState(calculateInitialTime)
   const [mounted, setMounted] = useState(false)
+
+  const calculateTimeLeft = useCallback(() => {
+    const now = new Date()
+    const difference = +TARGET_DATE - +now
+
+    if (difference > 0) {
+      setTimeLeft({
+        days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+        minutes: Math.floor((difference / 1000 / 60) % 60),
+        seconds: Math.floor((difference / 1000) % 60),
+      })
+    } else {
+      setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 })
+    }
+  }, [])
 
   useEffect(() => {
     setMounted(true)
-    const calculateTimeLeft = () => {
-      const now = new Date()
-      // Target: 31 August 2026, 6:00 PM (18:00:00)
-      const targetDate = new Date("August 31, 2026 18:00:00")
-      const difference = +targetDate - +now
-
-      if (difference > 0) {
-        setTimeLeft({
-          days: Math.floor(difference / (1000 * 60 * 60 * 24)),
-          hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
-          minutes: Math.floor((difference / 1000 / 60) % 60),
-          seconds: Math.floor((difference / 1000) % 60),
-        })
-      } else {
-        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 })
-      }
-    }
-
     calculateTimeLeft()
     const timer = setInterval(calculateTimeLeft, 1000)
-
     return () => clearInterval(timer)
-  }, [])
+  }, [calculateTimeLeft])
+
+  const displayTime = useMemo(() => {
+    return mounted ? timeLeft : calculateInitialTime()
+  }, [mounted, timeLeft])
 
   return (
     <section className="bg-black py-20 px-5 border-t border-b border-cyan-500/20 relative overflow-hidden bg-grid-cyber">
@@ -60,55 +72,61 @@ export default function CountdownSection() {
           </p>
         </Reveal>
 
-        {mounted ? (
-          <Reveal variant="scale" delay={160}>
-            <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 max-w-3xl mx-auto">
-              {/* Days Card */}
-              <div className="glass-card glass-card-hover rounded-2xl p-5 md:p-8 text-center relative group">
-                <span className="block text-4xl md:text-6xl font-extrabold text-cyan-400 tracking-tight drop-shadow-[0_0_15px_rgba(0,240,255,0.4)]">
-                  {timeLeft.days}
-                </span>
-                <span className="block mt-3 text-xs font-medium uppercase tracking-widest text-gray-400 group-hover:text-cyan-300">
-                  Days
-                </span>
-              </div>
-
-              {/* Hours Card */}
-              <div className="glass-card glass-card-hover rounded-2xl p-5 md:p-8 text-center relative group">
-                <span className="block text-4xl md:text-6xl font-extrabold text-white tracking-tight">
-                  {String(timeLeft.hours).padStart(2, "0")}
-                </span>
-                <span className="block mt-3 text-xs font-medium uppercase tracking-widest text-gray-400 group-hover:text-cyan-300">
-                  Hours
-                </span>
-              </div>
-
-              {/* Minutes Card */}
-              <div className="glass-card glass-card-hover rounded-2xl p-5 md:p-8 text-center relative group">
-                <span className="block text-4xl md:text-6xl font-extrabold text-white tracking-tight">
-                  {String(timeLeft.minutes).padStart(2, "0")}
-                </span>
-                <span className="block mt-3 text-xs font-medium uppercase tracking-widest text-gray-400 group-hover:text-cyan-300">
-                  Minutes
-                </span>
-              </div>
-
-              {/* Seconds Card */}
-              <div className="glass-card glass-card-hover rounded-2xl p-5 md:p-8 text-center relative group">
-                <span className="block text-4xl md:text-6xl font-extrabold text-cyan-400 tracking-tight animate-pulse drop-shadow-[0_0_20px_rgba(0,240,255,0.6)]">
-                  {String(timeLeft.seconds).padStart(2, "0")}
-                </span>
-                <span className="block mt-3 text-xs font-medium uppercase tracking-widest text-gray-400 group-hover:text-cyan-300">
-                  Seconds
-                </span>
-              </div>
+        <Reveal variant="scale" delay={160}>
+          <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 max-w-3xl mx-auto">
+            {/* Days Card */}
+            <div className="glass-card glass-card-hover rounded-2xl p-5 md:p-8 text-center relative group">
+              <span
+                className="block text-4xl md:text-6xl font-extrabold text-cyan-400 tracking-tight drop-shadow-[0_0_15px_rgba(0,240,255,0.4)]"
+                suppressHydrationWarning
+              >
+                {displayTime.days}
+              </span>
+              <span className="block mt-3 text-xs font-medium uppercase tracking-widest text-gray-400 group-hover:text-cyan-300">
+                Days
+              </span>
             </div>
-          </Reveal>
-        ) : (
-          <div className="mt-10 text-lg text-cyan-400">
-            Initializing timer...
+
+            {/* Hours Card */}
+            <div className="glass-card glass-card-hover rounded-2xl p-5 md:p-8 text-center relative group">
+              <span
+                className="block text-4xl md:text-6xl font-extrabold text-white tracking-tight"
+                suppressHydrationWarning
+              >
+                {String(displayTime.hours).padStart(2, "0")}
+              </span>
+              <span className="block mt-3 text-xs font-medium uppercase tracking-widest text-gray-400 group-hover:text-cyan-300">
+                Hours
+              </span>
+            </div>
+
+            {/* Minutes Card */}
+            <div className="glass-card glass-card-hover rounded-2xl p-5 md:p-8 text-center relative group">
+              <span
+                className="block text-4xl md:text-6xl font-extrabold text-white tracking-tight"
+                suppressHydrationWarning
+              >
+                {String(displayTime.minutes).padStart(2, "0")}
+              </span>
+              <span className="block mt-3 text-xs font-medium uppercase tracking-widest text-gray-400 group-hover:text-cyan-300">
+                Minutes
+              </span>
+            </div>
+
+            {/* Seconds Card */}
+            <div className="glass-card glass-card-hover rounded-2xl p-5 md:p-8 text-center relative group">
+              <span
+                className="block text-4xl md:text-6xl font-extrabold text-cyan-400 tracking-tight animate-pulse drop-shadow-[0_0_20px_rgba(0,240,255,0.6)]"
+                suppressHydrationWarning
+              >
+                {String(displayTime.seconds).padStart(2, "0")}
+              </span>
+              <span className="block mt-3 text-xs font-medium uppercase tracking-widest text-gray-400 group-hover:text-cyan-300">
+                Seconds
+              </span>
+            </div>
           </div>
-        )}
+        </Reveal>
 
         <Reveal variant="up" delay={240}>
           <div className="mt-10">
@@ -124,3 +142,6 @@ export default function CountdownSection() {
     </section>
   )
 }
+
+const CountdownSection = memo(CountdownSectionComponent)
+export default CountdownSection

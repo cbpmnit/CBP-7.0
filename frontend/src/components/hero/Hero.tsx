@@ -1,10 +1,10 @@
 "use client"
 
-import { useState, useEffect, useCallback, useRef } from "react"
+import { useState, useEffect, useCallback, useRef, useMemo, memo } from "react"
 import Image from "next/image"
 import { useAppSelector } from "@/store/hooks"
 
-const slides = [
+const SLIDES = [
   {
     image: "/assets/main-assets/home_1.webp",
     badge: "Edition 7.0 • MNIT Jaipur",
@@ -47,15 +47,17 @@ const slides = [
   },
 ]
 
-export default function Hero() {
+function HeroComponent() {
   const theme = useAppSelector((state) => state.theme.theme)
   const [current, setCurrent] = useState(0)
   const [isLoaded, setIsLoaded] = useState(false)
   const [videoEnded, setVideoEnded] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
 
+  const slides = useMemo(() => SLIDES, [])
+
   const next = useCallback(() => {
-    setCurrent((prev) => (prev + 1) % slides.length)
+    setCurrent((prev) => (prev + 1) % SLIDES.length)
   }, [])
 
   useEffect(() => {
@@ -69,6 +71,10 @@ export default function Hero() {
     if (videoRef.current) {
       videoRef.current.pause()
     }
+  }, [])
+
+  const handleSelectSlide = useCallback((index: number) => {
+    setCurrent(index)
   }, [])
 
   const active = slides[current]
@@ -187,7 +193,7 @@ export default function Hero() {
           {slides.map((_, i) => (
             <button
               key={i}
-              onClick={() => setCurrent(i)}
+              onClick={() => handleSelectSlide(i)}
               className={`hero-pagination-dot h-1.5 rounded-full transition-all duration-300 ${
                 i === current
                   ? "w-8 bg-cyan-400 shadow-[0_0_10px_#00f0ff]"
@@ -207,3 +213,6 @@ export default function Hero() {
     </section>
   )
 }
+
+const Hero = memo(HeroComponent)
+export default Hero
