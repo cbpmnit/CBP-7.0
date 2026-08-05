@@ -50,3 +50,6 @@ steps:
 images:
   - 'asia-south1-docker.pkg.dev/$PROJECT_ID/cbp-backend/cbp-backend:$COMMIT_SHA'
   - 'asia-south1-docker.pkg.dev/$PROJECT_ID/cbp-backend/cbp-backend:latest'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
