@@ -1,0 +1,87 @@
+package com.cbp7.notification.listener;
+
+import com.cbp7.notification.entity.NotificationType;
+import com.cbp7.notification.event.CertificateGeneratedEvent;
+import com.cbp7.notification.event.PaymentSuccessfulEvent;
+import com.cbp7.notification.event.StudentRegisteredEvent;
+import com.cbp7.notification.service.EmailNotificationService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Component;
+
+import java.util.HashMap;
+import java.util.Map;
+
+@Component
+@RequiredArgsConstructor
+@Slf4j
+public class NotificationEventListener {
+
+    private final EmailNotificationService emailNotificationService;
+
+    @Async
+    @EventListener
+    public void handleStudentRegistered(StudentRegisteredEvent event) {
+        log.info("Received StudentRegisteredEvent for studentId: {}", event.studentId());
+        try {
+            Map<String, String> variables = new HashMap<>();
+            variables.put("studentId", event.studentId() != null ? event.studentId() : "");
+            variables.put("studentName", event.studentName() != null ? event.studentName() : "");
+            variables.put("registrationId", event.registrationId() != null ? event.registrationId() : "");
+            variables.put("studentEmail", event.studentEmail() != null ? event.studentEmail() : "");
+
+            emailNotificationService.sendTemplateEmailByType(
+                    NotificationType.REGISTRATION_SUCCESS,
+                    event.studentEmail(),
+                    variables
+            );
+        } catch (Exception e) {
+            log.error("Failed to send registration confirmation email for studentId: {}", event.studentId(), e);
+        }
+    }
+
+    @Async
+    @EventListener
+    public void handlePaymentSuccessful(PaymentSuccessfulEvent event) {
+        log.info("Received PaymentSuccessfulEvent for paymentId: {}", event.paymentId());
+        try {
+            Map<String, String> variables = new HashMap<>();
+            variables.put("studentId", event.studentId() != null ? event.studentId() : "");
+            variables.put("studentName", event.studentName() != null ? event.studentName() : "");
+            variables.put("paymentId", event.paymentId() != null ? event.paymentId() : "");
+            variables.put("amount", event.amount() != null ? event.amount() : "");
+            variables.put("studentEmail", event.studentEmail() != null ? event.studentEmail() : "");
+
+            emailNotificationService.sendTemplateEmailByType(
+                    NotificationType.PAYMENT_SUCCESS,
+                    event.studentEmail(),
+                    variables
+            );
+        } catch (Exception e) {
+            log.error("Failed to send payment success email for paymentId: {}", event.paymentId(), e);
+        }
+    }
+
+    @Async
+    @EventListener
+    public void handleCertificateGenerated(CertificateGeneratedEvent event) {
+        log.info("Received CertificateGeneratedEvent for studentId: {}", event.studentId());
+        try {
+            Map<String, String> variables = new HashMap<>();
+            variables.put("studentId", event.studentId() != null ? event.studentId() : "");
+            variables.put("studentName", event.studentName() != null ? event.studentName() : "");
+            variables.put("certificateUrl", event.certificateUrl() != null ? event.certificateUrl() : "");
+            variables.put("studentEmail", event.studentEmail() != null ? event.studentEmail() : "");
+
+            emailNotificationService.sendTemplateEmailByType(
+                    NotificationType.CERTIFICATE_READY,
+                    event.studentEmail(),
+                    variables
+            );
+        } catch (Exception e) {
+            log.error("Failed to send certificate email for studentId: {}", event.studentId(), e);
+        }
+    }
+}
