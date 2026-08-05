@@ -59,10 +59,10 @@ const yearGroups: { year: string; speakers: Speaker[] }[] = [
   },
 ]
 
-function SpeakerCard({ speaker, index }: { speaker: Speaker; index: number }) {
+function SpeakerCard({ speaker }: { speaker: Speaker }) {
   return (
-    <div className="group flex flex-col items-center rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition duration-300 hover:shadow-lg hover:border-mnit-blue/20 text-center">
-      <div className="relative h-36 w-36 overflow-hidden rounded-full border-4 border-mnit-light shadow-md transition duration-500 group-hover:border-mnit-blue/30 group-hover:shadow-xl">
+    <div className="glass-card glass-card-hover rounded-3xl p-6 flex flex-col items-center text-center group">
+      <div className="relative h-36 w-36 overflow-hidden rounded-full border-2 border-cyan-500/40 shadow-[0_0_20px_rgba(0,240,255,0.3)] transition duration-500 group-hover:scale-105 group-hover:border-cyan-400">
         {speaker.image ? (
           <Image
             src={speaker.image}
@@ -71,7 +71,7 @@ function SpeakerCard({ speaker, index }: { speaker: Speaker; index: number }) {
             className="object-cover transition duration-500 group-hover:scale-110"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center bg-mnit-light text-mnit-blue text-xl font-bold">
+          <div className="flex h-full w-full items-center justify-center bg-cyan-500/20 text-cyan-300 text-xl font-bold">
             {speaker.name
               .split(" ")
               .map((n) => n[0])
@@ -80,8 +80,10 @@ function SpeakerCard({ speaker, index }: { speaker: Speaker; index: number }) {
           </div>
         )}
       </div>
-      <h3 className="mt-4 text-sm font-bold text-mnit-navy">{speaker.name}</h3>
-      <p className="mt-1 text-xs text-gray-500">{speaker.designation}</p>
+      <h3 className="mt-5 text-base font-extrabold text-white group-hover:text-cyan-300 transition duration-300">
+        {speaker.name}
+      </h3>
+      <p className="mt-1 text-xs font-mono text-gray-400">{speaker.designation}</p>
     </div>
   )
 }
@@ -94,17 +96,20 @@ export const metadata = {
 export default function SpeakersPage() {
   return (
     <PageTransition>
-      <main className="min-h-screen bg-white">
-        <section className="bg-mnit-navy py-24 sm:py-32">
-          <div className="mx-auto max-w-7xl px-5 lg:px-8 text-center">
+      <main className="min-h-screen bg-black text-gray-100 bg-grid-cyber">
+        <section className="bg-black py-24 sm:py-32 relative overflow-hidden border-b border-white/10">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-cyan-500/15 rounded-full blur-[160px] pointer-events-none" />
+
+          <div className="mx-auto max-w-7xl px-5 lg:px-8 text-center relative z-10">
             <Reveal>
-              <span className="inline-block rounded-full border border-mnit-gold/40 bg-mnit-gold/10 px-4 py-1.5 text-xs font-semibold tracking-wider uppercase text-mnit-gold">
+              <span className="inline-flex items-center gap-2 rounded-full bg-cyan-500/10 border border-cyan-500/30 px-4 py-1.5 text-xs font-bold text-cyan-300 uppercase tracking-widest backdrop-blur-md">
+                <span className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_#00f0ff]" />
                 Past Speakers
               </span>
             </Reveal>
             <Reveal delay={80}>
-              <h1 className="mt-4 text-4xl font-bold tracking-tight text-white sm:text-5xl">
-                Our <span className="text-mnit-gold">Speakers</span>
+              <h1 className="mt-4 text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl">
+                Our <span className="gradient-text-cyan">Speakers</span>
               </h1>
             </Reveal>
             <Reveal delay={120}>
@@ -122,17 +127,17 @@ export default function SpeakersPage() {
               <div key={group.year}>
                 <Reveal>
                   <div className="flex items-center gap-4 mb-10">
-                    <span className="text-5xl font-bold text-mnit-blue">
+                    <span className="text-5xl font-black gradient-text-cyan drop-shadow-[0_0_15px_rgba(0,240,255,0.3)]">
                       {group.year}
                     </span>
-                    <div className="h-px flex-1 bg-gray-200" />
+                    <div className="h-px flex-1 bg-gradient-to-r from-cyan-500/40 to-transparent" />
                   </div>
                 </Reveal>
 
                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
                   {group.speakers.map((speaker, i) => (
                     <Reveal key={speaker.name} delay={i * 60}>
-                      <SpeakerCard speaker={speaker} index={i} />
+                      <SpeakerCard speaker={speaker} />
                     </Reveal>
                   ))}
                 </div>

@@ -50,17 +50,20 @@ const contactInfo = [
 export default function ContactPage() {
   return (
     <PageTransition>
-      <main className="min-h-screen bg-white">
-        <section className="bg-mnit-navy py-24 sm:py-32">
-          <div className="mx-auto max-w-7xl px-5 lg:px-8 text-center">
+      <main className="min-h-screen bg-black text-gray-100 bg-grid-cyber">
+        <section className="bg-black py-24 sm:py-32 relative overflow-hidden border-b border-white/10">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-cyan-500/15 rounded-full blur-[160px] pointer-events-none" />
+
+          <div className="mx-auto max-w-7xl px-5 lg:px-8 text-center relative z-10">
             <Reveal>
-              <span className="inline-block rounded-full border border-mnit-gold/40 bg-mnit-gold/10 px-4 py-1.5 text-xs font-semibold tracking-wider uppercase text-mnit-gold">
+              <span className="inline-flex items-center gap-2 rounded-full bg-cyan-500/10 border border-cyan-500/30 px-4 py-1.5 text-xs font-bold text-cyan-300 uppercase tracking-widest backdrop-blur-md">
+                <span className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_#00f0ff]" />
                 Contact Us
               </span>
             </Reveal>
             <Reveal delay={80}>
-              <h1 className="mt-4 text-4xl font-bold tracking-tight text-white sm:text-5xl">
-                Get in <span className="text-mnit-gold">Touch</span>
+              <h1 className="mt-4 text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl">
+                Get in <span className="gradient-text-cyan">Touch</span>
               </h1>
             </Reveal>
             <Reveal delay={120}>
@@ -74,15 +77,15 @@ export default function ContactPage() {
 
         <section className="py-24 sm:py-32">
           <div className="mx-auto max-w-7xl px-5 lg:px-8">
-            <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
+            <div className="grid gap-12 lg:grid-cols-2 lg:gap-16">
               <div>
                 <Reveal>
-                  <h2 className="text-2xl font-bold text-mnit-navy">
-                    Contact Information
+                  <h2 className="text-3xl font-extrabold text-white">
+                    Contact <span className="gradient-text-cyan">Information</span>
                   </h2>
                 </Reveal>
                 <Reveal delay={80}>
-                  <p className="mt-3 text-sm leading-relaxed text-gray-600">
+                  <p className="mt-3 text-sm leading-relaxed text-gray-400">
                     Reach out to us for any queries regarding CBP 7.0 — whether
                     it is about registration, the program schedule, or general
                     information, we are happy to assist you.
@@ -92,16 +95,16 @@ export default function ContactPage() {
                 <div className="mt-8 space-y-4">
                   {contactInfo.map((item, i) => (
                     <Reveal key={item.title} delay={120 + i * 60}>
-                      <div className="flex gap-4 rounded-xl border border-gray-100 bg-white p-5 shadow-sm transition duration-200 hover:border-mnit-blue/20 hover:shadow-md">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-mnit-light text-mnit-blue">
+                      <div className="glass-card glass-card-hover rounded-2xl p-5 flex gap-4 items-center">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 shadow-[0_0_12px_rgba(0,240,255,0.3)]">
                           {item.icon}
                         </div>
                         <div>
-                          <p className="text-xs text-gray-500">{item.title}</p>
-                          <p className="text-sm font-semibold text-mnit-navy">
+                          <p className="text-xs text-gray-400 uppercase font-mono">{item.title}</p>
+                          <p className="text-base font-bold text-white">
                             {item.value}
                           </p>
-                          <p className="text-xs text-gray-500">{item.sub}</p>
+                          <p className="text-xs text-gray-400">{item.sub}</p>
                         </div>
                       </div>
                     </Reveal>
@@ -110,46 +113,46 @@ export default function ContactPage() {
               </div>
 
               <Reveal delay={100} variant="right">
-                <div className="rounded-2xl border border-gray-100 bg-white p-7 shadow-sm sm:p-8">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-mnit-blue text-white text-xs font-bold">
-                      2
+                <div className="glass-card rounded-3xl p-8 sm:p-10 border-cyan-500/30">
+                  <div className="flex items-center gap-3 mb-8">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-500 text-black text-sm font-extrabold shadow-[0_0_15px_#00f0ff]">
+                      ✉
                     </div>
                     <div>
-                      <h3 className="text-lg font-bold text-mnit-navy">
+                      <h3 className="text-xl font-extrabold text-white">
                         Send us a Message
                       </h3>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-gray-400 font-mono">
                         We will get back to you within 24 hours.
                       </p>
                     </div>
                   </div>
-                  <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
+                  <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Your Name <span className="text-red-500">*</span>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-cyan-300">
+                        Your Name <span className="text-cyan-400">*</span>
                       </label>
                       <input
                         type="text"
                         required
-                        className="mt-1.5 block w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm transition duration-200 focus:border-mnit-blue focus:outline-none focus:ring-1 focus:ring-mnit-blue"
+                        className="mt-2 block w-full rounded-xl bg-black/60 border border-white/10 px-4 py-3 text-sm text-white transition duration-200 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Your Email <span className="text-red-500">*</span>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-cyan-300">
+                        Your Email <span className="text-cyan-400">*</span>
                       </label>
                       <input
                         type="email"
                         required
-                        className="mt-1.5 block w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm transition duration-200 focus:border-mnit-blue focus:outline-none focus:ring-1 focus:ring-mnit-blue"
+                        className="mt-2 block w-full rounded-xl bg-black/60 border border-white/10 px-4 py-3 text-sm text-white transition duration-200 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Subject <span className="text-red-500">*</span>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-cyan-300">
+                        Subject <span className="text-cyan-400">*</span>
                       </label>
-                      <select className="mt-1.5 block w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm transition duration-200 focus:border-mnit-blue focus:outline-none focus:ring-1 focus:ring-mnit-blue">
+                      <select className="mt-2 block w-full rounded-xl bg-black/80 border border-white/10 px-4 py-3 text-sm text-white transition duration-200 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400">
                         <option>General Inquiry</option>
                         <option>Registration Help</option>
                         <option>Technical Support</option>
@@ -158,18 +161,18 @@ export default function ContactPage() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Message <span className="text-red-500">*</span>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-cyan-300">
+                        Message <span className="text-cyan-400">*</span>
                       </label>
                       <textarea
                         rows={5}
                         required
-                        className="mt-1.5 block w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm transition duration-200 focus:border-mnit-blue focus:outline-none focus:ring-1 focus:ring-mnit-blue"
+                        className="mt-2 block w-full rounded-xl bg-black/60 border border-white/10 px-4 py-3 text-sm text-white transition duration-200 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400"
                       />
                     </div>
                     <button
                       type="submit"
-                      className="w-full rounded-xl bg-mnit-blue py-3.5 text-sm font-bold text-white transition duration-200 hover:bg-mnit-navy hover:shadow-lg"
+                      className="w-full rounded-xl neon-button-cyan py-4 text-sm font-extrabold uppercase tracking-wider"
                     >
                       Send Message
                     </button>

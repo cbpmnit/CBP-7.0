@@ -16,17 +16,20 @@ const footerLinks = {
 
 export default function Footer() {
   return (
-    <footer className="bg-mnit-navy text-white">
-      <div className="mx-auto max-w-7xl px-5 lg:px-8">
-        <div className="grid gap-10 py-14 sm:grid-cols-2 lg:grid-cols-4">
+    <footer className="bg-black border-t border-white/10 text-gray-300 relative overflow-hidden">
+      {/* Background Radial Ambient Light */}
+      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-cyan-500/10 blur-[120px] pointer-events-none rounded-full" />
+      
+      <div className="mx-auto max-w-7xl px-5 lg:px-8 relative z-10">
+        <div className="grid gap-10 py-16 sm:grid-cols-2 lg:grid-cols-4">
           <div className="lg:col-span-1">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-mnit-gold text-mnit-navy font-bold text-sm">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-r from-cyan-400 to-blue-600 text-black font-extrabold text-sm shadow-[0_0_15px_rgba(0,240,255,0.4)]">
                 CBP
               </div>
               <div>
-                <p className="text-base font-bold text-white">CBP 7.0</p>
-                <p className="text-xs text-gray-400">MNIT Jaipur</p>
+                <p className="text-lg font-extrabold gradient-text-cyan">CBP 7.0</p>
+                <p className="text-xs text-gray-400 font-bold tracking-wider">MNIT JAIPUR</p>
               </div>
             </div>
             <p className="mt-4 text-sm leading-relaxed text-gray-400">
@@ -38,16 +41,17 @@ export default function Footer() {
 
           {Object.entries(footerLinks).map(([section, links]) => (
             <div key={section}>
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-mnit-gold">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-cyan-400">
                 {section}
               </h3>
-              <ul className="mt-4 space-y-2.5">
+              <ul className="mt-4 space-y-3">
                 {links.map((link) => (
                   <li key={link.name}>
                     <Link
                       href={link.href}
-                      className="text-sm text-gray-400 transition duration-200 hover:text-white"
+                      className="text-sm text-gray-400 transition duration-300 hover:text-cyan-400 hover:pl-1 flex items-center gap-1.5"
                     >
+                      <span className="text-cyan-500/50 text-xs">›</span>
                       {link.name}
                     </Link>
                   </li>
@@ -57,10 +61,10 @@ export default function Footer() {
           ))}
 
           <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-mnit-gold">
-              Contact
+            <h3 className="text-xs font-bold uppercase tracking-widest text-cyan-400">
+              Contact Us
             </h3>
-            <div className="mt-4 space-y-2.5 text-sm text-gray-400">
+            <div className="mt-4 space-y-3 text-sm text-gray-400">
               <p>
                 Department of Humanities &amp;{" "}
                 <br className="hidden sm:block" />
@@ -68,21 +72,23 @@ export default function Footer() {
               </p>
               <p>MNIT Jaipur, Jawaharlal Nehru Marg</p>
               <p>Jaipur, Rajasthan - 302017</p>
-              <p className="text-mnit-gold font-medium">cbp@mnit.ac.in</p>
+              <p className="text-cyan-400 font-semibold shadow-[0_0_8px_rgba(0,240,255,0.3)] inline-block">
+                cbp@mnit.ac.in
+              </p>
             </div>
           </div>
         </div>
 
-        <div className="border-t border-white/10 py-6">
-          <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
-            <p className="text-xs text-gray-500">
+        <div className="border-t border-white/10 py-8">
+          <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
+            <p className="text-xs text-gray-400">
               &copy; {new Date().getFullYear()} CBP 7.0 &middot; MNIT Jaipur.
               All rights reserved.
             </p>
             <div className="flex items-center gap-4">
-              <span className="flex items-center gap-1.5 text-xs text-gray-500">
-                <span className="h-1.5 w-1.5 rounded-full bg-green-400" />
-                Managed by Training &amp; Placement Cell
+              <span className="flex items-center gap-2 text-xs text-gray-400 bg-white/5 border border-white/10 px-3 py-1.5 rounded-full">
+                <span className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_#00f0ff]" />
+                Training &amp; Placement Cell, MNIT Jaipur
               </span>
             </div>
           </div>

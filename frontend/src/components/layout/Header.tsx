@@ -2,9 +2,14 @@
 
 import Link from "next/link"
 import Image from "next/image"
+import { usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
+import { useTheme } from "@/context/ThemeContext"
+import { FiSun, FiMoon, FiMenu, FiX } from "react-icons/fi"
 
 export default function Header() {
+  const pathname = usePathname()
+  const { theme, toggleTheme } = useTheme()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
 
@@ -33,103 +38,172 @@ export default function Header() {
   return (
     <>
       <header
-        className={`sticky top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          scrolled
-            ? "bg-mnit-navy/95 backdrop-blur-md shadow-[0_10px_30px_-5px_rgba(0,0,0,0.4)]"
-            : "bg-mnit-navy/90 backdrop-blur-sm shadow-[0_4px_20px_-5px_rgba(0,0,0,0.2)]"
-        }`}
+        className="sticky top-0 left-0 right-0 z-50 transition-all duration-500 py-3 px-3 sm:px-6"
       >
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 lg:px-8">
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="relative h-8 w-28 sm:h-10 sm:w-32 md:h-12 md:w-40 shrink-0 transition group-hover:scale-105 duration-200">
-              <Image
-                src="/favicon/logo-landscape.webp"
-                alt="CBP Logo"
-                fill
-                className="object-contain"
-              />
-            </div>
-          </Link>
+        <div
+          className={`header-nav-container mx-auto max-w-7xl rounded-2xl transition-all duration-300 ${
+            scrolled
+              ? "bg-black/85 backdrop-blur-xl border border-cyan-500/40 shadow-[0_10px_30px_-5px_rgba(0,240,255,0.25)] py-2.5 px-5"
+              : "bg-black/60 backdrop-blur-md border border-white/15 py-3 px-6 shadow-xl"
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            {/* Brand Logo */}
+            <Link href="/" className="flex items-center gap-3 group">
+              <div className="relative h-10 w-36 sm:h-11 sm:w-44 shrink-0 transition duration-300 group-hover:scale-105">
+                {/* Dark Mode Original Logo Image */}
+                <Image
+                  src="/favicon/logo-landscape.webp"
+                  alt="CBP Logo"
+                  fill
+                  className="header-logo-dark object-contain drop-shadow-[0_0_12px_rgba(0,240,255,0.5)]"
+                  priority
+                />
+                {/* Light Mode Gradient Masked Logo Div */}
+                <div
+                  className="header-logo-light h-full w-full"
+                  style={{
+                    WebkitMaskImage: "url(/favicon/logo-landscape.webp)",
+                    maskImage: "url(/favicon/logo-landscape.webp)",
+                    WebkitMaskSize: "contain",
+                    maskSize: "contain",
+                    WebkitMaskRepeat: "no-repeat",
+                    maskRepeat: "no-repeat",
+                    WebkitMaskPosition: "center",
+                    maskPosition: "center",
+                    background: "linear-gradient(180deg, #00d4ff 0%, #0284c7 50%, #1e40af 100%)",
+                    filter: "drop-shadow(0 2px 8px rgba(0, 212, 255, 0.4))",
+                  }}
+                  aria-label="CBP 7.0 Logo"
+                />
+              </div>
+            </Link>
 
-          <nav className="hidden items-center gap-1 md:flex">
-            {navLinks.map((link) => (
-              <Link
-                key={link.name}
-                href={link.path}
-                className="rounded-md px-3 py-1.5 text-sm font-semibold text-gray-200 transition duration-200 hover:text-mnit-gold hover:bg-white/10"
+            {/* Desktop Navigation Links */}
+            <nav className="hidden items-center gap-1.5 lg:gap-2.5 md:flex">
+              {navLinks.map((link) => {
+                const isActive = pathname === link.path
+                return (
+                  <Link
+                    key={link.name}
+                    href={link.path}
+                    className={`header-nav-link relative flex items-center justify-center rounded-xl px-4 py-2 text-sm font-normal transition duration-300 group ${
+                      isActive
+                        ? "header-nav-link-active bg-cyan-500/20 text-cyan-300 font-medium border border-cyan-500/40 shadow-[0_0_15px_rgba(0,240,255,0.25)]"
+                        : "text-gray-300 hover:text-cyan-300 hover:bg-cyan-500/10 border border-transparent"
+                    }`}
+                  >
+                    <span>{link.name}</span>
+                    <span
+                      className={`header-nav-line absolute bottom-0.5 left-1/2 -translate-x-1/2 h-[2px] bg-cyan-400 transition-all duration-300 shadow-[0_0_8px_#00f0ff] ${
+                        isActive ? "w-2/3" : "w-0 group-hover:w-1/2"
+                      }`}
+                    />
+                  </Link>
+                )
+              })}
+            </nav>
+
+            {/* Right Action CTA & Theme Switcher */}
+            <div className="hidden items-center gap-3 md:flex">
+              {/* Theme Switcher Button */}
+              <button
+                onClick={toggleTheme}
+                className="header-theme-btn flex h-10 w-10 items-center justify-center rounded-xl border border-cyan-500/40 bg-black/60 text-cyan-400 text-lg transition duration-300 hover:scale-105 hover:bg-cyan-500/20 shadow-[0_0_10px_rgba(0,240,255,0.2)]"
+                aria-label="Toggle Light/Dark Theme"
+                title={`Switch to ${theme === "dark" ? "Light" : "Dark"} Mode`}
               >
-                {link.name}
-              </Link>
-            ))}
-            <Link
-              href="/registration"
-              className="ml-3 rounded-xl bg-mnit-gold px-5 py-2 text-sm font-bold text-mnit-navy transition duration-200 hover:bg-white hover:shadow-lg"
-            >
-              Register
-            </Link>
-          </nav>
+                {theme === "dark" ? <FiSun /> : <FiMoon />}
+              </button>
 
-          <div className="flex items-center gap-3 md:hidden">
-            <Link
-              href="/registration"
-              className="rounded-xl bg-mnit-gold px-3.5 py-2 text-xs font-bold text-mnit-navy transition duration-200 hover:bg-white"
-            >
-              Register
-            </Link>
-            <button
-              onClick={() => setIsMenuOpen(true)}
-              className="flex h-10 w-10 flex-col items-center justify-center gap-1.5 rounded-xl border border-mnit-gold/30 bg-mnit-blue/50 transition duration-200 hover:bg-mnit-blue text-white"
-              aria-label="Open menu"
-            >
-              <span className="h-0.5 w-5 bg-white transition-transform" />
-              <span className="h-0.5 w-5 bg-white" />
-              <span className="h-0.5 w-5 bg-white" />
-            </button>
+              <Link
+                href="/registration"
+                className={`rounded-xl px-6 py-2.5 text-xs font-medium tracking-wider uppercase transition duration-300 ${
+                  pathname === "/registration"
+                    ? "neon-button-cyan scale-105 shadow-[0_0_30px_rgba(0,240,255,0.7)]"
+                    : "neon-button-cyan shadow-[0_0_20px_rgba(0,240,255,0.5)]"
+                }`}
+              >
+                Register Now
+              </Link>
+            </div>
+
+            {/* Mobile Actions */}
+            <div className="flex items-center gap-2.5 md:hidden">
+              <button
+                onClick={toggleTheme}
+                className="header-theme-btn flex h-9 w-9 items-center justify-center rounded-xl border border-cyan-500/40 bg-black/60 text-cyan-400 text-base"
+                aria-label="Toggle Light/Dark Theme"
+              >
+                {theme === "dark" ? <FiSun /> : <FiMoon />}
+              </button>
+
+              <Link
+                href="/registration"
+                className="rounded-xl neon-button-cyan px-4 py-2 text-xs font-medium uppercase"
+              >
+                Register
+              </Link>
+
+              <button
+                onClick={() => setIsMenuOpen(true)}
+                className="header-menu-btn flex h-10 w-10 items-center justify-center rounded-xl border border-cyan-500/40 bg-black/80 text-cyan-400 text-xl transition duration-200"
+                aria-label="Open menu"
+              >
+                <FiMenu />
+              </button>
+            </div>
           </div>
         </div>
       </header>
 
+      {/* Mobile Drawer Backdrop */}
       <div
         onClick={() => setIsMenuOpen(false)}
-        className={`fixed inset-0 z-50 bg-black/60 backdrop-blur-sm transition-opacity duration-300 md:hidden ${
-          isMenuOpen
-            ? "visible opacity-100"
-            : "invisible opacity-0"
+        className={`fixed inset-0 z-50 bg-black/80 backdrop-blur-md transition-opacity duration-300 md:hidden ${
+          isMenuOpen ? "visible opacity-100" : "invisible opacity-0"
         }`}
       />
 
+      {/* Mobile Drawer */}
       <aside
-        className={`fixed right-0 top-0 z-[60] h-screen w-72 bg-mnit-navy border-l border-mnit-gold/25 shadow-2xl transition-transform duration-300 md:hidden ${
+        className={`header-mobile-drawer fixed right-0 top-0 z-[60] h-screen w-80 bg-gray-950/95 backdrop-blur-xl border-l border-cyan-500/30 shadow-2xl transition-transform duration-300 md:hidden ${
           isMenuOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
-        <div className="flex h-16 items-center justify-between border-b border-mnit-gold/20 px-5 bg-mnit-blue/25">
-          <span className="text-lg font-bold text-mnit-gold">Menu</span>
+        <div className="header-drawer-title-bar flex h-20 items-center justify-between border-b border-cyan-500/20 px-6 bg-black/50">
+          <span className="text-lg font-medium gradient-text-cyan tracking-wider">NAVIGATION</span>
           <button
             onClick={() => setIsMenuOpen(false)}
-            className="relative flex h-8 w-8 items-center justify-center rounded-lg border border-mnit-gold/30 bg-mnit-blue/50 text-white transition hover:bg-mnit-blue"
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-cyan-500/30 bg-black text-cyan-400 text-xl transition hover:bg-cyan-500/20"
             aria-label="Close menu"
           >
-            <span className="absolute h-0.5 w-4 rotate-45 bg-white" />
-            <span className="absolute h-0.5 w-4 -rotate-45 bg-white" />
+            <FiX />
           </button>
         </div>
-        <nav className="flex flex-col py-2">
-          {navLinks.map((link) => (
-            <Link
-              key={link.name}
-              href={link.path}
-              onClick={() => setIsMenuOpen(false)}
-              className="border-b border-mnit-gold/10 px-6 py-4 text-base font-semibold text-gray-200 transition duration-200 hover:bg-white/5 hover:text-mnit-gold"
-            >
-              {link.name}
-            </Link>
-          ))}
-          <div className="mt-4 px-6">
+        <nav className="flex flex-col py-4">
+          {navLinks.map((link) => {
+            const isActive = pathname === link.path
+            return (
+              <Link
+                key={link.name}
+                href={link.path}
+                onClick={() => setIsMenuOpen(false)}
+                className={`flex items-center justify-between border-b border-white/5 px-6 py-4 text-base font-normal transition duration-200 ${
+                  isActive
+                    ? "bg-cyan-500/20 text-cyan-300 font-medium border-l-4 border-l-cyan-400 pl-8 shadow-[0_0_15px_rgba(0,240,255,0.3)]"
+                    : "text-gray-200 hover:bg-cyan-500/10 hover:text-cyan-400 hover:pl-8"
+                }`}
+              >
+                <span>{link.name}</span>
+              </Link>
+            )
+          })}
+          <div className="mt-8 px-6">
             <Link
               href="/registration"
               onClick={() => setIsMenuOpen(false)}
-              className="block rounded-xl bg-mnit-gold text-center px-4 py-3 text-sm font-bold text-mnit-navy transition duration-200 hover:bg-white"
+              className="block w-full rounded-xl neon-button-cyan text-center px-5 py-4 text-sm font-medium uppercase tracking-wider"
             >
               Register Now
             </Link>
