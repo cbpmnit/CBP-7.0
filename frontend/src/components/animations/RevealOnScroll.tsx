@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, type ReactNode } from "react"
+import { useEffect, useRef, useMemo, memo, type ReactNode } from "react"
 
 type RevealProps = {
   children: ReactNode
@@ -9,7 +9,7 @@ type RevealProps = {
   variant?: "up" | "left" | "right" | "scale" | "page"
 }
 
-export default function Reveal({
+function RevealComponent({
   children,
   className = "",
   delay = 0,
@@ -49,16 +49,20 @@ export default function Reveal({
     }
   }, [delay])
 
-  const variantClass =
-    variant === "left"
-      ? "reveal-left"
-      : variant === "right"
-        ? "reveal-right"
-        : variant === "scale"
-          ? "reveal-scale"
-          : variant === "page"
-            ? "reveal-page"
-            : "reveal"
+  const variantClass = useMemo(() => {
+    switch (variant) {
+      case "left":
+        return "reveal-left"
+      case "right":
+        return "reveal-right"
+      case "scale":
+        return "reveal-scale"
+      case "page":
+        return "reveal-page"
+      default:
+        return "reveal"
+    }
+  }, [variant])
 
   return (
     <div ref={ref} className={`${variantClass} ${className}`}>
@@ -66,3 +70,6 @@ export default function Reveal({
     </div>
   )
 }
+
+const Reveal = memo(RevealComponent)
+export default Reveal
