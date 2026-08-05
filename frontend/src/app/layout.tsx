@@ -4,6 +4,7 @@ import "./globals.css";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import TopBanner from "@/components/layout/TopBanner";
+import { ThemeProvider } from "@/context/ThemeContext";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -41,19 +42,19 @@ export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
-  }>) {
+}>) {
   return (
-    <html
-      lang="en"
-      className={`${inter.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col font-sans">
-        <TopBanner />
-        <Header />
-        {children}
-        <Footer />
-      </body>
-    </html>
+    <>
+      <html lang="en" className={`${inter.variable} h-full antialiased dark`} suppressHydrationWarning>
+        <body className="min-h-full flex flex-col font-sans transition-colors duration-300" suppressHydrationWarning>
+          <ThemeProvider>
+            <TopBanner />
+            <Header />
+            {children}
+            <Footer />
+          </ThemeProvider>
+        </body>
+      </html>
+    </>
   );
 }
-

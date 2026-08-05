@@ -48,7 +48,7 @@ const scheduleDays = [
     tag: "Certification & Valedictory",
     sessions: [
       { time: "09:00 AM", topic: "Personality Development & Self-Branding", speaker: "Industry Expert", venue: "Main Auditorium" },
-      { time: "11:00 AM", topic: "Feedback, Assessment & Q&amp;A", speaker: "CBP Organizing Team", venue: "Seminar Hall" },
+      { time: "11:00 AM", topic: "Feedback, Assessment & Q&A", speaker: "CBP Organizing Team", venue: "Seminar Hall" },
       { time: "02:00 PM", topic: "Valedictory Ceremony & Certificate Distribution", speaker: "Dr. Niraja Saraswat & Prof. Nupur Tandon", venue: "Main Auditorium" },
     ],
   },
@@ -57,17 +57,20 @@ const scheduleDays = [
 export default function SchedulePage() {
   return (
     <PageTransition>
-      <main className="min-h-screen bg-white">
-        <section className="bg-mnit-navy py-24 sm:py-32">
-          <div className="mx-auto max-w-7xl px-5 lg:px-8 text-center">
+      <main className="min-h-screen bg-black text-gray-100 bg-grid-cyber">
+        <section className="bg-black py-24 sm:py-32 relative overflow-hidden border-b border-white/10">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-cyan-500/15 rounded-full blur-[160px] pointer-events-none" />
+
+          <div className="mx-auto max-w-7xl px-5 lg:px-8 text-center relative z-10">
             <Reveal>
-              <span className="inline-block rounded-full border border-mnit-gold/40 bg-mnit-gold/10 px-4 py-1.5 text-xs font-semibold tracking-wider uppercase text-mnit-gold">
+              <span className="inline-flex items-center gap-2 rounded-full bg-cyan-500/10 border border-cyan-500/30 px-4 py-1.5 text-xs font-bold text-cyan-300 uppercase tracking-widest backdrop-blur-md">
+                <span className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_#00f0ff]" />
                 5-Day Program
               </span>
             </Reveal>
             <Reveal delay={80}>
-              <h1 className="mt-4 text-4xl font-bold tracking-tight text-white sm:text-5xl">
-                Program <span className="text-mnit-gold">Schedule</span>
+              <h1 className="mt-4 text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl">
+                Program <span className="gradient-text-cyan">Schedule</span>
               </h1>
             </Reveal>
             <Reveal delay={120}>
@@ -82,40 +85,36 @@ export default function SchedulePage() {
 
         <section className="py-24 sm:py-32">
           <div className="mx-auto max-w-7xl px-5 lg:px-8">
-            <div className="space-y-6">
+            <div className="space-y-8">
               {scheduleDays.map((day, di) => (
                 <Reveal key={day.day} delay={di * 100}>
-                  <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-                    <div className="bg-mnit-blue px-6 py-4 sm:px-8 sm:py-5">
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
-                        <span className="shrink-0 rounded-lg bg-white/20 px-3 py-1 text-xs font-bold text-mnit-gold w-fit">
-                          {day.day}
-                        </span>
-                        <div>
-                          <h3 className="text-base font-bold text-white">
-                            {day.tag}
-                          </h3>
-                        </div>
-                      </div>
+                  <div className="glass-card glass-card-hover rounded-3xl overflow-hidden">
+                    <div className="bg-cyan-500/10 border-b border-cyan-500/20 px-6 py-4 sm:px-8 sm:py-5 flex flex-col sm:flex-row sm:items-center gap-3">
+                      <span className="shrink-0 rounded-lg bg-cyan-500/20 border border-cyan-400/40 px-3.5 py-1 text-xs font-extrabold text-cyan-300 uppercase tracking-wider w-fit shadow-[0_0_10px_rgba(0,240,255,0.3)]">
+                        {day.day}
+                      </span>
+                      <h3 className="text-lg font-extrabold text-white">
+                        {day.tag}
+                      </h3>
                     </div>
-                    <div className="divide-y divide-gray-50">
+                    <div className="divide-y divide-white/5">
                       {day.sessions.map((session, i) => (
                         <div
                           key={i}
-                          className="flex flex-col gap-2 px-6 py-4 sm:flex-row sm:items-center sm:gap-6 sm:px-8"
+                          className="flex flex-col gap-3 px-6 py-5 sm:flex-row sm:items-center sm:gap-6 sm:px-8 hover:bg-white/5 transition duration-200"
                         >
-                          <span className="shrink-0 text-sm font-semibold text-mnit-blue w-24">
+                          <span className="shrink-0 text-sm font-bold text-cyan-400 font-mono w-28">
                             {session.time}
                           </span>
                           <div className="flex-1">
-                            <p className="text-sm font-bold text-mnit-navy">
+                            <p className="text-base font-bold text-white">
                               {session.topic}
                             </p>
-                            <p className="text-xs text-gray-500 mt-0.5">
+                            <p className="text-xs text-gray-400 mt-1">
                               {session.speaker}
                             </p>
                           </div>
-                          <span className="shrink-0 rounded-md bg-mnit-light px-3 py-1 text-xs font-medium text-gray-600 w-fit">
+                          <span className="shrink-0 rounded-lg bg-white/5 border border-white/10 px-3.5 py-1.5 text-xs font-semibold text-gray-300 w-fit">
                             {session.venue}
                           </span>
                         </div>

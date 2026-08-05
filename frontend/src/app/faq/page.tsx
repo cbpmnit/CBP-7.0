@@ -62,18 +62,20 @@ const faqs = [
 export default function FAQPage() {
   return (
     <PageTransition>
-      <main className="min-h-screen bg-white">
-        <section className="bg-mnit-navy py-24 sm:py-32">
-          <div className="mx-auto max-w-7xl px-5 lg:px-8 text-center">
+      <main className="min-h-screen bg-black text-gray-100 bg-grid-cyber">
+        <section className="bg-black py-24 sm:py-32 relative overflow-hidden border-b border-white/10">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-cyan-500/15 rounded-full blur-[160px] pointer-events-none" />
+
+          <div className="mx-auto max-w-7xl px-5 lg:px-8 text-center relative z-10">
             <Reveal>
-              <span className="inline-block rounded-full border border-mnit-gold/40 bg-mnit-gold/10 px-4 py-1.5 text-xs font-semibold tracking-wider uppercase text-mnit-gold">
-                FAQ
+              <span className="inline-flex items-center gap-2 rounded-full bg-cyan-500/10 border border-cyan-500/30 px-4 py-1.5 text-xs font-bold text-cyan-300 uppercase tracking-widest backdrop-blur-md">
+                <span className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_#00f0ff]" />
+                Help & Support
               </span>
             </Reveal>
             <Reveal delay={80}>
-              <h1 className="mt-4 text-4xl font-bold tracking-tight text-white sm:text-5xl">
-                Frequently Asked{" "}
-                <span className="text-mnit-gold">Questions</span>
+              <h1 className="mt-4 text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl">
+                Frequently Asked <span className="gradient-text-cyan">Questions</span>
               </h1>
             </Reveal>
             <Reveal delay={120}>
@@ -87,21 +89,21 @@ export default function FAQPage() {
 
         <section className="py-24 sm:py-32">
           <div className="mx-auto max-w-3xl px-5 lg:px-8">
-            <div className="space-y-3">
+            <div className="space-y-4">
               {faqs.map((faq, i) => (
                 <Reveal key={i} delay={i * 40}>
-                  <details className="group rounded-2xl border border-gray-100 bg-white shadow-sm open:border-mnit-blue/20 open:shadow-md">
-                    <summary className="flex cursor-pointer items-center justify-between gap-4 px-6 py-5 text-sm sm:text-base select-none">
-                      <span className="font-semibold text-mnit-navy pr-4">
+                  <details className="group glass-card glass-card-hover rounded-2xl open:border-cyan-500/50 open:shadow-[0_0_20px_rgba(0,240,255,0.2)]">
+                    <summary className="flex cursor-pointer items-center justify-between gap-4 px-7 py-5 text-base font-bold text-white select-none">
+                      <span className="group-open:text-cyan-300 transition duration-200">
                         {faq.question}
                       </span>
-                      <span className="shrink-0 rounded-lg bg-mnit-light p-1.5 text-gray-400 transition duration-200 group-open:rotate-180 group-open:bg-mnit-blue group-open:text-white">
+                      <span className="shrink-0 rounded-xl bg-white/5 border border-white/10 p-2 text-cyan-400 transition duration-300 group-open:rotate-180 group-open:bg-cyan-500 group-open:text-black">
                         <svg
                           className="h-4 w-4"
                           fill="none"
                           viewBox="0 0 24 24"
                           stroke="currentColor"
-                          strokeWidth={2}
+                          strokeWidth={2.5}
                         >
                           <path
                             strokeLinecap="round"
@@ -111,8 +113,8 @@ export default function FAQPage() {
                         </svg>
                       </span>
                     </summary>
-                    <div className="px-6 pb-5">
-                      <p className="text-sm leading-relaxed text-gray-600">
+                    <div className="px-7 pb-6 pt-1 border-t border-white/5">
+                      <p className="text-sm leading-relaxed text-gray-300">
                         {faq.answer}
                       </p>
                     </div>

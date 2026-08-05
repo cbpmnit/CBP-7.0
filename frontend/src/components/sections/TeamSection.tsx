@@ -1,4 +1,5 @@
 import Image from "next/image"
+import Reveal from "@/components/animations/RevealOnScroll"
 
 const team = [
   {
@@ -23,46 +24,58 @@ const team = [
 
 export default function TeamSection() {
   return (
-    <section className="bg-white py-24 sm:py-32">
-      <div className="mx-auto max-w-7xl px-5 lg:px-8">
+    <section className="bg-black py-24 sm:py-32 relative overflow-hidden bg-grid-cyber border-t border-white/10">
+      <div className="mx-auto max-w-7xl px-5 lg:px-8 relative z-10">
         <div className="mx-auto max-w-2xl text-center">
-          <span className="inline-block rounded-full bg-mnit-light px-3 py-1 text-xs font-semibold text-mnit-accent uppercase tracking-wider">
-            Our Advisers
-          </span>
-          <h2 className="mt-4 text-3xl font-bold tracking-tight text-mnit-navy sm:text-4xl">
-            Meet the Advisers
-          </h2>
-          <p className="mt-4 text-base leading-relaxed text-gray-600">
-            The CBP 7.0 is spearheaded by dedicated faculty members and the
-            Training &amp; Placement Cell at MNIT Jaipur, ensuring a world-class
-            learning experience for every participant.
-          </p>
+          <Reveal variant="scale">
+            <span className="inline-flex items-center gap-2 rounded-full bg-cyan-500/10 border border-cyan-500/30 px-4 py-1.5 text-xs font-medium text-cyan-300 uppercase tracking-widest backdrop-blur-md">
+              <span className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_#00f0ff]" />
+              Our Leadership
+            </span>
+          </Reveal>
+          
+          <Reveal variant="up" delay={80}>
+            <h2 className="mt-4 text-3xl font-semibold tracking-tight text-white sm:text-4xl lg:text-5xl">
+              Meet the <span className="gradient-text-cyan">Advisers</span>
+            </h2>
+          </Reveal>
+
+          <Reveal variant="up" delay={140}>
+            <p className="mt-4 text-base leading-relaxed text-gray-400">
+              The CBP 7.0 is spearheaded by dedicated faculty members and the
+              Training &amp; Placement Cell at MNIT Jaipur, ensuring a world-class
+              learning experience for every participant.
+            </p>
+          </Reveal>
         </div>
 
-        <div className="mt-14 flex flex-wrap justify-center gap-12 lg:gap-20">
-          {team.map((member) => (
-            <div
+        <div className="mt-16 flex flex-wrap justify-center gap-10 lg:gap-16">
+          {team.map((member, idx) => (
+            <Reveal
               key={member.name}
-              className="group flex flex-col items-center text-center w-60"
+              variant="scale"
+              delay={idx * 120}
             >
-              <div className="relative h-40 w-40 overflow-hidden rounded-full border-4 border-mnit-light shadow-lg transition duration-500 group-hover:border-mnit-blue/30 group-hover:shadow-xl">
-                <Image
-                  src={member.image}
-                  alt={member.name}
-                  fill
-                  className="object-cover transition duration-500 group-hover:scale-110"
-                />
+              <div className="glass-card glass-card-hover rounded-3xl p-8 flex flex-col items-center text-center w-72 group">
+                <div className="relative h-44 w-44 overflow-hidden rounded-full border-2 border-cyan-500/40 shadow-[0_0_20px_rgba(0,240,255,0.3)] transition duration-500 group-hover:scale-105 group-hover:border-cyan-400">
+                  <Image
+                    src={member.image}
+                    alt={member.name}
+                    fill
+                    className="object-cover transition duration-500 group-hover:scale-110"
+                  />
+                </div>
+                <h3 className="mt-6 text-lg font-medium text-white group-hover:text-cyan-300 transition duration-300">
+                  {member.name}
+                </h3>
+                <p className="mt-1 text-sm font-medium text-cyan-400 shadow-[0_0_6px_rgba(0,240,255,0.4)]">
+                  {member.role}
+                </p>
+                <p className="mt-2 text-xs leading-relaxed text-gray-400 font-sans">
+                  {member.department}
+                </p>
               </div>
-              <h3 className="mt-5 text-base font-bold text-mnit-navy">
-                {member.name}
-              </h3>
-              <p className="text-sm font-medium text-mnit-blue">
-                {member.role}
-              </p>
-              <p className="mt-1 text-xs leading-relaxed text-gray-500">
-                {member.department}
-              </p>
-            </div>
+            </Reveal>
           ))}
         </div>
       </div>

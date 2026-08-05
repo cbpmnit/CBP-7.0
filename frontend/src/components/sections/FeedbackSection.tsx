@@ -3,27 +3,28 @@
 import { useState, useEffect } from "react"
 import Image from "next/image"
 import Reveal from "@/components/animations/RevealOnScroll"
+import { FiChevronLeft, FiChevronRight } from "react-icons/fi"
 
 const testimonials = [
   {
     name: "Diksha Gupta",
     rollNumber: "2021UME1409",
     quote:
-      "I enrolled in the CBP program on the recommendation of my seniors, and it turned out to be a life-changing decision. The program taught me many practical applications from the Bhagavad Gita that helped me deal with stress, anxiety, and peer pressure while staying focused on my goals. It kept me away from the usual distractions of college life, where even the most dedicated students often get diverted. What I found most valuable was the circle of friends, seniors, and professors I met through CBP. Surrounded by such positive and inspiring people, I was able to maintain a good CGPA and secure two internships and two placement offers during my B.Tech. CBP has truly been a turning point in my academic and personal journey.",
+      "I enrolled in the CBP program on the recommendation of my seniors, and it turned out to be a life-changing decision. The program taught me many practical applications from the Bhagavad Gita that helped me deal with stress, anxiety, and peer pressure while staying focused on my goals. It kept me away from the usual distractions of college life. Surrounded by such positive and inspiring people, I was able to maintain a good CGPA and secure two internships and two placement offers during my B.Tech.",
     image: "/assets/seniors/DeekshaSinghal.webp",
   },
   {
     name: "Saurav Raj",
     rollNumber: "2022UEE1169",
     quote:
-      "When I came to college, I was a very shy person and wasn't good at socializing. The first thing that CBP helped me with was building a feeling of community and socializing with new students that joined the program, which eventually helped me in developing a better personality. It was a very interesting program and was never boring. Secondly, I got a chance to hear from very senior and qualified leaders and their guidance helped me in my career too. To any newly joined students, I would suggest that they must attend this program as there are no losses, only gains.",
+      "When I came to college, I was a very shy person and wasn't good at socializing. The first thing that CBP helped me with was building a feeling of community and socializing with new students that joined the program, which eventually helped me in developing a better personality. Secondly, I got a chance to hear from very senior and qualified leaders and their guidance helped me in my career too.",
     image: "/assets/seniors/Akash Kumar.webp",
   },
   {
     name: "Amit Tiwari",
     rollNumber: "2022UME1200",
     quote:
-      "Capacity Building Program affected my life very greatly. In this Program I learnt how should be our lifestyle. I learnt how to control the mind. There are many other things like why Bhagavad Gita is important for our life and how we can make our life blissful and disciplined by reading Bhagavad Gita. This Program teaches the value of life, goals and character. A disciplined and characterful life can help us to achieve our goals.",
+      "Capacity Building Program affected my life very greatly. In this Program I learnt how should be our lifestyle. I learnt how to control the mind. There are many other things like why Bhagavad Gita is important for our life and how we can make our life blissful and disciplined by reading Bhagavad Gita. This Program teaches the value of life, goals and character.",
     image: "/assets/seniors/ansh.webp",
   },
   {
@@ -49,75 +50,78 @@ export default function FeedbackSection() {
   useEffect(() => {
     const timer = setInterval(() => {
       handleNext()
-    }, 4500) // Slide automatically every 4.5 seconds
+    }, 4500)
 
     return () => clearInterval(timer)
   }, [])
 
   return (
-    <section className="bg-mnit-light py-24 sm:py-32">
-      <div className="mx-auto max-w-7xl px-5 lg:px-8">
+    <section className="bg-black py-24 sm:py-32 relative overflow-hidden bg-grid-cyber border-t border-b border-white/10">
+      <div className="mx-auto max-w-7xl px-5 lg:px-8 relative z-10">
         <div className="mx-auto max-w-2xl text-center">
           <Reveal>
-            <span className="inline-block rounded-full bg-white px-3 py-1 text-xs font-semibold text-mnit-accent uppercase tracking-wider">
+            <span className="inline-flex items-center gap-2 rounded-full bg-cyan-500/10 border border-cyan-500/30 px-4 py-1.5 text-xs font-medium text-cyan-300 uppercase tracking-widest backdrop-blur-md">
+              <span className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_#00f0ff]" />
               Student Feedback
             </span>
           </Reveal>
           <Reveal delay={80}>
-            <h2 className="mt-4 text-3xl font-bold tracking-tight text-mnit-navy sm:text-4xl">
-              What Our Alumni Say
+            <h2 className="mt-4 text-3xl font-semibold tracking-tight text-white sm:text-4xl lg:text-5xl">
+              What Our Alumni <span className="gradient-text-cyan">Say</span>
             </h2>
           </Reveal>
           <Reveal delay={120}>
-            <p className="mt-4 text-base leading-relaxed text-gray-600">
+            <p className="mt-4 text-base leading-relaxed text-gray-400">
               Real stories from students whose lives were transformed by the
               Capacity Building Program.
             </p>
           </Reveal>
         </div>
 
-        {/* 1. Desktop Layout (Static Grid) */}
-        <div className="hidden md:grid mt-14 gap-6 md:grid-cols-2 lg:grid-cols-4">
+        {/* Desktop Layout */}
+        <div className="hidden md:grid mt-16 gap-6 md:grid-cols-2 lg:grid-cols-4">
           {testimonials.map((t, i) => (
-            <Reveal key={t.name} delay={i * 100}>
-              <div className="flex h-full flex-col rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition duration-300 hover:shadow-lg hover:border-mnit-blue/20">
-                <div className="flex items-center gap-4">
-                  <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full border-2 border-mnit-light shadow-sm">
-                    <Image
-                      src={t.image}
-                      alt={t.name}
-                      fill
-                      className="object-cover"
-                    />
+            <Reveal key={t.name} delay={i * 100} variant={i % 2 === 0 ? "left" : "right"}>
+              <div className="glass-card glass-card-hover rounded-2xl p-7 flex flex-col justify-between h-full group">
+                <div>
+                  <div className="flex items-center gap-4">
+                    <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full border-2 border-cyan-500/40 shadow-[0_0_12px_rgba(0,240,255,0.3)]">
+                      <Image
+                        src={t.image}
+                        alt={t.name}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="text-sm font-medium text-white group-hover:text-cyan-300 transition duration-300 truncate">
+                        {t.name}
+                      </h3>
+                      <p className="text-xs text-gray-400 font-sans truncate">
+                        {t.rollNumber}
+                      </p>
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <h3 className="text-sm font-bold text-mnit-navy truncate">
-                      {t.name}
-                    </h3>
-                    <p className="text-xs text-gray-500 truncate">
-                      {t.rollNumber}
+
+                  <div className="mt-5">
+                    <svg
+                      className="h-6 w-6 text-cyan-400/60"
+                      fill="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4.995v10h-9.983zm-14.017 0v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4.995v10h-9.983z" />
+                    </svg>
+                    <p className="mt-3 text-sm leading-relaxed text-gray-300">
+                      {t.quote}
                     </p>
                   </div>
                 </div>
 
-                <div className="mt-4 flex-1">
-                  <svg
-                    className="h-6 w-6 text-mnit-gold/60"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4.995v10h-9.983zm-14.017 0v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4.995v10h-9.983z" />
-                  </svg>
-                  <p className="mt-3 text-sm leading-relaxed text-gray-600">
-                    {t.quote}
-                  </p>
-                </div>
-
-                <div className="mt-4 flex items-center gap-1">
+                <div className="mt-6 flex items-center gap-1">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <svg
                       key={star}
-                      className="h-3.5 w-3.5 text-mnit-gold"
+                      className="h-4 w-4 text-cyan-400 drop-shadow-[0_0_6px_rgba(0,240,255,0.6)]"
                       fill="currentColor"
                       viewBox="0 0 24 24"
                     >
@@ -130,9 +134,9 @@ export default function FeedbackSection() {
           ))}
         </div>
 
-        {/* 2. Mobile Layout (Slider Carousel) */}
+        {/* Mobile Carousel */}
         <div className="block md:hidden mt-10 relative px-4">
-          <div className="overflow-hidden min-h-[350px] flex items-center justify-center">
+          <div className="overflow-hidden min-h-[360px] flex items-center justify-center">
             {testimonials.map((t, idx) => (
               <div
                 key={t.name}
@@ -142,72 +146,58 @@ export default function FeedbackSection() {
                     : "opacity-0 absolute translate-x-12 pointer-events-none"
                 }`}
               >
-                <div className="flex flex-col rounded-2xl border border-gray-100 bg-white p-6 shadow-md">
-                  <div className="flex items-center gap-4">
-                    <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full border-2 border-mnit-light shadow-sm">
-                      <Image
-                        src={t.image}
-                        alt={t.name}
-                        fill
-                        className="object-cover"
-                      />
+                <div className="glass-card rounded-2xl p-6 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center gap-4">
+                      <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full border-2 border-cyan-500/40">
+                        <Image
+                          src={t.image}
+                          alt={t.name}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="text-sm font-medium text-white truncate">
+                          {t.name}
+                        </h3>
+                        <p className="text-xs text-gray-400 font-sans truncate">
+                          {t.rollNumber}
+                        </p>
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <h3 className="text-sm font-bold text-mnit-navy truncate">
-                        {t.name}
-                      </h3>
-                      <p className="text-xs text-gray-500 truncate">
-                        {t.rollNumber}
-                      </p>
-                    </div>
-                  </div>
 
-                  <div className="mt-4 flex-1">
-                    <svg
-                      className="h-5 w-5 text-mnit-gold/60"
-                      fill="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4.995v10h-9.983zm-14.017 0v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4.995v10h-9.983z" />
-                    </svg>
-                    <p className="mt-2.5 text-xs sm:text-sm leading-relaxed text-gray-600">
+                    <p className="mt-4 text-sm leading-relaxed text-gray-300">
                       {t.quote}
                     </p>
                   </div>
 
-                  <div className="mt-4 flex items-center justify-between">
-                    <div className="flex items-center gap-1">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <svg
-                          key={star}
-                          className="h-3.5 w-3.5 text-mnit-gold"
-                          fill="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                        </svg>
-                      ))}
-                    </div>
+                  <div className="mt-6 flex items-center gap-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <svg
+                        key={star}
+                        className="h-4 w-4 text-cyan-400"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                      </svg>
+                    ))}
                   </div>
                 </div>
               </div>
             ))}
           </div>
 
-          {/* Navigation Controls */}
           <div className="mt-6 flex items-center justify-between">
-            {/* Prev Button */}
             <button
               onClick={handlePrev}
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white shadow-sm transition hover:bg-gray-50 hover:scale-105 active:scale-95"
-              aria-label="Previous slide"
+              className="flex h-10 w-10 items-center justify-center rounded-xl border border-cyan-500/30 bg-black/60 text-cyan-400 text-lg"
+              aria-label="Previous Testimonial"
             >
-              <svg className="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-              </svg>
+              <FiChevronLeft />
             </button>
 
-            {/* Pagination Dots */}
             <div className="flex gap-2">
               {testimonials.map((_, idx) => (
                 <button
@@ -215,23 +205,19 @@ export default function FeedbackSection() {
                   onClick={() => setCurrentIndex(idx)}
                   className={`h-2 rounded-full transition-all duration-300 ${
                     idx === currentIndex
-                      ? "w-6 bg-mnit-gold"
-                      : "w-2 bg-gray-300 hover:bg-gray-400"
+                      ? "w-6 bg-cyan-400 shadow-[0_0_8px_#00f0ff]"
+                      : "w-2 bg-white/20"
                   }`}
-                  aria-label={`Go to slide ${idx + 1}`}
                 />
               ))}
             </div>
 
-            {/* Next Button */}
             <button
               onClick={handleNext}
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white shadow-sm transition hover:bg-gray-50 hover:scale-105 active:scale-95"
-              aria-label="Next slide"
+              className="flex h-10 w-10 items-center justify-center rounded-xl border border-cyan-500/30 bg-black/60 text-cyan-400 text-lg"
+              aria-label="Next Testimonial"
             >
-              <svg className="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-              </svg>
+              <FiChevronRight />
             </button>
           </div>
         </div>

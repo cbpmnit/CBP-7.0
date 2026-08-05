@@ -6,7 +6,7 @@ type RevealProps = {
   children: ReactNode
   className?: string
   delay?: number
-  variant?: "up" | "left" | "right" | "scale"
+  variant?: "up" | "left" | "right" | "scale" | "page"
 }
 
 export default function Reveal({
@@ -21,25 +21,32 @@ export default function Reveal({
     const el = ref.current
     if (!el) return
 
+    let timer: NodeJS.Timeout
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            setTimeout(() => {
+            timer = setTimeout(() => {
               el.classList.add("revealed")
             }, delay)
-            observer.unobserve(el)
+          } else {
+            clearTimeout(timer)
+            el.classList.remove("revealed")
           }
         })
       },
       {
-        threshold: 0.12,
-        rootMargin: "0px 0px -40px 0px",
+        threshold: 0.15,
+        rootMargin: "0px 0px -50px 0px",
       }
     )
 
     observer.observe(el)
-    return () => observer.disconnect()
+    return () => {
+      clearTimeout(timer)
+      observer.disconnect()
+    }
   }, [delay])
 
   const variantClass =
@@ -49,7 +56,9 @@ export default function Reveal({
         ? "reveal-right"
         : variant === "scale"
           ? "reveal-scale"
-          : "reveal"
+          : variant === "page"
+            ? "reveal-page"
+            : "reveal"
 
   return (
     <div ref={ref} className={`${variantClass} ${className}`}>
