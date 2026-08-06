@@ -1,5 +1,6 @@
 package com.cbp7.notification.listener;
 
+import com.cbp7.attendance.qr.event.AttendanceQrGeneratedEvent;
 import com.cbp7.notification.constant.NotificationVariableConstants;
 import com.cbp7.notification.entity.NotificationType;
 import com.cbp7.notification.event.CertificateGeneratedEvent;
@@ -83,6 +84,27 @@ public class NotificationEventListener {
             );
         } catch (Exception e) {
             log.error("Failed to send certificate email for studentId: {}", event.studentId(), e);
+        }
+    }
+
+    @Async("notificationAsyncExecutor")
+    @EventListener
+    public void handleAttendanceQrGenerated(AttendanceQrGeneratedEvent event) {
+        log.info("Received AttendanceQrGeneratedEvent for studentId: {}", event.studentId());
+        try {
+            Map<String, String> variables = new HashMap<>();
+            variables.put(NotificationVariableConstants.STUDENT_ID, event.studentId() != null ? event.studentId() : "");
+            variables.put(NotificationVariableConstants.STUDENT_NAME, event.studentName() != null ? event.studentName() : "");
+            variables.put(NotificationVariableConstants.STUDENT_EMAIL, event.studentEmail() != null ? event.studentEmail() : "");
+            variables.put(NotificationVariableConstants.QR_TOKEN, event.qrToken() != null ? event.qrToken() : "");
+
+            emailNotificationService.sendTemplateEmailByType(
+                    NotificationType.ATTENDANCE_QR_GENERATED,
+                    event.studentEmail(),
+                    variables
+            );
+        } catch (Exception e) {
+            log.error("Failed to send attendance QR email for studentId: {}", event.studentId(), e);
         }
     }
 }

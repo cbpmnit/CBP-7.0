@@ -1,5 +1,6 @@
 package com.cbp7.notification;
 
+import com.cbp7.attendance.qr.event.AttendanceQrGeneratedEvent;
 import com.cbp7.notification.email.EmailSender;
 import com.cbp7.notification.entity.NotificationChannel;
 import com.cbp7.notification.entity.NotificationTemplate;
@@ -30,7 +31,7 @@ import static org.mockito.Mockito.verify;
 @TestPropertySource(properties = {
     "spring.datasource.hikari.initialization-fail-timeout=-1",
     "spring.flyway.enabled=false",
-    "spring.datasource.hikari.connection-init-sql=CREATE SCHEMA IF NOT EXISTS cbp; CREATE SCHEMA IF NOT EXISTS profile; CREATE SCHEMA IF NOT EXISTS payment; CREATE SCHEMA IF NOT EXISTS notification;"
+    "spring.datasource.hikari.connection-init-sql=CREATE SCHEMA IF NOT EXISTS cbp; CREATE SCHEMA IF NOT EXISTS profile; CREATE SCHEMA IF NOT EXISTS payment; CREATE SCHEMA IF NOT EXISTS notification; CREATE SCHEMA IF NOT EXISTS attendance;"
 })
 class NotificationEventListenerTest {
 
@@ -138,7 +139,36 @@ class NotificationEventListenerTest {
     }
 
     @Test
-    @DisplayName("4. Email failure does not break business flow")
+    @DisplayName("4. AttendanceQrGeneratedEvent published triggers email notification")
+    void attendanceQrGeneratedEventTriggersEmail() {
+        NotificationTemplate template = NotificationTemplate.builder()
+                .name("Attendance QR Ready")
+                .channel(NotificationChannel.EMAIL)
+                .type(NotificationType.ATTENDANCE_QR_GENERATED)
+                .subject("Your CBP Attendance QR is Ready")
+                .content("Hello {{studentName}}, your attendance QR is {{qrToken}}.")
+                .createdBy("ADMIN001")
+                .build();
+        notificationTemplateRepository.save(template);
+
+        AttendanceQrGeneratedEvent event = new AttendanceQrGeneratedEvent(
+                "STU123",
+                "Parv Agrawal",
+                "parv@example.com",
+                "CBP_ATTENDANCE_999"
+        );
+
+        notificationEventPublisher.publish(event);
+
+        verify(emailSender, timeout(5000)).sendEmail(
+                eq("parv@example.com"),
+                eq("Your CBP Attendance QR is Ready"),
+                contains("Hello Parv Agrawal, your attendance QR is CBP_ATTENDANCE_999.")
+        );
+    }
+
+    @Test
+    @DisplayName("5. Email failure does not break business flow")
     void emailFailureDoesNotBreakBusinessFlow() {
         NotificationTemplate template = NotificationTemplate.builder()
                 .name("Payment Confirmation")

@@ -2,21 +2,28 @@ package com.cbp7.attendance.qr;
 
 import com.cbp7.attendance.qr.dto.AttendanceQrResponse;
 import com.cbp7.attendance.qr.entity.AttendanceQrCode;
+import com.cbp7.attendance.qr.event.AttendanceQrGeneratedEvent;
 import com.cbp7.attendance.qr.repository.AttendanceQrRepository;
 import com.cbp7.attendance.qr.service.AttendanceQrService;
 import com.cbp7.common.exception.ResourceNotFoundException;
+import com.cbp7.notification.event.NotificationEventPublisher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
 
 @SpringBootTest
 @Transactional
@@ -32,6 +39,9 @@ class AttendanceQrServiceTest {
 
     @Autowired
     private AttendanceQrRepository attendanceQrRepository;
+
+    @MockitoBean
+    private NotificationEventPublisher notificationEventPublisher;
 
     @BeforeEach
     void setUp() {
@@ -50,6 +60,7 @@ class AttendanceQrServiceTest {
         assertTrue(qrCode.getToken().startsWith("CBP_ATTENDANCE_"));
         assertEquals(studentId, qrCode.getStudentId());
         assertTrue(qrCode.isActive());
+        verify(notificationEventPublisher).publish(any(AttendanceQrGeneratedEvent.class));
     }
 
     @Test
@@ -108,7 +119,19 @@ class AttendanceQrServiceTest {
     }
 
     @Test
-    @DisplayName("6. Missing student or empty ID throws appropriate exception")
+    @DisplayName("6. QR creation succeeds even if notification fails")
+    void qrCreationSucceedsEvenIfNotificationFails() {
+        doThrow(new RuntimeException("Messaging error"))
+                .when(notificationEventPublisher).publish(any(AttendanceQrGeneratedEvent.class));
+
+        assertDoesNotThrow(() -> {
+            AttendanceQrCode qrCode = attendanceQrService.generateQrForStudent("2024student006");
+            assertNotNull(qrCode);
+        });
+    }
+
+    @Test
+    @DisplayName("7. Missing student or empty ID throws appropriate exception")
     void invalidStudentHandlingThrowsException() {
         assertThrows(IllegalArgumentException.class, () -> attendanceQrService.generateQrForStudent(null));
         assertThrows(IllegalArgumentException.class, () -> attendanceQrService.generateQrForStudent("  "));

@@ -12,4 +12,5 @@ public final class NotificationVariableConstants {
     public static final String PAYMENT_ID = "paymentId";
     public static final String AMOUNT = "amount";
     public static final String CERTIFICATE_URL = "certificateUrl";
+    public static final String QR_TOKEN = "qrToken";
 }
