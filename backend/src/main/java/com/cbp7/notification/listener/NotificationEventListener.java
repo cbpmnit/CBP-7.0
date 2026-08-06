@@ -1,5 +1,6 @@
 package com.cbp7.notification.listener;
 
+import com.cbp7.notification.constant.NotificationVariableConstants;
 import com.cbp7.notification.entity.NotificationType;
 import com.cbp7.notification.event.CertificateGeneratedEvent;
 import com.cbp7.notification.event.PaymentSuccessfulEvent;
@@ -21,16 +22,16 @@ public class NotificationEventListener {
 
     private final EmailNotificationService emailNotificationService;
 
-    @Async
+    @Async("notificationAsyncExecutor")
     @EventListener
     public void handleStudentRegistered(StudentRegisteredEvent event) {
         log.info("Received StudentRegisteredEvent for studentId: {}", event.studentId());
         try {
             Map<String, String> variables = new HashMap<>();
-            variables.put("studentId", event.studentId() != null ? event.studentId() : "");
-            variables.put("studentName", event.studentName() != null ? event.studentName() : "");
-            variables.put("registrationId", event.registrationId() != null ? event.registrationId() : "");
-            variables.put("studentEmail", event.studentEmail() != null ? event.studentEmail() : "");
+            variables.put(NotificationVariableConstants.STUDENT_ID, event.studentId() != null ? event.studentId() : "");
+            variables.put(NotificationVariableConstants.STUDENT_NAME, event.studentName() != null ? event.studentName() : "");
+            variables.put(NotificationVariableConstants.REGISTRATION_ID, event.registrationId() != null ? event.registrationId() : "");
+            variables.put(NotificationVariableConstants.STUDENT_EMAIL, event.studentEmail() != null ? event.studentEmail() : "");
 
             emailNotificationService.sendTemplateEmailByType(
                     NotificationType.REGISTRATION_SUCCESS,
@@ -42,17 +43,17 @@ public class NotificationEventListener {
         }
     }
 
-    @Async
+    @Async("notificationAsyncExecutor")
     @EventListener
     public void handlePaymentSuccessful(PaymentSuccessfulEvent event) {
         log.info("Received PaymentSuccessfulEvent for paymentId: {}", event.paymentId());
         try {
             Map<String, String> variables = new HashMap<>();
-            variables.put("studentId", event.studentId() != null ? event.studentId() : "");
-            variables.put("studentName", event.studentName() != null ? event.studentName() : "");
-            variables.put("paymentId", event.paymentId() != null ? event.paymentId() : "");
-            variables.put("amount", event.amount() != null ? event.amount() : "");
-            variables.put("studentEmail", event.studentEmail() != null ? event.studentEmail() : "");
+            variables.put(NotificationVariableConstants.STUDENT_ID, event.studentId() != null ? event.studentId() : "");
+            variables.put(NotificationVariableConstants.STUDENT_NAME, event.studentName() != null ? event.studentName() : "");
+            variables.put(NotificationVariableConstants.PAYMENT_ID, event.paymentId() != null ? event.paymentId() : "");
+            variables.put(NotificationVariableConstants.AMOUNT, event.amount() != null ? event.amount() : "");
+            variables.put(NotificationVariableConstants.STUDENT_EMAIL, event.studentEmail() != null ? event.studentEmail() : "");
 
             emailNotificationService.sendTemplateEmailByType(
                     NotificationType.PAYMENT_SUCCESS,
@@ -64,16 +65,16 @@ public class NotificationEventListener {
         }
     }
 
-    @Async
+    @Async("notificationAsyncExecutor")
     @EventListener
     public void handleCertificateGenerated(CertificateGeneratedEvent event) {
         log.info("Received CertificateGeneratedEvent for studentId: {}", event.studentId());
         try {
             Map<String, String> variables = new HashMap<>();
-            variables.put("studentId", event.studentId() != null ? event.studentId() : "");
-            variables.put("studentName", event.studentName() != null ? event.studentName() : "");
-            variables.put("certificateUrl", event.certificateUrl() != null ? event.certificateUrl() : "");
-            variables.put("studentEmail", event.studentEmail() != null ? event.studentEmail() : "");
+            variables.put(NotificationVariableConstants.STUDENT_ID, event.studentId() != null ? event.studentId() : "");
+            variables.put(NotificationVariableConstants.STUDENT_NAME, event.studentName() != null ? event.studentName() : "");
+            variables.put(NotificationVariableConstants.CERTIFICATE_URL, event.certificateUrl() != null ? event.certificateUrl() : "");
+            variables.put(NotificationVariableConstants.STUDENT_EMAIL, event.studentEmail() != null ? event.studentEmail() : "");
 
             emailNotificationService.sendTemplateEmailByType(
                     NotificationType.CERTIFICATE_READY,

@@ -29,7 +29,8 @@ import static org.mockito.Mockito.verify;
 @SpringBootTest
 @TestPropertySource(properties = {
     "spring.datasource.hikari.initialization-fail-timeout=-1",
-    "spring.flyway.enabled=false"
+    "spring.flyway.enabled=false",
+    "spring.datasource.hikari.connection-init-sql=CREATE SCHEMA IF NOT EXISTS cbp; CREATE SCHEMA IF NOT EXISTS profile; CREATE SCHEMA IF NOT EXISTS payment; CREATE SCHEMA IF NOT EXISTS notification;"
 })
 class NotificationEventListenerTest {
 

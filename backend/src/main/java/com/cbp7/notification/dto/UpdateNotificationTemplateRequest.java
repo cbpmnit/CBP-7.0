@@ -12,6 +12,7 @@ public record UpdateNotificationTemplateRequest(
         @NotNull(message = "Channel is required")
         NotificationChannel channel,
 
+        @NotNull(message = "Notification type is required")
         NotificationType type,
 
         String subject,

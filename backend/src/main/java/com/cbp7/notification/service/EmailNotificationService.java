@@ -2,6 +2,7 @@ package com.cbp7.notification.service;
 
 import com.cbp7.common.exception.ResourceNotFoundException;
 import com.cbp7.notification.email.EmailSender;
+import com.cbp7.notification.entity.NotificationChannel;
 import com.cbp7.notification.entity.NotificationTemplate;
 import com.cbp7.notification.entity.NotificationType;
 import com.cbp7.notification.processor.TemplateProcessorService;
@@ -31,8 +32,8 @@ public class EmailNotificationService {
 
     @Transactional(readOnly = true)
     public void sendTemplateEmailByType(NotificationType type, String recipient, Map<String, String> variables) {
-        NotificationTemplate template = notificationTemplateRepository.findByType(type)
-                .orElseThrow(() -> new ResourceNotFoundException("Notification template not found with type: " + type));
+        NotificationTemplate template = notificationTemplateRepository.findByTypeAndChannel(type, NotificationChannel.EMAIL)
+                .orElseThrow(() -> new ResourceNotFoundException("Notification template not found for type: " + type + " and channel: EMAIL"));
 
         sendEmailForTemplate(template, recipient, variables);
     }

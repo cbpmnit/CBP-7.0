@@ -38,7 +38,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Transactional
 @TestPropertySource(properties = {
     "spring.datasource.hikari.initialization-fail-timeout=-1",
-    "spring.flyway.enabled=false"
+    "spring.flyway.enabled=false",
+    "spring.datasource.hikari.connection-init-sql=CREATE SCHEMA IF NOT EXISTS cbp; CREATE SCHEMA IF NOT EXISTS profile; CREATE SCHEMA IF NOT EXISTS payment; CREATE SCHEMA IF NOT EXISTS notification;"
 })
 class NotificationTemplateControllerTest {
 
@@ -251,5 +252,24 @@ class NotificationTemplateControllerTest {
     void withoutJwtReturns401() throws Exception {
         mockMvc.perform(get("/api/v1/admin/notifications/templates"))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("8. Admin creates template without NotificationType -> HTTP 400")
+    void adminCreatesTemplateWithoutTypeReturns400() throws Exception {
+        CreateNotificationTemplateRequest request = new CreateNotificationTemplateRequest(
+                "Invalid Template",
+                NotificationChannel.EMAIL,
+                null,
+                "Subject",
+                "Content",
+                null
+        );
+
+        mockMvc.perform(post("/api/v1/admin/notifications/templates")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
     }
 }

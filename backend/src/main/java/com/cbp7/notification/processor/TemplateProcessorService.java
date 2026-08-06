@@ -1,6 +1,7 @@
 package com.cbp7.notification.processor;
 
 import org.springframework.stereotype.Service;
+import org.springframework.web.util.HtmlUtils;
 
 import java.util.Map;
 
@@ -20,8 +21,9 @@ public class TemplateProcessorService {
         for (Map.Entry<String, String> entry : variables.entrySet()) {
             if (entry.getKey() != null) {
                 String placeholder = "{{" + entry.getKey() + "}}";
-                String replacement = entry.getValue() != null ? entry.getValue() : "";
-                processed = processed.replace(placeholder, replacement);
+                String rawReplacement = entry.getValue() != null ? entry.getValue() : "";
+                String escapedReplacement = HtmlUtils.htmlEscape(rawReplacement);
+                processed = processed.replace(placeholder, escapedReplacement);
             }
         }
 

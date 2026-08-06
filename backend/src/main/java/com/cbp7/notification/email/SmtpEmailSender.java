@@ -14,11 +14,11 @@ import java.nio.charset.StandardCharsets;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class SesEmailSender implements EmailSender {
+public class SmtpEmailSender implements EmailSender {
 
     private final JavaMailSender javaMailSender;
 
-    @Value("${spring.mail.username:noreply@cbp.com}")
+    @Value("${spring.mail.from:${spring.mail.username:noreply@cbpmnit.in}}")
     private String fromAddress;
 
     @Override
@@ -33,6 +33,8 @@ public class SesEmailSender implements EmailSender {
 
             if (fromAddress != null && !fromAddress.isBlank()) {
                 helper.setFrom(fromAddress);
+            } else {
+                helper.setFrom("noreply@cbpmnit.in");
             }
             helper.setTo(recipient);
             helper.setSubject(subject != null ? subject : "");

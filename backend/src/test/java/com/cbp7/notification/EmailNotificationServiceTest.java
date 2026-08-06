@@ -4,6 +4,7 @@ import com.cbp7.common.exception.ResourceNotFoundException;
 import com.cbp7.notification.email.EmailSender;
 import com.cbp7.notification.entity.NotificationChannel;
 import com.cbp7.notification.entity.NotificationTemplate;
+import com.cbp7.notification.entity.NotificationType;
 import com.cbp7.notification.processor.TemplateProcessorService;
 import com.cbp7.notification.repository.NotificationTemplateRepository;
 import com.cbp7.notification.service.EmailNotificationService;
@@ -21,14 +22,14 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-
 import static org.mockito.Mockito.verify;
 
 @SpringBootTest
 @Transactional
 @TestPropertySource(properties = {
     "spring.datasource.hikari.initialization-fail-timeout=-1",
-    "spring.flyway.enabled=false"
+    "spring.flyway.enabled=false",
+    "spring.datasource.hikari.connection-init-sql=CREATE SCHEMA IF NOT EXISTS cbp; CREATE SCHEMA IF NOT EXISTS profile; CREATE SCHEMA IF NOT EXISTS payment; CREATE SCHEMA IF NOT EXISTS notification;"
 })
 class EmailNotificationServiceTest {
 
@@ -69,6 +70,7 @@ class EmailNotificationServiceTest {
         NotificationTemplate template = NotificationTemplate.builder()
                 .name("Welcome Email")
                 .channel(NotificationChannel.EMAIL)
+                .type(NotificationType.REGISTRATION_SUCCESS)
                 .subject("Welcome {{studentName}}")
                 .content("<h2>Hello {{studentName}}</h2><p>ID: {{registrationId}}</p>")
                 .createdBy("ADMIN001")
@@ -90,7 +92,30 @@ class EmailNotificationServiceTest {
     }
 
     @Test
-    @DisplayName("3. Missing template throws ResourceNotFoundException")
+    @DisplayName("3. sendTemplateEmailByType uses type and channel")
+    void sendTemplateEmailByTypeUsesTypeAndChannel() {
+        NotificationTemplate template = NotificationTemplate.builder()
+                .name("Payment Email")
+                .channel(NotificationChannel.EMAIL)
+                .type(NotificationType.PAYMENT_SUCCESS)
+                .subject("Payment {{paymentId}}")
+                .content("Amount {{amount}}")
+                .createdBy("ADMIN001")
+                .build();
+        notificationTemplateRepository.save(template);
+
+        Map<String, String> variables = Map.of(
+                "paymentId", "PAY100",
+                "amount", "5000"
+        );
+
+        emailNotificationService.sendTemplateEmailByType(NotificationType.PAYMENT_SUCCESS, "student@example.com", variables);
+
+        verify(emailSender).sendEmail("student@example.com", "Payment PAY100", "Amount 5000");
+    }
+
+    @Test
+    @DisplayName("4. Missing template throws ResourceNotFoundException")
     void missingTemplateThrowsResourceNotFoundException() {
         UUID nonExistentId = UUID.randomUUID();
         Map<String, String> variables = Map.of();
@@ -101,7 +126,7 @@ class EmailNotificationServiceTest {
     }
 
     @Test
-    @DisplayName("4. Invalid or missing variables do not break processing")
+    @DisplayName("5. Invalid or missing variables do not break processing")
     void invalidVariablesHandledGracefully() {
         String template = "Hello {{studentName}}, welcome to {{course}}!";
         Map<String, String> partialVariables = Map.of("studentName", "Parv");

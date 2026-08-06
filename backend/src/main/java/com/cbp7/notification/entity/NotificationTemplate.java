@@ -12,8 +12,17 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
+import jakarta.persistence.UniqueConstraint;
+
 @Entity
-@Table(schema = "notification", name = "notification_templates")
+@Table(
+    schema = "notification",
+    name = "notification_templates",
+    uniqueConstraints = {
+        @UniqueConstraint(name = "uq_notification_template_name", columnNames = {"name"}),
+        @UniqueConstraint(name = "uq_notification_template_type_channel", columnNames = {"type", "channel"})
+    }
+)
 @Getter
 @Setter
 @NoArgsConstructor
