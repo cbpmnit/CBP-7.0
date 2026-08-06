@@ -60,14 +60,13 @@ export default function PaymentStatusPage() {
 
     const pollPaymentStatus = async () => {
       try {
-        const payments = await api.get<PaymentInfo[]>("/api/v1/payment/me")
-        const matchingPayment = payments?.find(p => p.transactionId === transactionId)
+        const result = await api.get<any>(`/api/v1/payment/status/${transactionId}`)
 
-        if (matchingPayment) {
-          if (matchingPayment.paymentStatus === "SUCCESS") {
+        if (result) {
+          if (result.paymentStatus === "SUCCESS") {
             setStatus("SUCCESS")
             return
-          } else if (matchingPayment.paymentStatus === "FAILED") {
+          } else if (result.paymentStatus === "FAILED") {
             setStatus("FAILED")
             return
           }

@@ -76,11 +76,8 @@ export default function DashboardPage() {
       // 3. Fetch Payment details
       let pay: PaymentInfo | null = null
       try {
-        const payments = await api.get<PaymentInfo[]>("/api/v1/payment/me")
-        if (payments && payments.length > 0) {
-          pay = payments[0]
-          setPaymentInfo(pay)
-        }
+        pay = await api.get<PaymentInfo>("/api/v1/payment/me")
+        setPaymentInfo(pay)
       } catch (err) {
         if (!(err instanceof ApiError && err.status === 404)) {
           throw err

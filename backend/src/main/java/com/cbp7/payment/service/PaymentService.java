@@ -154,6 +154,7 @@ public class PaymentService {
 
         return new PaymentDetailResponse(
                 payment.getId(),
+                payment.getTransactionId(),
                 payment.getPaymentMode(),
                 payment.getPaymentStatus(),
                 payment.getAmount(),

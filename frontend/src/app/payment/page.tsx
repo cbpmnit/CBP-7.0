@@ -28,13 +28,8 @@ export default function PaymentPage() {
     try {
       setLoading(true)
       setError(null)
-      const data = await api.get<PaymentInfo[]>("/api/v1/payment/me")
-      if (data && data.length > 0) {
-        // Grab latest payment record
-        setPayment(data[0])
-      } else {
-        setPayment(null)
-      }
+      const data = await api.get<PaymentInfo>("/api/v1/payment/me")
+      setPayment(data)
     } catch (err) {
       if (err instanceof ApiError && err.status === 404) {
         setPayment(null)

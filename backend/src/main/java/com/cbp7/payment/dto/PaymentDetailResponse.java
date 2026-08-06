@@ -9,6 +9,7 @@ import java.util.UUID;
 
 public record PaymentDetailResponse(
         UUID paymentId,
+        String transactionId,
         PaymentMode paymentMode,
         PaymentStatus paymentStatus,
         BigDecimal amount,
