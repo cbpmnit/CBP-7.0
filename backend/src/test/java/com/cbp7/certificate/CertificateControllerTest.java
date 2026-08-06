@@ -12,6 +12,11 @@ import com.cbp7.cbp.repository.CbpRegistrationRepository;
 import com.cbp7.certificate.repository.CertificateRepository;
 import com.cbp7.certificate.service.CertificateService;
 import com.cbp7.notification.event.NotificationEventPublisher;
+import com.cbp7.profile.entity.Branch;
+import com.cbp7.profile.entity.Course;
+import com.cbp7.profile.entity.Gender;
+import com.cbp7.profile.entity.UserProfile;
+import com.cbp7.profile.repository.UserProfileRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -54,6 +59,9 @@ class CertificateControllerTest {
     private UserRepository userRepository;
 
     @Autowired
+    private UserProfileRepository userProfileRepository;
+
+    @Autowired
     private CbpRegistrationRepository cbpRegistrationRepository;
 
     @Autowired
@@ -76,6 +84,7 @@ class CertificateControllerTest {
     private String volunteerToken;
 
     private User studentUser;
+    private UserProfile userProfile;
 
     @BeforeEach
     void setUp() {
@@ -116,9 +125,23 @@ class CertificateControllerTest {
                         .enabled(true)
                         .build()));
 
+        userProfile = userProfileRepository.save(UserProfile.builder()
+                .user(studentUser)
+                .firstName("Cert")
+                .lastName("Student")
+                .gender(Gender.MALE)
+                .phoneNumber("9999999999")
+                .sameAsWhatsapp(true)
+                .course(Course.BTECH)
+                .branch(Branch.COMPUTER_SCIENCE_ENGINEERING)
+                .year(4)
+                .hosteller(true)
+                .build());
+
         cbpRegistrationRepository.findByUserStudentIdIgnoreCase("2024certstudent01")
                 .orElseGet(() -> cbpRegistrationRepository.save(CbpRegistration.builder()
                         .user(studentUser)
+                        .profile(userProfile)
                         .registrationId("REG-CERT-002")
                         .registrationStatus(RegistrationStatus.REGISTERED)
                         .studentId("2024certstudent01")
