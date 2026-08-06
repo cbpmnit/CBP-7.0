@@ -18,7 +18,8 @@ class PhonePeConfigTest {
         assertEquals("xxxxx", phonePeConfig.getClientId());
         assertEquals("xxxxx", phonePeConfig.getClientSecret());
         assertEquals("1", phonePeConfig.getClientVersion());
-        assertEquals("https://api-preprod.phonepe.com", phonePeConfig.getBaseUrl());
+        assertEquals("SANDBOX", phonePeConfig.getEnvironment());
+        assertEquals("https://api-preprod.phonepe.com/apis/pg-sandbox", phonePeConfig.getBaseUrl());
         assertEquals("http://localhost:3000/payment-status", phonePeConfig.getRedirectUrl());
         assertEquals("http://localhost:9900/api/v1/payment/phonepe/callback", phonePeConfig.getCallbackUrl());
     }

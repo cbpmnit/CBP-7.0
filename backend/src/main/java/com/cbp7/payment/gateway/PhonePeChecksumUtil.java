@@ -17,6 +17,10 @@ public final class PhonePeChecksumUtil {
         return generateSha256(base64Body + saltKey) + "###" + saltIndex;
     }
 
+    public static String generateStatusChecksum(String merchantId, String transactionId, String saltKey, String saltIndex) {
+        return generateSha256("/pg/v1/status/" + merchantId + "/" + transactionId + saltKey) + "###" + saltIndex;
+    }
+
     private static String generateSha256(String input) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");

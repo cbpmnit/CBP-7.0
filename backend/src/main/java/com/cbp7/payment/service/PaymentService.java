@@ -13,6 +13,7 @@ import com.cbp7.payment.dto.CreatePaymentRequest;
 import com.cbp7.payment.dto.PaymentDetailResponse;
 import com.cbp7.payment.dto.PaymentResponse;
 import com.cbp7.payment.dto.PhonePePaymentResponse;
+import com.cbp7.payment.dto.PaymentStatusResponse;
 import com.cbp7.payment.entity.Payment;
 import com.cbp7.payment.enums.PaymentMode;
 import com.cbp7.payment.enums.PaymentStatus;
@@ -46,6 +47,7 @@ public class PaymentService {
     private final PaymentGateway paymentGateway;
     private final PhonePeConfig phonePeConfig;
     private final ObjectMapper objectMapper;
+    private final PaymentVerificationService paymentVerificationService;
 
     @Transactional
     public PaymentResponse createPayment(User user, CreatePaymentRequest request) {
@@ -156,6 +158,28 @@ public class PaymentService {
                 payment.getPaymentStatus(),
                 payment.getAmount(),
                 payment.getCreatedAt()
+        );
+    }
+
+    @Transactional
+    public PaymentStatusResponse verifyAndGetPaymentStatus(User user, String transactionId) {
+        validateStudentRole(user);
+
+        // Fetch payment to check ownership before verification
+        Payment payment = paymentRepository.findByTransactionId(transactionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Payment record not found for transaction: " + transactionId));
+
+        if (!payment.getUserId().equals(user.getId())) {
+            throw new ForbiddenException("You are not authorized to view this payment status.");
+        }
+
+        // Verify and update status via PaymentVerificationService
+        Payment verifiedPayment = paymentVerificationService.verifyPaymentStatus(transactionId);
+
+        return new PaymentStatusResponse(
+                verifiedPayment.getTransactionId(),
+                verifiedPayment.getPaymentStatus(),
+                verifiedPayment.getAmount()
         );
     }
 

@@ -23,7 +23,9 @@ public class PhonePeConfig {
     @NotBlank(message = "PhonePe client version must be configured")
     private String clientVersion;
 
-    @NotBlank(message = "PhonePe base URL must be configured")
+    @NotBlank(message = "PhonePe environment must be configured")
+    private String environment;
+
     private String baseUrl;
 
     @NotBlank(message = "PhonePe redirect URL is not configured")
@@ -38,6 +40,7 @@ public class PhonePeConfig {
                 "clientId='" + clientId + '\'' +
                 ", clientSecret='[PROTECTED]'" +
                 ", clientVersion='" + clientVersion + '\'' +
+                ", environment='" + environment + '\'' +
                 ", baseUrl='" + baseUrl + '\'' +
                 ", redirectUrl='" + redirectUrl + '\'' +
                 ", callbackUrl='" + callbackUrl + '\'' +

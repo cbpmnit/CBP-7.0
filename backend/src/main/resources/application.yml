@@ -42,6 +42,7 @@ phonepe:
   client-id: ${PHONEPE_CLIENT_ID}
   client-secret: ${PHONEPE_CLIENT_SECRET}
   client-version: ${PHONEPE_CLIENT_VERSION}
+  environment: ${PHONEPE_ENVIRONMENT:SANDBOX}
   base-url: ${PHONEPE_BASE_URL}
   redirect-url: ${PHONEPE_REDIRECT_URL:${FRONTEND_URL}/payment-status}
   callback-url: ${PHONEPE_CALLBACK_URL:${API_BASE_URL}/api/v1/payment/phonepe/callback}

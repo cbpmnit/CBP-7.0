@@ -76,6 +76,24 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(response);
     }
 
+    @ExceptionHandler({
+            PhonePeBadRequestException.class,
+            PhonePeAuthenticationException.class,
+            PhonePeResourceNotFoundException.class,
+            PhonePeConnectionException.class,
+            PhonePeGatewayException.class
+    })
+    public ResponseEntity<ErrorResponse> handlePhonePeGatewayExceptions(PhonePeException ex, HttpServletRequest request) {
+        ErrorResponse response = ErrorResponse.of(HttpStatus.BAD_GATEWAY.value(), "Bad Gateway", "Unable to initiate payment", request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(response);
+    }
+
+    @ExceptionHandler(PhonePeTimeoutException.class)
+    public ResponseEntity<ErrorResponse> handlePhonePeTimeoutException(PhonePeTimeoutException ex, HttpServletRequest request) {
+        ErrorResponse response = ErrorResponse.of(HttpStatus.GATEWAY_TIMEOUT.value(), "Gateway Timeout", "Payment initiation timed out", request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.GATEWAY_TIMEOUT).body(response);
+    }
+
     @ExceptionHandler({InvalidCredentialsException.class, BadCredentialsException.class, UsernameNotFoundException.class})
     public ResponseEntity<ErrorResponse> handleInvalidCredentialsException(Exception ex, HttpServletRequest request) {
         ErrorResponse response = ErrorResponse.of(HttpStatus.UNAUTHORIZED.value(), "Unauthorized", ex.getMessage(), request.getRequestURI());

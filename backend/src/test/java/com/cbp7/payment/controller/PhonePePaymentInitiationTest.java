@@ -15,22 +15,23 @@ import com.cbp7.profile.dto.CreateProfileRequest;
 import com.cbp7.profile.entity.Branch;
 import com.cbp7.profile.entity.Course;
 import com.cbp7.profile.entity.Gender;
-import com.cbp7.payment.gateway.PhonePeGateway;
+import com.cbp7.payment.config.PhonePeConfig;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.phonepe.sdk.pg.payments.v2.StandardCheckoutClient;
+import com.phonepe.sdk.pg.payments.v2.models.request.StandardCheckoutPayRequest;
+import com.phonepe.sdk.pg.payments.v2.models.response.StandardCheckoutPayResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
-import org.springframework.test.web.client.MockRestServiceServer;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
-import org.springframework.web.client.RestClient;
 import org.springframework.web.context.WebApplicationContext;
 
 import java.math.BigDecimal;
@@ -39,11 +40,11 @@ import java.util.UUID;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
-import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
-import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
-import static org.springframework.test.web.client.response.MockRestResponseCreators.withServerError;
-import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -53,7 +54,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class PhonePePaymentInitiationTest {
 
     private MockMvc mockMvc;
-    private MockRestServiceServer mockServer;
 
     @Autowired
     private WebApplicationContext webApplicationContext;
@@ -71,21 +71,18 @@ public class PhonePePaymentInitiationTest {
     private PaymentRepository paymentRepository;
 
     @Autowired
-    private RestClient.Builder phonepeRestClientBuilder;
+    private PhonePeConfig phonePeConfig;
 
-    @Autowired
-    private PhonePeGateway phonePeGateway;
+    @MockitoBean
+    private StandardCheckoutClient standardCheckoutClient;
 
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext)
                 .apply(springSecurity())
                 .build();
-        mockServer = MockRestServiceServer.bindTo(phonepeRestClientBuilder).build();
-        phonePeGateway.setPhonepeRestClient(phonepeRestClientBuilder.build());
     }
 
-    // Helper methods
     private String registerStudent(String studentId, String email, String name, String password) throws Exception {
         RegisterRequest registerRequest = new RegisterRequest(
                 studentId, email, name, "9876543210", password, password
@@ -141,17 +138,15 @@ public class PhonePePaymentInitiationTest {
         System.out.println();
     }
 
-    // 1. shouldInitiatePhonePePaymentSuccessfully
     @Test
     void shouldInitiatePhonePePaymentSuccessfully() throws Exception {
         String token = registerStudent("2023UCP3001", "student3001@mnit.ac.in", "Parv Agrawal", "Password@123");
         createProfile(token);
         createCbpRegistration(token);
 
-        // Mock PhonePe gateway API response
-        mockServer.expect(requestTo("https://api-preprod.phonepe.com/pg/v1/pay"))
-                .andExpect(method(HttpMethod.POST))
-                .andRespond(withSuccess("{\"success\":true,\"code\":\"PAYMENT_INITIATED\",\"message\":\"Payment Initiated\",\"data\":{\"merchantId\":\"xxxxx\",\"merchantTransactionId\":\"tx_id\",\"instrumentResponse\":{\"type\":\"PAY_PAGE\",\"redirectInfo\":{\"url\":\"https://phonepe-payment-url\",\"method\":\"GET\"}}}}", MediaType.APPLICATION_JSON));
+        StandardCheckoutPayResponse mockResponse = mock(StandardCheckoutPayResponse.class);
+        when(mockResponse.getRedirectUrl()).thenReturn("https://phonepe-payment-url");
+        when(standardCheckoutClient.pay(any(StandardCheckoutPayRequest.class))).thenReturn(mockResponse);
 
         MvcResult result = mockMvc.perform(post("/api/v1/payment/phonepe/initiate")
                 .header("Authorization", "Bearer " + token))
@@ -164,11 +159,9 @@ public class PhonePePaymentInitiationTest {
                 .andExpect(jsonPath("$.data.paymentStatus", equalTo(PaymentStatus.PENDING.name())))
                 .andReturn();
 
-        mockServer.verify();
         printResponse("INITIATE PHONEPE PAYMENT RESPONSE", result);
     }
 
-    // 2. shouldRejectPaymentWithoutCbpRegistration
     @Test
     void shouldRejectPaymentWithoutCbpRegistration() throws Exception {
         String token = registerStudent("2023UCP3002", "student3002@mnit.ac.in", "Parv Agrawal", "Password@123");
@@ -185,7 +178,6 @@ public class PhonePePaymentInitiationTest {
         printResponse("REJECT PAYMENT WITHOUT CBP REGISTRATION RESPONSE", result);
     }
 
-    // 3. shouldRejectAlreadyCompletedPayment
     @Test
     void shouldRejectAlreadyCompletedPayment() throws Exception {
         String token = registerStudent("2023UCP3003", "student3003@mnit.ac.in", "Parv Agrawal", "Password@123");
@@ -195,7 +187,6 @@ public class PhonePePaymentInitiationTest {
         User user = userRepository.findByStudentId("2023ucp3003").orElseThrow();
         var registration = cbpRegistrationRepository.findByUserStudentIdIgnoreCase("2023ucp3003").orElseThrow();
 
-        // Create an existing SUCCESS payment
         Payment payment = Payment.builder()
                 .registrationId(registration.getId())
                 .userId(user.getId())
@@ -217,7 +208,6 @@ public class PhonePePaymentInitiationTest {
         printResponse("REJECT ALREADY COMPLETED PAYMENT RESPONSE", result);
     }
 
-    // 4. shouldRejectUnauthorizedUser
     @Test
     void shouldRejectUnauthorizedUser() throws Exception {
         MvcResult result = mockMvc.perform(post("/api/v1/payment/phonepe/initiate"))
@@ -228,7 +218,6 @@ public class PhonePePaymentInitiationTest {
         printResponse("REJECT UNAUTHORIZED USER RESPONSE", result);
     }
 
-    // 5. shouldRejectVolunteerInitiatingPayment
     @Test
     void shouldRejectVolunteerInitiatingPayment() throws Exception {
         String token = registerStudent("2023UCP3005", "volunteer3005@mnit.ac.in", "Volunteer User", "Password@123");
@@ -245,17 +234,18 @@ public class PhonePePaymentInitiationTest {
         printResponse("REJECT VOLUNTEER PAYMENT RESPONSE", result);
     }
 
-    // 6. shouldHandlePhonePeFailure
     @Test
     void shouldHandlePhonePeFailure() throws Exception {
         String token = registerStudent("2023UCP3006", "student3006@mnit.ac.in", "Parv Agrawal", "Password@123");
         createProfile(token);
         createCbpRegistration(token);
 
-        // Mock PhonePe API failure
-        mockServer.expect(requestTo("https://api-preprod.phonepe.com/pg/v1/pay"))
-                .andExpect(method(HttpMethod.POST))
-                .andRespond(withServerError());
+        com.phonepe.sdk.pg.common.exception.PhonePeException mockException = mock(com.phonepe.sdk.pg.common.exception.PhonePeException.class);
+        when(mockException.getHttpStatusCode()).thenReturn(502);
+        when(mockException.getCode()).thenReturn("BAD_GATEWAY");
+        when(mockException.getMessage()).thenReturn("Bad Gateway");
+
+        when(standardCheckoutClient.pay(any(StandardCheckoutPayRequest.class))).thenThrow(mockException);
 
         MvcResult result = mockMvc.perform(post("/api/v1/payment/phonepe/initiate")
                 .header("Authorization", "Bearer " + token))
@@ -265,7 +255,6 @@ public class PhonePePaymentInitiationTest {
                 .andExpect(jsonPath("$.message", equalTo("Unable to initiate payment")))
                 .andReturn();
 
-        mockServer.verify();
         printResponse("PHONEPE FAILURE HANDLING RESPONSE", result);
     }
 }

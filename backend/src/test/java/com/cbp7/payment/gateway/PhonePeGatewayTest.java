@@ -1,28 +1,27 @@
 package com.cbp7.payment.gateway;
 
+import com.cbp7.common.exception.PhonePeBadRequestException;
+import com.cbp7.common.exception.PhonePeGatewayException;
 import com.cbp7.payment.config.PhonePeConfig;
+import com.cbp7.payment.dto.PhonePeStatusResponse;
 import com.cbp7.payment.entity.Payment;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.BeforeEach;
+import com.phonepe.sdk.pg.payments.v2.StandardCheckoutClient;
+import com.phonepe.sdk.pg.payments.v2.models.request.StandardCheckoutPayRequest;
+import com.phonepe.sdk.pg.payments.v2.models.response.StandardCheckoutPayResponse;
+import com.phonepe.sdk.pg.common.models.response.OrderStatusResponse;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.client.MockRestServiceServer;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestClient;
 
 import java.math.BigDecimal;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
-import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
-import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 @SpringBootTest
 @Transactional
@@ -37,19 +36,8 @@ class PhonePeGatewayTest {
     @Autowired
     private PhonePeConfig phonePeConfig;
 
-    @Autowired
-    private RestClient.Builder phonepeRestClientBuilder;
-
-    @Autowired
-    private ObjectMapper objectMapper;
-
-    private MockRestServiceServer mockServer;
-
-    @BeforeEach
-    void setUp() {
-        mockServer = MockRestServiceServer.bindTo(phonepeRestClientBuilder).build();
-        phonePeGateway.setPhonepeRestClient(phonepeRestClientBuilder.build());
-    }
+    @MockitoBean
+    private StandardCheckoutClient standardCheckoutClient;
 
     @Test
     void gatewayBeanShouldExist() {
@@ -58,7 +46,7 @@ class PhonePeGatewayTest {
     }
 
     @Test
-    void shouldGeneratePayloadWithConfiguredUrls() throws Exception {
+    void shouldInitiatePhonePePaymentSuccessfully() throws Exception {
         UUID userId = UUID.randomUUID();
         UUID regId = UUID.randomUUID();
         Payment payment = Payment.builder()
@@ -69,32 +57,73 @@ class PhonePeGatewayTest {
                 .build();
         payment.setId(UUID.randomUUID());
 
-        // Mock PhonePe payment success response
-        mockServer.expect(requestTo("https://api-preprod.phonepe.com/pg/v1/pay"))
-                .andExpect(method(HttpMethod.POST))
-                .andExpect(request -> {
-                    // Extract body and verify redirectUrl/callbackUrl in request
-                    String requestBody = request.getBody().toString();
-                    try {
-                        JsonNode root = objectMapper.readTree(requestBody);
-                        String base64Request = root.path("request").asText();
-                        String decodedJson = new String(Base64.getDecoder().decode(base64Request), StandardCharsets.UTF_8);
-                        JsonNode payload = objectMapper.readTree(decodedJson);
-
-                        assertEquals(phonePeConfig.getRedirectUrl(), payload.path("redirectUrl").asText());
-                        assertEquals(phonePeConfig.getCallbackUrl(), payload.path("callbackUrl").asText());
-                        assertEquals(phonePeConfig.getClientId(), payload.path("merchantId").asText());
-                        assertEquals("CBP_TXN_TEST12345", payload.path("merchantTransactionId").asText());
-                        assertEquals(50000L, payload.path("amount").asLong()); // 500.00 INR = 50000 paise
-                    } catch (Exception e) {
-                        fail("Failed to parse/decode request body: " + e.getMessage());
-                    }
-                })
-                .andRespond(withSuccess("{\"success\":true,\"code\":\"PAYMENT_INITIATED\",\"message\":\"Payment Initiated\",\"data\":{\"merchantId\":\"xxxxx\",\"merchantTransactionId\":\"tx_id\",\"instrumentResponse\":{\"type\":\"PAY_PAGE\",\"redirectInfo\":{\"url\":\"https://phonepe-payment-url\",\"method\":\"GET\"}}}}", MediaType.APPLICATION_JSON));
+        StandardCheckoutPayResponse mockResponse = mock(StandardCheckoutPayResponse.class);
+        when(mockResponse.getRedirectUrl()).thenReturn("https://phonepe-payment-url");
+        when(standardCheckoutClient.pay(any(StandardCheckoutPayRequest.class))).thenReturn(mockResponse);
 
         String redirectUrl = phonePeGateway.initiatePayment(payment);
         assertEquals("https://phonepe-payment-url", redirectUrl);
 
-        mockServer.verify();
+        ArgumentCaptor<StandardCheckoutPayRequest> requestCaptor = ArgumentCaptor.forClass(StandardCheckoutPayRequest.class);
+        verify(standardCheckoutClient).pay(requestCaptor.capture());
+
+        StandardCheckoutPayRequest capturedRequest = requestCaptor.getValue();
+        assertEquals("CBP_TXN_TEST12345", capturedRequest.getMerchantOrderId());
+        assertEquals(50000L, capturedRequest.getAmount());
+        assertNotNull(capturedRequest.getMetaInfo());
+        assertEquals(regId.toString(), capturedRequest.getMetaInfo().getUdf1());
+        assertEquals(userId.toString(), capturedRequest.getMetaInfo().getUdf2());
+    }
+
+    @Test
+    void checkPaymentStatus_Completed_ReturnsStatusResponse() throws Exception {
+        OrderStatusResponse mockStatusResponse = mock(OrderStatusResponse.class);
+        when(mockStatusResponse.getState()).thenReturn("COMPLETED");
+        when(mockStatusResponse.getErrorCode()).thenReturn("PAYMENT_SUCCESS");
+        when(standardCheckoutClient.getOrderStatus("CBP_TXN_TEST12345")).thenReturn(mockStatusResponse);
+
+        PhonePeStatusResponse response = phonePeGateway.checkPaymentStatus("CBP_TXN_TEST12345");
+        assertEquals("CBP_TXN_TEST12345", response.transactionId());
+        assertEquals("COMPLETED", response.state());
+        assertTrue(response.success());
+        assertEquals("PAYMENT_SUCCESS", response.code());
+    }
+
+    @Test
+    void initiatePayment_PhonePeReturns400_ThrowsPhonePeBadRequestException() throws Exception {
+        com.phonepe.sdk.pg.common.exception.PhonePeException mockException = mock(com.phonepe.sdk.pg.common.exception.PhonePeException.class);
+        when(mockException.getHttpStatusCode()).thenReturn(400);
+        when(mockException.getCode()).thenReturn("BAD_REQUEST");
+        when(mockException.getMessage()).thenReturn("Invalid request parameters");
+
+        when(standardCheckoutClient.pay(any(StandardCheckoutPayRequest.class))).thenThrow(mockException);
+
+        Payment payment = Payment.builder()
+                .userId(UUID.randomUUID())
+                .registrationId(UUID.randomUUID())
+                .amount(new BigDecimal("500.00"))
+                .transactionId("CBP_TXN_ERROR")
+                .build();
+
+        assertThrows(PhonePeBadRequestException.class, () -> phonePeGateway.initiatePayment(payment));
+    }
+
+    @Test
+    void initiatePayment_PhonePeReturns500_ThrowsPhonePeGatewayException() throws Exception {
+        com.phonepe.sdk.pg.common.exception.PhonePeException mockException = mock(com.phonepe.sdk.pg.common.exception.PhonePeException.class);
+        when(mockException.getHttpStatusCode()).thenReturn(500);
+        when(mockException.getCode()).thenReturn("INTERNAL_SERVER_ERROR");
+        when(mockException.getMessage()).thenReturn("Provider server error");
+
+        when(standardCheckoutClient.pay(any(StandardCheckoutPayRequest.class))).thenThrow(mockException);
+
+        Payment payment = Payment.builder()
+                .userId(UUID.randomUUID())
+                .registrationId(UUID.randomUUID())
+                .amount(new BigDecimal("500.00"))
+                .transactionId("CBP_TXN_ERROR")
+                .build();
+
+        assertThrows(PhonePeGatewayException.class, () -> phonePeGateway.initiatePayment(payment));
     }
 }

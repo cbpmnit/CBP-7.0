@@ -32,6 +32,7 @@ phonepe:
   client-id: xxxxx
   client-secret: xxxxx
   client-version: 1
-  base-url: https://api-preprod.phonepe.com
+  environment: SANDBOX
+  base-url: https://api-preprod.phonepe.com/apis/pg-sandbox
   redirect-url: http://localhost:3000/payment-status
   callback-url: http://localhost:9900/api/v1/payment/phonepe/callback

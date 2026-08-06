@@ -1,23 +1,19 @@
 package com.cbp7.payment.gateway;
 
-import com.cbp7.common.exception.BadGatewayException;
+import com.cbp7.common.exception.*;
 import com.cbp7.payment.config.PhonePeConfig;
 import com.cbp7.payment.entity.Payment;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.cbp7.payment.dto.PhonePeStatusResponse;
+import com.phonepe.sdk.pg.payments.v2.StandardCheckoutClient;
+import com.phonepe.sdk.pg.payments.v2.models.request.StandardCheckoutPayRequest;
+import com.phonepe.sdk.pg.payments.v2.models.response.StandardCheckoutPayResponse;
+import com.phonepe.sdk.pg.common.models.MetaInfo;
+import com.phonepe.sdk.pg.common.models.response.OrderStatusResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestClient;
-import org.springframework.web.client.RestClientResponseException;
 
 import java.math.BigDecimal;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
@@ -25,85 +21,88 @@ import java.util.Map;
 public class PhonePeGateway implements PaymentGateway {
 
     private final PhonePeConfig phonePeConfig;
-    
-    @lombok.Setter
-    @lombok.NonNull
-    private RestClient phonepeRestClient;
-    
-    private final ObjectMapper objectMapper;
+    private final StandardCheckoutClient standardCheckoutClient;
 
     @Override
     public String initiatePayment(Payment payment) {
         try {
-            String apiPath = "/pg/v1/pay";
-
-            // Prepare PhonePe payment payload
-            Map<String, Object> payload = new HashMap<>();
-            payload.put("merchantId", phonePeConfig.getClientId());
-            payload.put("merchantTransactionId", payment.getTransactionId());
-            payload.put("merchantUserId", payment.getUserId().toString());
-            
-            // Amount in paise (1 INR = 100 paise)
             long amountInPaise = payment.getAmount().multiply(new BigDecimal("100")).longValue();
-            payload.put("amount", amountInPaise);
-            
-            // Redirect back to frontend
-            payload.put("redirectUrl", phonePeConfig.getRedirectUrl());
-            payload.put("redirectMode", "REDIRECT");
-            payload.put("callbackUrl", phonePeConfig.getCallbackUrl());
 
-            Map<String, Object> paymentInstrument = new HashMap<>();
-            paymentInstrument.put("type", "PAY_PAGE");
-            payload.put("paymentInstrument", paymentInstrument);
-
-            // Base64 encode the payload
-            String jsonPayload = objectMapper.writeValueAsString(payload);
-            String base64Payload = Base64.getEncoder().encodeToString(jsonPayload.getBytes(StandardCharsets.UTF_8));
-
-            // Generate X-VERIFY checksum signature
-            String checksum = PhonePeChecksumUtil.generateApiChecksum(base64Payload, apiPath, phonePeConfig.getClientSecret(), phonePeConfig.getClientVersion());
-
-            // Build request body wrapper
-            Map<String, String> requestBody = new HashMap<>();
-            requestBody.put("request", base64Payload);
-
-            log.info("Sending payment initiation request to PhonePe for Transaction ID: {}", payment.getTransactionId());
-
-            // Call PhonePe payment endpoint
-            ResponseEntity<String> responseEntity = phonepeRestClient.post()
-                    .uri(apiPath)
-                    .header("Content-Type", "application/json")
-                    .header("X-VERIFY", checksum)
-                    .body(requestBody)
-                    .retrieve()
-                    .toEntity(String.class);
-
-            String responseBody = responseEntity.getBody();
-            if (responseBody == null) {
-                throw new BadGatewayException("Unable to initiate payment");
+            MetaInfo metaInfo = new MetaInfo();
+            if (payment.getRegistrationId() != null) {
+                metaInfo.setUdf1(payment.getRegistrationId().toString());
+            }
+            if (payment.getUserId() != null) {
+                metaInfo.setUdf2(payment.getUserId().toString());
             }
 
-            JsonNode rootNode = objectMapper.readTree(responseBody);
-            if (rootNode.path("success").asBoolean()) {
-                String redirectUrl = rootNode.path("data")
-                        .path("instrumentResponse")
-                        .path("redirectInfo")
-                        .path("url")
-                        .asText();
-                log.info("PhonePe payment initiated successfully. Redirect URL: {}", redirectUrl);
-                return redirectUrl;
-            } else {
-                String msg = rootNode.path("message").asText("Unknown PhonePe error");
-                log.error("PhonePe API initiation returned success=false: {}", msg);
-                throw new BadGatewayException("Unable to initiate payment");
-            }
+            StandardCheckoutPayRequest payRequest = StandardCheckoutPayRequest.builder()
+                    .merchantOrderId(payment.getTransactionId())
+                    .amount(amountInPaise)
+                    .redirectUrl(phonePeConfig.getRedirectUrl())
+                    .metaInfo(metaInfo)
+                    .build();
 
-        } catch (RestClientResponseException e) {
-            log.error("PhonePe RestClient returned non-2xx status: {}, body: {}", e.getStatusCode(), e.getResponseBodyAsString());
-            throw new BadGatewayException("Unable to initiate payment");
+            log.info("Sending payment initiation request to PhonePe Standard Checkout for Transaction ID: {}", payment.getTransactionId());
+            log.info("PhonePe environment: {}, clientId: {}", phonePeConfig.getEnvironment(), maskClientId(phonePeConfig.getClientId()));
+
+            StandardCheckoutPayResponse payResponse = standardCheckoutClient.pay(payRequest);
+            String redirectUrl = payResponse.getRedirectUrl();
+            log.info("PhonePe payment initiated successfully. Redirect URL: {}", redirectUrl);
+            return redirectUrl;
+
+        } catch (com.phonepe.sdk.pg.common.exception.PhonePeException e) {
+            throw handlePhonePeException(e, "initiate");
         } catch (Exception e) {
-            log.error("Error communicating with PhonePe gateway: {}", e.getMessage(), e);
-            throw new BadGatewayException("Unable to initiate payment");
+            log.error("PhonePe payment initiation failed - Unexpected error: {}", e.getMessage(), e);
+            throw new PhonePeGatewayException("Unable to initiate payment");
         }
+    }
+
+    @Override
+    public PhonePeStatusResponse checkPaymentStatus(String transactionId) {
+        try {
+            log.info("Sending payment status query to PhonePe for Transaction ID: {}", transactionId);
+            log.info("PhonePe environment: {}, clientId: {}", phonePeConfig.getEnvironment(), maskClientId(phonePeConfig.getClientId()));
+
+            OrderStatusResponse response = standardCheckoutClient.getOrderStatus(transactionId);
+            
+            String state = response.getState();
+            boolean success = "COMPLETED".equalsIgnoreCase(state);
+            String code = success ? "PAYMENT_SUCCESS" : ("FAILED".equalsIgnoreCase(state) ? "PAYMENT_ERROR" : "PENDING");
+            String message = response.getErrorCode();
+
+            return new PhonePeStatusResponse(transactionId, state, success, code, message);
+
+        } catch (com.phonepe.sdk.pg.common.exception.PhonePeException e) {
+            throw handlePhonePeException(e, "retrieve status of");
+        } catch (Exception e) {
+            log.error("PhonePe status query failed - Unexpected error: {}", e.getMessage(), e);
+            throw new PhonePeGatewayException("Unable to retrieve payment status");
+        }
+    }
+
+    private RuntimeException handlePhonePeException(com.phonepe.sdk.pg.common.exception.PhonePeException e, String operation) {
+        int status = e.getHttpStatusCode();
+        String errorCode = e.getCode();
+        String message = e.getMessage();
+
+        log.error("PhonePe API failed - Status: {}, Code: {}, Message: {}", status, errorCode, message);
+
+        if (status == 400) {
+            return new PhonePeBadRequestException("PhonePe bad request: " + message);
+        } else {
+            return new PhonePeGatewayException("Unable to " + operation + " payment");
+        }
+    }
+
+    private String maskClientId(String clientId) {
+        if (clientId == null) {
+            return "null";
+        }
+        if (clientId.length() <= 4) {
+            return "****";
+        }
+        return clientId.substring(0, 2) + "****" + clientId.substring(clientId.length() - 4);
     }
 }
