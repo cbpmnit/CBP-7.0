@@ -28,6 +28,9 @@ cors:
   frontend-url: http://localhost:3000
   allowed-origins: http://localhost:3000
 
+frontend:
+  payment-status-url: http://localhost:3000/payment-status
+
 phonepe:
   client-id: xxxxx
   client-secret: xxxxx

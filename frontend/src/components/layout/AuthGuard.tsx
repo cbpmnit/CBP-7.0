@@ -5,7 +5,7 @@ import { useRouter, usePathname } from "next/navigation"
 import { useAppSelector } from "@/store/hooks"
 
 const PUBLIC_ROUTES = ["/", "/login", "/register", "/registration"]
-const PROTECTED_ROUTES = ["/dashboard", "/profile", "/payment", "/cbp"]
+const PROTECTED_ROUTES = ["/dashboard", "/profile", "/payment", "/cbp", "/payment-status"]
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter()

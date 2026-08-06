@@ -38,6 +38,9 @@ cors:
   frontend-url: ${FRONTEND_URL}
   allowed-origins: ${CORS_ALLOWED_ORIGINS:${FRONTEND_URL}}
 
+frontend:
+  payment-status-url: ${FRONTEND_PAYMENT_STATUS_URL:${FRONTEND_URL}/payment-status}
+
 phonepe:
   client-id: ${PHONEPE_CLIENT_ID}
   client-secret: ${PHONEPE_CLIENT_SECRET}
