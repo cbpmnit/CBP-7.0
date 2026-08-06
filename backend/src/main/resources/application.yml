@@ -17,10 +17,10 @@ spring:
       connection-timeout: 30000
       idle-timeout: 300000
       max-lifetime: 1800000
-      connection-init-sql: CREATE SCHEMA IF NOT EXISTS cbp; CREATE SCHEMA IF NOT EXISTS profile; CREATE SCHEMA IF NOT EXISTS payment; CREATE SCHEMA IF NOT EXISTS notification; CREATE SCHEMA IF NOT EXISTS attendance;
+      connection-init-sql: CREATE SCHEMA IF NOT EXISTS cbp; CREATE SCHEMA IF NOT EXISTS profile; CREATE SCHEMA IF NOT EXISTS payment; CREATE SCHEMA IF NOT EXISTS notification; CREATE SCHEMA IF NOT EXISTS attendance; CREATE SCHEMA IF NOT EXISTS certificate;
   flyway:
     enabled: true
-    schemas: cbp, profile, notification, payment, attendance, public
+    schemas: cbp, profile, notification, payment, attendance, certificate, public
     create-schemas: true
     baseline-on-migrate: true
   jpa:
@@ -66,6 +66,9 @@ phonepe:
   callback-username: ${PHONEPE_CALLBACK_USERNAME:cbp_user}
   callback-password: ${PHONEPE_CALLBACK_PASSWORD:cbp_pass}
   reconciliation-minutes: ${PHONEPE_RECONCILIATION_MINUTES:15}
+
+certificate:
+  minimum-attendance-percentage: 75.0
 
 logging:
   level:
