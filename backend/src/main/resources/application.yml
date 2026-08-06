@@ -46,6 +46,9 @@ phonepe:
   base-url: ${PHONEPE_BASE_URL}
   redirect-url: ${PHONEPE_REDIRECT_URL:${FRONTEND_URL}/payment-status}
   callback-url: ${PHONEPE_CALLBACK_URL:${API_BASE_URL}/api/v1/payment/phonepe/callback}
+  callback-username: ${PHONEPE_CALLBACK_USERNAME:cbp_user}
+  callback-password: ${PHONEPE_CALLBACK_PASSWORD:cbp_pass}
+  reconciliation-minutes: ${PHONEPE_RECONCILIATION_MINUTES:15}
 
 logging:
   level:

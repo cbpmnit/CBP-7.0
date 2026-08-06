@@ -20,8 +20,8 @@ import com.cbp7.payment.enums.PaymentStatus;
 import com.cbp7.payment.gateway.PaymentGateway;
 import com.cbp7.payment.repository.PaymentRepository;
 import com.cbp7.payment.config.PhonePeConfig;
-import com.cbp7.payment.dto.PhonePeCallbackRequest;
-import com.cbp7.payment.gateway.PhonePeChecksumUtil;
+import com.cbp7.payment.dto.PhonePeStatusDetailsResponse;
+import com.cbp7.payment.dto.PhonePeStatusResponse;
 import com.cbp7.cbp.enums.RegistrationStatus;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -193,60 +193,35 @@ public class PaymentService {
     }
 
     @Transactional
-    public void processPhonePeCallback(String xVerify, PhonePeCallbackRequest request) {
-        if (request == null || request.response() == null) {
-            throw new IllegalArgumentException("Callback request payload is missing");
+    public PhonePeStatusDetailsResponse verifyAndGetStatusDetails(User user, String transactionId) {
+        validateStudentRole(user);
+
+        // Fetch payment to check ownership before verification
+        Payment payment = paymentRepository.findByTransactionId(transactionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Payment record not found for transaction: " + transactionId));
+
+        if (!payment.getUserId().equals(user.getId())) {
+            throw new ForbiddenException("You are not authorized to view this payment status.");
         }
 
-        // 1. Verify Checksum Signature
-        String expectedChecksum = PhonePeChecksumUtil.generateCallbackChecksum(
-                request.response(), phonePeConfig.getClientSecret(), phonePeConfig.getClientVersion()
-        );
-        if (xVerify == null || !xVerify.equalsIgnoreCase(expectedChecksum)) {
-            throw new IllegalArgumentException("Invalid callback signature");
-        }
+        // Verify and update status via PaymentVerificationService
+        Payment verifiedPayment = paymentVerificationService.verifyPaymentStatus(transactionId);
 
+        // Get actual gateway status
+        String phonepeStatus = "PENDING";
         try {
-            // 2. Decode and Parse Payload
-            String decodedPayload = new String(Base64.getDecoder().decode(request.response()), StandardCharsets.UTF_8);
-            JsonNode rootNode = objectMapper.readTree(decodedPayload);
-            
-            String merchantTransactionId = rootNode.path("data").path("merchantTransactionId").asText();
-            String code = rootNode.path("code").asText();
-            boolean success = rootNode.path("success").asBoolean();
-
-            if (merchantTransactionId == null || merchantTransactionId.isBlank()) {
-                throw new IllegalArgumentException("Transaction ID not found in callback payload");
-            }
-
-            // 3. Find and Update local Payment record
-            Payment payment = paymentRepository.findByTransactionId(merchantTransactionId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Payment record not found for transaction: " + merchantTransactionId));
-
-            // 4. Idempotency Check
-            if (payment.getPaymentStatus() == PaymentStatus.SUCCESS) {
-                return;
-            }
-
-            // 5. Update Status
-            if ("PAYMENT_SUCCESS".equals(code) || success) {
-                payment.setPaymentStatus(PaymentStatus.SUCCESS);
-
-                // Update CBP registration state
-                CbpRegistration registration = cbpRegistrationRepository.findById(payment.getRegistrationId())
-                        .orElseThrow(() -> new ResourceNotFoundException("CBP registration not found for ID: " + payment.getRegistrationId()));
-                registration.setRegistrationStatus(RegistrationStatus.REGISTERED);
-                cbpRegistrationRepository.save(registration);
-            } else {
-                payment.setPaymentStatus(PaymentStatus.FAILED);
-            }
-
-            paymentRepository.save(payment);
-
-        } catch (IllegalArgumentException | ResourceNotFoundException e) {
-            throw e;
+            PhonePeStatusResponse gatewayStatus = paymentGateway.checkPaymentStatus(transactionId);
+            phonepeStatus = gatewayStatus.state();
         } catch (Exception e) {
-            throw new IllegalArgumentException("Error parsing callback payload: " + e.getMessage(), e);
+            phonepeStatus = verifiedPayment.getPaymentStatus().name();
         }
+
+        return new PhonePeStatusDetailsResponse(
+                verifiedPayment.getId(),
+                verifiedPayment.getTransactionId(),
+                verifiedPayment.getPaymentStatus(),
+                verifiedPayment.getAmount(),
+                phonepeStatus
+        );
     }
 }

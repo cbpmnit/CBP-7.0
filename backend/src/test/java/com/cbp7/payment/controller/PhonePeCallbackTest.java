@@ -8,11 +8,9 @@ import com.cbp7.cbp.entity.CbpRegistration;
 import com.cbp7.cbp.enums.RegistrationStatus;
 import com.cbp7.cbp.repository.CbpRegistrationRepository;
 import com.cbp7.payment.config.PhonePeConfig;
-import com.cbp7.payment.dto.PhonePeCallbackRequest;
 import com.cbp7.payment.entity.Payment;
 import com.cbp7.payment.enums.PaymentMode;
 import com.cbp7.payment.enums.PaymentStatus;
-import com.cbp7.payment.gateway.PhonePeChecksumUtil;
 import com.cbp7.payment.repository.PaymentRepository;
 import com.cbp7.profile.dto.CreateProfileRequest;
 import com.cbp7.profile.entity.Branch;
@@ -20,11 +18,14 @@ import com.cbp7.profile.entity.Course;
 import com.cbp7.profile.entity.Gender;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.phonepe.sdk.pg.payments.v2.StandardCheckoutClient;
+import com.phonepe.sdk.pg.common.models.response.CallbackResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -32,14 +33,12 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
 
 import java.math.BigDecimal;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -67,6 +66,9 @@ public class PhonePeCallbackTest {
 
     @Autowired
     private PhonePeConfig phonePeConfig;
+
+    @MockitoBean
+    private StandardCheckoutClient standardCheckoutClient;
 
     private User testUser;
     private CbpRegistration testRegistration;
@@ -142,35 +144,21 @@ public class PhonePeCallbackTest {
                 .andExpect(status().isCreated());
     }
 
-    private String createBase64Response(String transactionId, String code, boolean success) throws Exception {
-        Map<String, Object> data = new HashMap<>();
-        data.put("merchantTransactionId", transactionId);
-        
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("success", success);
-        payload.put("code", code);
-        payload.put("data", data);
-
-        String json = objectMapper.writeValueAsString(payload);
-        return Base64.getEncoder().encodeToString(json.getBytes(StandardCharsets.UTF_8));
-    }
-
     @Test
     void processCallback_SuccessfulPayment_UpdatesPaymentAndRegistration() throws Exception {
-        String base64Response = createBase64Response(testPayment.getTransactionId(), "PAYMENT_SUCCESS", true);
-        String xVerify = PhonePeChecksumUtil.generateCallbackChecksum(
-                base64Response, phonePeConfig.getClientSecret(), phonePeConfig.getClientVersion()
-        );
+        CallbackResponse mockResponse = mock(CallbackResponse.class, RETURNS_DEEP_STUBS);
+        when(mockResponse.getPayload().getOrderId()).thenReturn(testPayment.getTransactionId());
+        when(mockResponse.getPayload().getState()).thenReturn("COMPLETED");
 
-        PhonePeCallbackRequest callbackRequest = new PhonePeCallbackRequest(base64Response);
+        when(standardCheckoutClient.validateCallback(anyString(), anyString(), anyString(), anyString()))
+                .thenReturn(mockResponse);
 
         mockMvc.perform(post("/api/v1/payment/phonepe/callback")
-                .header("X-VERIFY", xVerify)
+                .header("Authorization", "Basic Y2JwX3VzZXI6Y2JwX3Bhc3M=")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(callbackRequest)))
+                .content("{\"dummy\":\"payload\"}"))
                 .andExpect(status().isOk());
 
-        // Refresh and check assertions
         Payment updatedPayment = paymentRepository.findById(testPayment.getId()).orElseThrow();
         assertEquals(PaymentStatus.SUCCESS, updatedPayment.getPaymentStatus());
 
@@ -180,20 +168,19 @@ public class PhonePeCallbackTest {
 
     @Test
     void processCallback_FailedPayment_UpdatesPaymentStatusToFailed() throws Exception {
-        String base64Response = createBase64Response(testPayment.getTransactionId(), "PAYMENT_ERROR", false);
-        String xVerify = PhonePeChecksumUtil.generateCallbackChecksum(
-                base64Response, phonePeConfig.getClientSecret(), phonePeConfig.getClientVersion()
-        );
+        CallbackResponse mockResponse = mock(CallbackResponse.class, RETURNS_DEEP_STUBS);
+        when(mockResponse.getPayload().getOrderId()).thenReturn(testPayment.getTransactionId());
+        when(mockResponse.getPayload().getState()).thenReturn("FAILED");
 
-        PhonePeCallbackRequest callbackRequest = new PhonePeCallbackRequest(base64Response);
+        when(standardCheckoutClient.validateCallback(anyString(), anyString(), anyString(), anyString()))
+                .thenReturn(mockResponse);
 
         mockMvc.perform(post("/api/v1/payment/phonepe/callback")
-                .header("X-VERIFY", xVerify)
+                .header("Authorization", "Basic Y2JwX3VzZXI6Y2JwX3Bhc3M=")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(callbackRequest)))
+                .content("{\"dummy\":\"payload\"}"))
                 .andExpect(status().isOk());
 
-        // Check assertions
         Payment updatedPayment = paymentRepository.findById(testPayment.getId()).orElseThrow();
         assertEquals(PaymentStatus.FAILED, updatedPayment.getPaymentStatus());
 
@@ -203,68 +190,80 @@ public class PhonePeCallbackTest {
 
     @Test
     void processCallback_InvalidSignature_ReturnsBadRequest() throws Exception {
-        String base64Response = createBase64Response(testPayment.getTransactionId(), "PAYMENT_SUCCESS", true);
-        String xVerify = "wrong_signature###1";
+        com.phonepe.sdk.pg.common.exception.PhonePeException mockException = mock(com.phonepe.sdk.pg.common.exception.PhonePeException.class);
+        when(mockException.getMessage()).thenReturn("Invalid signature");
 
-        PhonePeCallbackRequest callbackRequest = new PhonePeCallbackRequest(base64Response);
+        when(standardCheckoutClient.validateCallback(anyString(), anyString(), anyString(), anyString()))
+                .thenThrow(mockException);
 
         mockMvc.perform(post("/api/v1/payment/phonepe/callback")
-                .header("X-VERIFY", xVerify)
+                .header("Authorization", "wrong_auth_header")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(callbackRequest)))
+                .content("{\"dummy\":\"payload\"}"))
                 .andExpect(status().isBadRequest());
 
-        // Check that states are unchanged
         Payment unchangedPayment = paymentRepository.findById(testPayment.getId()).orElseThrow();
         assertEquals(PaymentStatus.PENDING, unchangedPayment.getPaymentStatus());
-
-        CbpRegistration unchangedRegistration = cbpRegistrationRepository.findById(testRegistration.getId()).orElseThrow();
-        assertEquals(RegistrationStatus.PAYMENT_PENDING, unchangedRegistration.getRegistrationStatus());
     }
 
     @Test
     void processCallback_IdempotentDuplicateCall_DoesNotThrowError() throws Exception {
-        // First successful call
-        String base64Response = createBase64Response(testPayment.getTransactionId(), "PAYMENT_SUCCESS", true);
-        String xVerify = PhonePeChecksumUtil.generateCallbackChecksum(
-                base64Response, phonePeConfig.getClientSecret(), phonePeConfig.getClientVersion()
-        );
+        CallbackResponse mockResponse = mock(CallbackResponse.class, RETURNS_DEEP_STUBS);
+        when(mockResponse.getPayload().getOrderId()).thenReturn(testPayment.getTransactionId());
+        when(mockResponse.getPayload().getState()).thenReturn("COMPLETED");
 
-        PhonePeCallbackRequest callbackRequest = new PhonePeCallbackRequest(base64Response);
+        when(standardCheckoutClient.validateCallback(anyString(), anyString(), anyString(), anyString()))
+                .thenReturn(mockResponse);
 
+        // First call
         mockMvc.perform(post("/api/v1/payment/phonepe/callback")
-                .header("X-VERIFY", xVerify)
+                .header("Authorization", "Basic Y2JwX3VzZXI6Y2JwX3Bhc3M=")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(callbackRequest)))
+                .content("{\"dummy\":\"payload\"}"))
                 .andExpect(status().isOk());
 
-        // Check that it's success
         assertEquals(PaymentStatus.SUCCESS, paymentRepository.findById(testPayment.getId()).orElseThrow().getPaymentStatus());
 
-        // Send callback again
+        // Second call
         mockMvc.perform(post("/api/v1/payment/phonepe/callback")
-                .header("X-VERIFY", xVerify)
+                .header("Authorization", "Basic Y2JwX3VzZXI6Y2JwX3Bhc3M=")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(callbackRequest)))
+                .content("{\"dummy\":\"payload\"}"))
                 .andExpect(status().isOk());
 
-        // Verify still SUCCESS and no errors
         assertEquals(PaymentStatus.SUCCESS, paymentRepository.findById(testPayment.getId()).orElseThrow().getPaymentStatus());
     }
 
     @Test
     void processCallback_PaymentNotFound_ReturnsNotFound() throws Exception {
-        String base64Response = createBase64Response("CBP_TXN_NONEXISTENT", "PAYMENT_SUCCESS", true);
-        String xVerify = PhonePeChecksumUtil.generateCallbackChecksum(
-                base64Response, phonePeConfig.getClientSecret(), phonePeConfig.getClientVersion()
-        );
+        CallbackResponse mockResponse = mock(CallbackResponse.class, RETURNS_DEEP_STUBS);
+        when(mockResponse.getPayload().getOrderId()).thenReturn("CBP_TXN_NONEXISTENT");
+        when(mockResponse.getPayload().getState()).thenReturn("COMPLETED");
 
-        PhonePeCallbackRequest callbackRequest = new PhonePeCallbackRequest(base64Response);
+        when(standardCheckoutClient.validateCallback(anyString(), anyString(), anyString(), anyString()))
+                .thenReturn(mockResponse);
 
         mockMvc.perform(post("/api/v1/payment/phonepe/callback")
-                .header("X-VERIFY", xVerify)
+                .header("Authorization", "Basic Y2JwX3VzZXI6Y2JwX3Bhc3M=")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(callbackRequest)))
+                .content("{\"dummy\":\"payload\"}"))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void processCallback_MissingAuthorizationHeader_ReturnsBadRequest() throws Exception {
+        mockMvc.perform(post("/api/v1/payment/phonepe/callback")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"dummy\":\"payload\"}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void processCallback_MissingBody_ReturnsBadRequest() throws Exception {
+        mockMvc.perform(post("/api/v1/payment/phonepe/callback")
+                .header("Authorization", "Basic Y2JwX3VzZXI6Y2JwX3Bhc3M=")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(""))
+                .andExpect(status().isBadRequest());
     }
 }

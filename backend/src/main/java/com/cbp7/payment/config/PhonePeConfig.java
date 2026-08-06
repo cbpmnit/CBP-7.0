@@ -34,6 +34,14 @@ public class PhonePeConfig {
     @NotBlank(message = "PhonePe callback URL is not configured")
     private String callbackUrl;
 
+    @NotBlank(message = "PhonePe callback username must be configured")
+    private String callbackUsername;
+
+    @NotBlank(message = "PhonePe callback password must be configured")
+    private String callbackPassword;
+
+    private int reconciliationMinutes = 15;
+
     @Override
     public String toString() {
         return "PhonePeConfig{" +
@@ -44,6 +52,9 @@ public class PhonePeConfig {
                 ", baseUrl='" + baseUrl + '\'' +
                 ", redirectUrl='" + redirectUrl + '\'' +
                 ", callbackUrl='" + callbackUrl + '\'' +
+                ", callbackUsername='" + callbackUsername + '\'' +
+                ", callbackPassword='[PROTECTED]'" +
+                ", reconciliationMinutes=" + reconciliationMinutes +
                 '}';
     }
 }

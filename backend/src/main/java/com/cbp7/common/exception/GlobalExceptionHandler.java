@@ -76,15 +76,20 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(response);
     }
 
+    @ExceptionHandler(PhonePeBadRequestException.class)
+    public ResponseEntity<ErrorResponse> handlePhonePeBadRequestException(PhonePeBadRequestException ex, HttpServletRequest request) {
+        ErrorResponse response = ErrorResponse.of(HttpStatus.BAD_REQUEST.value(), "Bad Request", ex.getMessage(), request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
     @ExceptionHandler({
-            PhonePeBadRequestException.class,
             PhonePeAuthenticationException.class,
             PhonePeResourceNotFoundException.class,
             PhonePeConnectionException.class,
             PhonePeGatewayException.class
     })
     public ResponseEntity<ErrorResponse> handlePhonePeGatewayExceptions(PhonePeException ex, HttpServletRequest request) {
-        ErrorResponse response = ErrorResponse.of(HttpStatus.BAD_GATEWAY.value(), "Bad Gateway", "Unable to initiate payment", request.getRequestURI());
+        ErrorResponse response = ErrorResponse.of(HttpStatus.BAD_GATEWAY.value(), "Bad Gateway", ex.getMessage(), request.getRequestURI());
         return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(response);
     }
 

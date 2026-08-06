@@ -36,3 +36,6 @@ phonepe:
   base-url: https://api-preprod.phonepe.com/apis/pg-sandbox
   redirect-url: http://localhost:3000/payment-status
   callback-url: http://localhost:9900/api/v1/payment/phonepe/callback
+  callback-username: cbp_user
+  callback-password: cbp_pass
+  reconciliation-minutes: 15

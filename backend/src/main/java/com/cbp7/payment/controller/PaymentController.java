@@ -8,6 +8,7 @@ import com.cbp7.payment.dto.PaymentResponse;
 import com.cbp7.payment.dto.PhonePePaymentResponse;
 import com.cbp7.payment.dto.PhonePeCallbackRequest;
 import com.cbp7.payment.dto.PaymentStatusResponse;
+import com.cbp7.payment.dto.PhonePeStatusDetailsResponse;
 import com.cbp7.payment.service.PaymentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -67,12 +68,13 @@ public class PaymentController {
         return ResponseEntity.ok(ApiResponse.success("Payment status retrieved successfully", response));
     }
 
-    @PostMapping("/phonepe/callback")
-    public ResponseEntity<ApiResponse<Void>> handlePhonePeCallback(
-            @RequestHeader("X-VERIFY") String xVerify,
-            @Valid @RequestBody PhonePeCallbackRequest request
+    @GetMapping("/status/{transactionId}")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<ApiResponse<PhonePeStatusDetailsResponse>> getStatusDetails(
+            @AuthenticationPrincipal User user,
+            @PathVariable String transactionId
     ) {
-        paymentService.processPhonePeCallback(xVerify, request);
-        return ResponseEntity.ok(ApiResponse.success("Callback processed successfully"));
+        PhonePeStatusDetailsResponse response = paymentService.verifyAndGetStatusDetails(user, transactionId);
+        return ResponseEntity.ok(ApiResponse.success("Payment status retrieved successfully", response));
     }
 }
