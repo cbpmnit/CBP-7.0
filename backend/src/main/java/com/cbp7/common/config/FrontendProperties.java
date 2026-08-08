@@ -12,9 +12,9 @@ import org.springframework.context.annotation.Configuration;
 public class FrontendProperties {
 
     /**
-     * Frontend Base URL (e.g. http://localhost:3000 or https://cbpmnit.in)
+     * Frontend Base URL (configured via application properties e.g. frontend.url)
      */
-    private String url = "http://localhost:3000";
+    private String url;
 
     /**
      * Optional explicitly configured Frontend Payment Status URL
@@ -23,7 +23,7 @@ public class FrontendProperties {
 
     public String getUrl() {
         if (url == null || url.isBlank()) {
-            return "http://localhost:3000";
+            throw new IllegalStateException("Frontend URL is not configured. Please check 'frontend.url' or FRONTEND_URL property.");
         }
         return url.endsWith("/") ? url.substring(0, url.length() - 1) : url;
     }

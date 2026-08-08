@@ -174,7 +174,7 @@ function LoginFormContent() {
   }
 
   const handleGoogleClick = () => {
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:9900"
+    const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:9900"
     window.location.href = `${backendUrl}/api/v1/auth/google`
   }
 

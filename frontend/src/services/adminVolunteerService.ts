@@ -116,10 +116,11 @@ export const adminVolunteerService = {
     const list = await adminVolunteerService.getAllVolunteers()
     const found = list.find((v) => v.id === id || v.email === id)
     if (found) {
+      const origin = typeof window !== "undefined" ? window.location.origin : ""
       return {
         ...found,
         phoneNumber: "9876543210",
-        activationLink: found.status === "INVITED" ? `http://localhost:3000/volunteer/setup-password?token=mock_${found.id}` : undefined,
+        activationLink: found.status === "INVITED" && origin ? `${origin}/volunteer/setup-password?token=mock_${found.id}` : undefined,
       }
     }
 
