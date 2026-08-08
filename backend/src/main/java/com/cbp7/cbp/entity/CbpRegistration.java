@@ -19,7 +19,7 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 @Entity
-@Table(name = "registrations", schema = "cbp")
+@Table(name = "registrations", schema = "program")
 @Getter
 @Setter
 @NoArgsConstructor

@@ -29,7 +29,16 @@ public class VolunteerAttendanceController {
             @Valid @RequestBody MarkAttendanceRequest request
     ) {
         String volunteerId = volunteerUser != null ? volunteerUser.getStudentId() : "system";
-        AttendanceRecordResponse response = attendanceService.markAttendance(request.qrToken(), volunteerId);
+        AttendanceRecordResponse response;
+
+        if (request.sessionId() != null && request.studentId() != null) {
+            response = attendanceService.recordStudentAttendance(request.sessionId(), request.studentId(), volunteerId);
+        } else if (request.qrToken() != null && request.studentId() != null) {
+            response = attendanceService.markAttendanceViaQr(request.qrToken(), request.studentId(), volunteerId);
+        } else {
+            throw new IllegalArgumentException("Must provide either (sessionId and studentId) or (qrToken and studentId)");
+        }
+
         return ResponseEntity.ok(ApiResponse.success("Attendance marked successfully", response));
     }
 }

@@ -45,7 +45,7 @@ import static org.mockito.Mockito.when;
 @TestPropertySource(properties = {
     "spring.datasource.hikari.initialization-fail-timeout=-1",
     "spring.flyway.enabled=false",
-    "spring.datasource.hikari.connection-init-sql=CREATE SCHEMA IF NOT EXISTS cbp; CREATE SCHEMA IF NOT EXISTS profile; CREATE SCHEMA IF NOT EXISTS payment; CREATE SCHEMA IF NOT EXISTS notification; CREATE SCHEMA IF NOT EXISTS attendance; CREATE SCHEMA IF NOT EXISTS certificate;"
+    "spring.datasource.hikari.connection-init-sql=CREATE SCHEMA IF NOT EXISTS identity; CREATE SCHEMA IF NOT EXISTS program; CREATE SCHEMA IF NOT EXISTS platform;"
 })
 class CertificateServiceTest {
 

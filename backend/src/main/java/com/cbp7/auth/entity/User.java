@@ -16,7 +16,7 @@ import lombok.experimental.SuperBuilder;
 @Entity
 @Table(
     name = "users",
-    schema = "cbp"
+    schema = "identity"
 )
 @Getter
 @Setter

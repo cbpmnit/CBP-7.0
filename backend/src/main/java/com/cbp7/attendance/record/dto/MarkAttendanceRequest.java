@@ -1,9 +1,9 @@
 package com.cbp7.attendance.record.dto;
 
-import jakarta.validation.constraints.NotBlank;
+import java.util.UUID;
 
 public record MarkAttendanceRequest(
-        @NotBlank(message = "QR token is required")
-        String qrToken
-) {
-}
+        String qrToken,
+        UUID sessionId,
+        String studentId
+) {}

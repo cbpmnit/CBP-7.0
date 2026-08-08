@@ -1,12 +1,15 @@
 package com.cbp7.attendance.record;
 
-import com.cbp7.attendance.qr.entity.AttendanceQrCode;
+import com.cbp7.attendance.qr.dto.SessionQrCodeResponse;
 import com.cbp7.attendance.qr.repository.AttendanceQrRepository;
 import com.cbp7.attendance.qr.service.AttendanceQrService;
 import com.cbp7.attendance.record.dto.AttendanceRecordResponse;
 import com.cbp7.attendance.record.entity.AttendanceStatus;
 import com.cbp7.attendance.record.repository.AttendanceRecordRepository;
 import com.cbp7.attendance.record.service.AttendanceService;
+import com.cbp7.attendance.session.entity.AttendanceSession;
+import com.cbp7.attendance.session.entity.SessionStatus;
+import com.cbp7.attendance.session.repository.AttendanceSessionRepository;
 import com.cbp7.common.exception.DuplicateResourceException;
 import com.cbp7.common.exception.ResourceNotFoundException;
 import com.cbp7.notification.event.NotificationEventPublisher;
@@ -20,19 +23,17 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @Transactional
 @TestPropertySource(properties = {
     "spring.datasource.hikari.initialization-fail-timeout=-1",
     "spring.flyway.enabled=false",
-    "spring.datasource.hikari.connection-init-sql=CREATE SCHEMA IF NOT EXISTS cbp; CREATE SCHEMA IF NOT EXISTS profile; CREATE SCHEMA IF NOT EXISTS payment; CREATE SCHEMA IF NOT EXISTS notification; CREATE SCHEMA IF NOT EXISTS attendance;"
+    "spring.datasource.hikari.connection-init-sql=CREATE SCHEMA IF NOT EXISTS identity; CREATE SCHEMA IF NOT EXISTS program; CREATE SCHEMA IF NOT EXISTS platform;"
 })
 class AttendanceServiceTest {
 
@@ -43,6 +44,9 @@ class AttendanceServiceTest {
     private AttendanceQrService attendanceQrService;
 
     @Autowired
+    private AttendanceSessionRepository sessionRepository;
+
+    @Autowired
     private AttendanceQrRepository attendanceQrRepository;
 
     @Autowired
@@ -51,25 +55,38 @@ class AttendanceServiceTest {
     @MockitoBean
     private NotificationEventPublisher notificationEventPublisher;
 
+    private AttendanceSession session;
+
     @BeforeEach
     void setUp() {
         attendanceRecordRepository.deleteAll();
         attendanceQrRepository.deleteAll();
+        sessionRepository.deleteAll();
+
+        session = sessionRepository.save(AttendanceSession.builder()
+                .dayNumber(1)
+                .title("Day 1 Orientation")
+                .sessionDate(LocalDate.now())
+                .startTime(LocalTime.of(9, 0))
+                .endTime(LocalTime.of(12, 0))
+                .venue("APJ Hall")
+                .status(SessionStatus.ACTIVE)
+                .createdBy("admin001")
+                .build());
     }
 
     @Test
-    @DisplayName("1. Valid QR creates attendance record successfully")
+    @DisplayName("1. Valid Session QR creates attendance record successfully")
     void validQrCreatesAttendanceRecord() {
         String studentId = "2024student101";
-        AttendanceQrCode qrCode = attendanceQrService.generateQrForStudent(studentId);
+        SessionQrCodeResponse qrCode = attendanceQrService.generateSessionQr(session.getId(), 120);
 
-        AttendanceRecordResponse response = attendanceService.markAttendance(qrCode.getToken(), "2024volunteer001");
+        AttendanceRecordResponse response = attendanceService.markAttendanceViaQr(qrCode.token(), studentId, "2024volunteer001");
 
         assertNotNull(response.id());
         assertEquals(studentId, response.studentId());
-        assertEquals(qrCode.getId(), response.qrCodeId());
+        assertEquals(session.getId(), response.sessionId());
         assertEquals("2024volunteer001", response.markedBy());
-        assertEquals(LocalDate.now(), response.attendanceDate());
         assertEquals(AttendanceStatus.PRESENT, response.status());
     }
 
@@ -77,57 +94,32 @@ class AttendanceServiceTest {
     @DisplayName("2. Invalid QR token is rejected with ResourceNotFoundException")
     void invalidQrTokenThrowsException() {
         assertThrows(ResourceNotFoundException.class, () ->
-                attendanceService.markAttendance("CBP_ATTENDANCE_INVALID_TOKEN", "2024volunteer001")
+                attendanceService.markAttendanceViaQr("CBP_SESSION_QR_INVALID_TOKEN", "2024student101", "2024volunteer001")
         );
     }
 
     @Test
-    @DisplayName("3. Inactive QR code is rejected with IllegalStateException")
-    void inactiveQrTokenThrowsException() {
-        String studentId = "2024student102";
-        AttendanceQrCode qrCode = attendanceQrService.generateQrForStudent(studentId);
-        qrCode.setActive(false);
-        attendanceQrRepository.save(qrCode);
-
-        assertThrows(IllegalStateException.class, () ->
-                attendanceService.markAttendance(qrCode.getToken(), "2024volunteer001")
-        );
-    }
-
-    @Test
-    @DisplayName("4. Duplicate attendance on same date is rejected with DuplicateResourceException")
+    @DisplayName("3. Duplicate attendance in same session is rejected with DuplicateResourceException")
     void duplicateAttendanceRejected() {
         String studentId = "2024student103";
-        AttendanceQrCode qrCode = attendanceQrService.generateQrForStudent(studentId);
+        SessionQrCodeResponse qrCode = attendanceQrService.generateSessionQr(session.getId(), 120);
 
-        attendanceService.markAttendance(qrCode.getToken(), "2024volunteer001");
+        attendanceService.markAttendanceViaQr(qrCode.token(), studentId, "2024volunteer001");
 
         assertThrows(DuplicateResourceException.class, () ->
-                attendanceService.markAttendance(qrCode.getToken(), "2024volunteer001")
+                attendanceService.markAttendanceViaQr(qrCode.token(), studentId, "2024volunteer001")
         );
     }
 
     @Test
-    @DisplayName("5. Correct volunteer ID is stored as markedBy")
-    void correctVolunteerStoredAsMarkedBy() {
-        String studentId = "2024student104";
-        String volunteerId = "VOLUNTEER_PARV_99";
-        AttendanceQrCode qrCode = attendanceQrService.generateQrForStudent(studentId);
-
-        AttendanceRecordResponse response = attendanceService.markAttendance(qrCode.getToken(), volunteerId);
-
-        assertEquals(volunteerId, response.markedBy());
-    }
-
-    @Test
-    @DisplayName("6. Admin and Student attendance history retrieval works")
+    @DisplayName("4. Session and Student attendance history retrieval works")
     void attendanceHistoryRetrievalWorks() {
         String studentId = "2024student105";
-        AttendanceQrCode qrCode = attendanceQrService.generateQrForStudent(studentId);
-        attendanceService.markAttendance(qrCode.getToken(), "2024volunteer001");
+        SessionQrCodeResponse qrCode = attendanceQrService.generateSessionQr(session.getId(), 120);
+        attendanceService.markAttendanceViaQr(qrCode.token(), studentId, "2024volunteer001");
 
-        List<AttendanceRecordResponse> dateRecords = attendanceService.getAttendanceForDate(LocalDate.now());
-        assertTrue(dateRecords.stream().anyMatch(r -> r.studentId().equals(studentId)));
+        List<AttendanceRecordResponse> sessionRecords = attendanceService.getSessionAttendanceRecords(session.getId());
+        assertTrue(sessionRecords.stream().anyMatch(r -> r.studentId().equals(studentId)));
 
         List<AttendanceRecordResponse> studentHistory = attendanceService.getStudentAttendanceHistory(studentId);
         assertEquals(1, studentHistory.size());

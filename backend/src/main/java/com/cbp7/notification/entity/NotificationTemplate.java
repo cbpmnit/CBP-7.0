@@ -16,7 +16,7 @@ import jakarta.persistence.UniqueConstraint;
 
 @Entity
 @Table(
-    schema = "notification",
+    schema = "platform",
     name = "notification_templates",
     uniqueConstraints = {
         @UniqueConstraint(name = "uq_notification_template_name", columnNames = {"name"}),

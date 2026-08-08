@@ -16,7 +16,7 @@ import lombok.experimental.SuperBuilder;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(schema = "certificate", name = "certificates")
+@Table(schema = "program", name = "certificates")
 @Getter
 @Setter
 @SuperBuilder

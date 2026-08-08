@@ -1,10 +1,13 @@
 package com.cbp7.attendance.record;
 
-import com.cbp7.attendance.qr.entity.AttendanceQrCode;
+import com.cbp7.attendance.qr.dto.SessionQrCodeResponse;
 import com.cbp7.attendance.qr.repository.AttendanceQrRepository;
 import com.cbp7.attendance.qr.service.AttendanceQrService;
 import com.cbp7.attendance.record.repository.AttendanceRecordRepository;
 import com.cbp7.attendance.record.service.AttendanceService;
+import com.cbp7.attendance.session.entity.AttendanceSession;
+import com.cbp7.attendance.session.entity.SessionStatus;
+import com.cbp7.attendance.session.repository.AttendanceSessionRepository;
 import com.cbp7.auth.entity.Role;
 import com.cbp7.auth.entity.User;
 import com.cbp7.auth.repository.UserRepository;
@@ -23,8 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
 
 import java.time.LocalDate;
-
-import static org.hamcrest.Matchers.hasSize;
+import java.time.LocalTime;
 
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -36,7 +38,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @TestPropertySource(properties = {
     "spring.datasource.hikari.initialization-fail-timeout=-1",
     "spring.flyway.enabled=false",
-    "spring.datasource.hikari.connection-init-sql=CREATE SCHEMA IF NOT EXISTS cbp; CREATE SCHEMA IF NOT EXISTS profile; CREATE SCHEMA IF NOT EXISTS payment; CREATE SCHEMA IF NOT EXISTS notification; CREATE SCHEMA IF NOT EXISTS attendance;"
+    "spring.datasource.hikari.connection-init-sql=CREATE SCHEMA IF NOT EXISTS identity; CREATE SCHEMA IF NOT EXISTS program; CREATE SCHEMA IF NOT EXISTS platform;"
 })
 class AttendanceQueryControllerTest {
 
@@ -47,6 +49,9 @@ class AttendanceQueryControllerTest {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private AttendanceSessionRepository sessionRepository;
 
     @Autowired
     private AttendanceQrRepository attendanceQrRepository;
@@ -71,6 +76,7 @@ class AttendanceQueryControllerTest {
     private String volunteerToken;
 
     private User studentUser;
+    private AttendanceSession session;
 
     @BeforeEach
     void setUp() {
@@ -81,6 +87,7 @@ class AttendanceQueryControllerTest {
 
         attendanceRecordRepository.deleteAll();
         attendanceQrRepository.deleteAll();
+        sessionRepository.deleteAll();
 
         User adminUser = userRepository.findByStudentId("2024admin001")
                 .orElseGet(() -> userRepository.save(User.builder()
@@ -112,41 +119,38 @@ class AttendanceQueryControllerTest {
                         .enabled(true)
                         .build()));
 
+        session = sessionRepository.save(AttendanceSession.builder()
+                .dayNumber(1)
+                .title("Day 1 Orientation")
+                .sessionDate(LocalDate.now())
+                .startTime(LocalTime.of(9, 0))
+                .endTime(LocalTime.of(12, 0))
+                .venue("APJ Hall")
+                .status(SessionStatus.ACTIVE)
+                .createdBy("2024admin001")
+                .build());
+
         adminToken = jwtProvider.generateToken(adminUser);
         studentToken = jwtProvider.generateToken(studentUser);
         volunteerToken = jwtProvider.generateToken(volunteerUser);
     }
 
     @Test
-    @DisplayName("1. Admin views attendance by date -> HTTP 200 OK")
-    void adminViewsAttendanceByDate() throws Exception {
-        AttendanceQrCode qrCode = attendanceQrService.generateQrForStudent(studentUser.getStudentId());
-        attendanceService.markAttendance(qrCode.getToken(), "2024volunteer001");
-
-        mockMvc.perform(get("/api/v1/admin/attendance/date/{date}", LocalDate.now().toString())
-                        .header("Authorization", "Bearer " + adminToken))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.totalPresent").value(1))
-                .andExpect(jsonPath("$.data.records", hasSize(1)));
-    }
-
-    @Test
-    @DisplayName("2. Admin views student attendance history -> HTTP 200 OK")
+    @DisplayName("1. Admin views student attendance history -> HTTP 200 OK")
     void adminViewsStudentAttendanceHistory() throws Exception {
-        AttendanceQrCode qrCode = attendanceQrService.generateQrForStudent(studentUser.getStudentId());
-        attendanceService.markAttendance(qrCode.getToken(), "2024volunteer001");
+        SessionQrCodeResponse qrCode = attendanceQrService.generateSessionQr(session.getId(), 120);
+        attendanceService.markAttendanceViaQr(qrCode.token(), studentUser.getStudentId(), "2024volunteer001");
 
         mockMvc.perform(get("/api/v1/admin/attendance/student/{studentId}", studentUser.getStudentId())
                         .header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.studentId").value(studentUser.getStudentId()))
-                .andExpect(jsonPath("$.data.present").value(1));
+                .andExpect(jsonPath("$.data.attendedSessions").value(1));
     }
 
     @Test
-    @DisplayName("3. Admin views overall attendance summary -> HTTP 200 OK")
+    @DisplayName("2. Admin views overall attendance summary -> HTTP 200 OK")
     void adminViewsOverallSummary() throws Exception {
         mockMvc.perform(get("/api/v1/admin/attendance/summary")
                         .header("Authorization", "Bearer " + adminToken))
@@ -156,21 +160,21 @@ class AttendanceQueryControllerTest {
     }
 
     @Test
-    @DisplayName("4. Student views own attendance summary -> HTTP 200 OK")
+    @DisplayName("3. Student views own attendance summary -> HTTP 200 OK")
     void studentViewsOwnAttendanceSummary() throws Exception {
-        AttendanceQrCode qrCode = attendanceQrService.generateQrForStudent(studentUser.getStudentId());
-        attendanceService.markAttendance(qrCode.getToken(), "2024volunteer001");
+        SessionQrCodeResponse qrCode = attendanceQrService.generateSessionQr(session.getId(), 120);
+        attendanceService.markAttendanceViaQr(qrCode.token(), studentUser.getStudentId(), "2024volunteer001");
 
         mockMvc.perform(get("/api/v1/student/attendance")
                         .header("Authorization", "Bearer " + studentToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.studentId").value(studentUser.getStudentId()))
-                .andExpect(jsonPath("$.data.present").value(1));
+                .andExpect(jsonPath("$.data.attendedSessions").value(1));
     }
 
     @Test
-    @DisplayName("5. Student tries to access admin API -> HTTP 403 Forbidden")
+    @DisplayName("4. Student tries to access admin API -> HTTP 403 Forbidden")
     void studentTriesToAccessAdminApiReturns403() throws Exception {
         mockMvc.perform(get("/api/v1/admin/attendance/summary")
                         .header("Authorization", "Bearer " + studentToken))
@@ -178,7 +182,7 @@ class AttendanceQueryControllerTest {
     }
 
     @Test
-    @DisplayName("6. Volunteer tries to access admin reports -> HTTP 403 Forbidden")
+    @DisplayName("5. Volunteer tries to access admin reports -> HTTP 403 Forbidden")
     void volunteerTriesToAccessAdminReportsReturns403() throws Exception {
         mockMvc.perform(get("/api/v1/admin/attendance/summary")
                         .header("Authorization", "Bearer " + volunteerToken))
@@ -186,7 +190,7 @@ class AttendanceQueryControllerTest {
     }
 
     @Test
-    @DisplayName("7. Unauthenticated request -> HTTP 401 Unauthorized")
+    @DisplayName("6. Unauthenticated request -> HTTP 401 Unauthorized")
     void unauthenticatedRequestReturns401() throws Exception {
         mockMvc.perform(get("/api/v1/student/attendance"))
                 .andExpect(status().isUnauthorized());

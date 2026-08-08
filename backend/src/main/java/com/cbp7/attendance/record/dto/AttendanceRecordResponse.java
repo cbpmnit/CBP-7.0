@@ -9,22 +9,29 @@ import java.util.UUID;
 
 public record AttendanceRecordResponse(
         UUID id,
+        UUID sessionId,
         String studentId,
-        UUID qrCodeId,
         String markedBy,
-        LocalDate attendanceDate,
-        LocalDateTime attendanceTime,
+        LocalDateTime markedAt,
         AttendanceStatus status
 ) {
     public static AttendanceRecordResponse fromEntity(AttendanceRecord record) {
+        if (record == null) return null;
         return new AttendanceRecordResponse(
                 record.getId(),
+                record.getSessionId(),
                 record.getStudentId(),
-                record.getQrCodeId(),
                 record.getMarkedBy(),
-                record.getAttendanceDate(),
-                record.getAttendanceTime(),
+                record.getMarkedAt(),
                 record.getStatus()
         );
+    }
+
+    public LocalDate attendanceDate() {
+        return markedAt != null ? markedAt.toLocalDate() : LocalDate.now();
+    }
+
+    public LocalDateTime attendanceTime() {
+        return markedAt;
     }
 }

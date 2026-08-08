@@ -4,9 +4,24 @@ import java.util.List;
 
 public record StudentAttendanceSummaryResponse(
         String studentId,
-        long totalClasses,
-        long present,
-        double percentage,
-        List<AttendanceRecordResponse> records
+        long totalSessions,
+        long attendedSessions,
+        double attendancePercentage,
+        List<SessionAttendanceStatusDto> sessions
 ) {
+    public double percentage() {
+        return attendancePercentage;
+    }
+
+    public long totalClasses() {
+        return totalSessions;
+    }
+
+    public long present() {
+        return attendedSessions;
+    }
+
+    public List<SessionAttendanceStatusDto> records() {
+        return sessions;
+    }
 }

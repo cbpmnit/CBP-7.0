@@ -20,7 +20,7 @@ import lombok.experimental.SuperBuilder;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "user_profiles", schema = "profile")
+@Table(name = "user_profiles", schema = "identity")
 @Getter
 @Setter
 @NoArgsConstructor

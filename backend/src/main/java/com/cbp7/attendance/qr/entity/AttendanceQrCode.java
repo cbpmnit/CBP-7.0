@@ -11,8 +11,11 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
+import java.time.LocalDateTime;
+import java.util.UUID;
+
 @Entity
-@Table(schema = "attendance", name = "qr_codes")
+@Table(schema = "program", name = "attendance_qr_codes")
 @Getter
 @Setter
 @SuperBuilder
@@ -20,11 +23,18 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 public class AttendanceQrCode extends BaseEntity {
 
-    @Column(name = "student_id", nullable = false)
-    private String studentId;
+    @Column(name = "session_id", nullable = false)
+    private UUID sessionId;
 
     @Column(name = "token", nullable = false, unique = true)
     private String token;
+
+    @Builder.Default
+    @Column(name = "generated_at", nullable = false)
+    private LocalDateTime generatedAt = LocalDateTime.now();
+
+    @Column(name = "expires_at")
+    private LocalDateTime expiresAt;
 
     @Builder.Default
     @Column(name = "active", nullable = false)

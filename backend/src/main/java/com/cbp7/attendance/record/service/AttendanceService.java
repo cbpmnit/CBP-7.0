@@ -1,12 +1,14 @@
 package com.cbp7.attendance.record.service;
 
 import com.cbp7.attendance.qr.entity.AttendanceQrCode;
-import com.cbp7.attendance.qr.repository.AttendanceQrRepository;
+import com.cbp7.attendance.qr.service.AttendanceQrService;
 import com.cbp7.attendance.record.dto.AttendanceRecordResponse;
 import com.cbp7.attendance.record.entity.AttendanceRecord;
 import com.cbp7.attendance.record.entity.AttendanceStatus;
 import com.cbp7.attendance.record.event.AttendanceMarkedEvent;
 import com.cbp7.attendance.record.repository.AttendanceRecordRepository;
+import com.cbp7.attendance.session.entity.AttendanceSession;
+import com.cbp7.attendance.session.repository.AttendanceSessionRepository;
 import com.cbp7.auth.entity.User;
 import com.cbp7.auth.repository.UserRepository;
 import com.cbp7.common.exception.DuplicateResourceException;
@@ -21,6 +23,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -28,44 +31,48 @@ import java.util.Optional;
 public class AttendanceService {
 
     private final AttendanceRecordRepository attendanceRecordRepository;
-    private final AttendanceQrRepository attendanceQrRepository;
+    private final AttendanceSessionRepository sessionRepository;
+    private final AttendanceQrService attendanceQrService;
     private final NotificationEventPublisher notificationEventPublisher;
     private final UserRepository userRepository;
 
     @Transactional
-    public AttendanceRecordResponse markAttendance(String qrToken, String volunteerId) {
+    public AttendanceRecordResponse markAttendanceViaQr(String qrToken, String studentId, String volunteerId) {
         if (qrToken == null || qrToken.isBlank()) {
             throw new IllegalArgumentException("QR token must not be empty");
+        }
+        if (studentId == null || studentId.isBlank()) {
+            throw new IllegalArgumentException("Student ID must not be empty");
         }
         if (volunteerId == null || volunteerId.isBlank()) {
             throw new IllegalArgumentException("Volunteer ID must not be empty");
         }
 
-        AttendanceQrCode qrCode = attendanceQrRepository.findByToken(qrToken)
-                .orElseThrow(() -> new ResourceNotFoundException("Invalid QR token: " + qrToken));
+        AttendanceQrCode qrCode = attendanceQrService.validateQrToken(qrToken);
+        return recordStudentAttendance(qrCode.getSessionId(), studentId, volunteerId);
+    }
 
-        if (!qrCode.isActive()) {
-            throw new IllegalStateException("Attendance QR code is inactive");
-        }
+    @Transactional
+    public AttendanceRecordResponse recordStudentAttendance(UUID sessionId, String studentId, String markedBy) {
+        String cleanStudentId = studentId.trim().toLowerCase();
 
-        String studentId = qrCode.getStudentId();
-        LocalDate today = LocalDate.now();
+        AttendanceSession session = sessionRepository.findById(sessionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Session not found with ID: " + sessionId));
 
-        if (attendanceRecordRepository.existsByStudentIdAndAttendanceDate(studentId, today)) {
-            throw new DuplicateResourceException("Attendance already marked for student " + studentId + " on " + today);
+        if (attendanceRecordRepository.existsBySessionIdAndStudentId(sessionId, cleanStudentId)) {
+            throw new DuplicateResourceException("Attendance already marked for student " + cleanStudentId + " in session Day " + session.getDayNumber());
         }
 
         AttendanceRecord record = AttendanceRecord.builder()
-                .studentId(studentId)
-                .qrCodeId(qrCode.getId())
-                .markedBy(volunteerId)
-                .attendanceDate(today)
-                .attendanceTime(LocalDateTime.now())
+                .sessionId(sessionId)
+                .studentId(cleanStudentId)
+                .markedBy(markedBy)
+                .markedAt(LocalDateTime.now())
                 .status(AttendanceStatus.PRESENT)
                 .build();
 
         AttendanceRecord saved = attendanceRecordRepository.save(record);
-        log.info("Attendance marked for student {} on {} by volunteer {}", studentId, today, volunteerId);
+        log.info("Attendance marked for student {} in session Day {} by {}", cleanStudentId, session.getDayNumber(), markedBy);
 
         publishAttendanceMarkedEvent(saved);
 
@@ -88,8 +95,8 @@ public class AttendanceService {
                     name,
                     email,
                     record.getMarkedBy(),
-                    record.getAttendanceDate(),
-                    record.getAttendanceTime(),
+                    record.getMarkedAt().toLocalDate(),
+                    record.getMarkedAt(),
                     record.getStatus()
             );
 
@@ -100,12 +107,8 @@ public class AttendanceService {
     }
 
     @Transactional(readOnly = true)
-    public List<AttendanceRecordResponse> getAttendanceForDate(LocalDate date) {
-        if (date == null) {
-            throw new IllegalArgumentException("Date must not be null");
-        }
-        return attendanceRecordRepository.findByAttendanceDate(date)
-                .stream()
+    public List<AttendanceRecordResponse> getSessionAttendanceRecords(UUID sessionId) {
+        return attendanceRecordRepository.findBySessionId(sessionId).stream()
                 .map(AttendanceRecordResponse::fromEntity)
                 .toList();
     }
@@ -115,7 +118,7 @@ public class AttendanceService {
         if (studentId == null || studentId.isBlank()) {
             throw new IllegalArgumentException("Student ID must not be empty");
         }
-        return attendanceRecordRepository.findByStudentId(studentId)
+        return attendanceRecordRepository.findByStudentId(studentId.trim().toLowerCase())
                 .stream()
                 .map(AttendanceRecordResponse::fromEntity)
                 .toList();
