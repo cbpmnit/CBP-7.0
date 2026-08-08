@@ -145,10 +145,10 @@ function HeaderComponent() {
                     <FiGrid className="h-3.5 w-3.5" />
                     <span>
                       {normalizedRole === "ROLE_ADMIN" || normalizedRole === "ADMIN"
-                        ? "Admin Portal"
+                        ? "ADMIN"
                         : normalizedRole === "ROLE_VOLUNTEER" || normalizedRole === "VOLUNTEER"
-                        ? "Gate Scanner"
-                        : "Dashboard"}
+                        ? "VOLUNTEER"
+                        : "DASHBOARD"}
                     </span>
                   </Link>
 
@@ -305,13 +305,22 @@ function HeaderComponent() {
                     </Link>
                   </>
                 ) : normalizedRole === "ROLE_VOLUNTEER" || normalizedRole === "VOLUNTEER" ? (
-                  <Link
-                    href="/volunteer/scanner"
-                    onClick={handleCloseMobileMenu}
-                    className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-bold uppercase tracking-wider"
-                  >
-                    <FiCalendar /> Gate QR Scanner
-                  </Link>
+                  <>
+                    <Link
+                      href="/volunteer/profile"
+                      onClick={handleCloseMobileMenu}
+                      className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-bold uppercase tracking-wider"
+                    >
+                      <FiUser /> My Profile
+                    </Link>
+                    <Link
+                      href="/volunteer/scanner"
+                      onClick={handleCloseMobileMenu}
+                      className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-slate-100 text-slate-800 text-xs font-semibold"
+                    >
+                      <FiCalendar /> Attendance Scanner
+                    </Link>
+                  </>
                 ) : (
                   <>
                     <Link

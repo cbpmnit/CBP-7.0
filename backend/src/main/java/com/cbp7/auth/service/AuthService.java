@@ -6,6 +6,7 @@ import com.cbp7.auth.dto.RegisterRequest;
 import com.cbp7.auth.dto.UserResponse;
 import com.cbp7.auth.entity.Role;
 import com.cbp7.auth.entity.User;
+import com.cbp7.auth.identity.UserIdentityResolver;
 import com.cbp7.auth.repository.UserRepository;
 import com.cbp7.auth.security.JwtProvider;
 import com.cbp7.common.exception.DuplicateResourceException;
@@ -20,12 +21,15 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class AuthService {
 
     private final UserRepository userRepository;
+    private final UserIdentityResolver userIdentityResolver;
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
     private final NotificationEventPublisher notificationEventPublisher;
@@ -98,18 +102,18 @@ public class AuthService {
     }
 
     public LoginResponse login(LoginRequest request) {
-        if (request == null || request.studentId() == null || request.password() == null) {
-            throw new IllegalArgumentException("Student ID and password must be provided");
+        if (request == null || request.getEffectiveIdentifier().isBlank() || request.password() == null) {
+            throw new IllegalArgumentException("Student ID / email and password must be provided");
         }
 
-        String studentId = request.studentId().trim().toLowerCase();
+        String rawIdentifier = request.getEffectiveIdentifier();
         String rawPassword = request.password().trim();
 
-        User user = userRepository.findByStudentId(studentId)
-                .orElseThrow(() -> new InvalidCredentialsException("Invalid student ID or password"));
+        User user = findUserByIdentifier(rawIdentifier)
+                .orElseThrow(() -> new InvalidCredentialsException("Invalid Student ID/email or password"));
 
         if (!passwordEncoder.matches(rawPassword, user.getPassword())) {
-            throw new InvalidCredentialsException("Invalid student ID or password");
+            throw new InvalidCredentialsException("Invalid Student ID/email or password");
         }
 
         if (!Boolean.TRUE.equals(user.getEnabled())) {
@@ -124,6 +128,10 @@ public class AuthService {
                 user.getName(),
                 user.getRole().name()
         );
+    }
+
+    public Optional<User> findUserByIdentifier(String identifier) {
+        return userIdentityResolver.findUserByIdentifier(identifier);
     }
 
     public String logout() {

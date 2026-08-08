@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useAppDispatch } from "@/store/hooks"
@@ -16,13 +16,29 @@ export default function LoginPage() {
   const router = useRouter()
   const dispatch = useAppDispatch()
   const [formData, setFormData] = useState({
-    studentId: "",
+    identifier: "",
     password: "",
     rememberMe: false,
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isSubmitted, setIsSubmitted] = useState(false)
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedIdentifier =
+        localStorage.getItem("cbp-saved-identifier") ||
+        localStorage.getItem("cbp-studentId") ||
+        ""
+      if (savedIdentifier) {
+        setFormData((prev) => ({
+          ...prev,
+          identifier: savedIdentifier,
+          rememberMe: true,
+        }))
+      }
+    }
+  }, [])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target
@@ -40,9 +56,9 @@ export default function LoginPage() {
     setLoading(true)
     setError(null)
 
-    const cleanStudentId = formData.studentId.trim()
-    if (!cleanStudentId) {
-      setError("Student ID is required")
+    const cleanIdentifier = formData.identifier.trim()
+    if (!cleanIdentifier) {
+      setError("Student ID or Email Address is required")
       setLoading(false)
       return
     }
@@ -53,13 +69,23 @@ export default function LoginPage() {
     }
 
     try {
-      // 1. Call Backend Login API with aligned LoginRequest contract
+      // 1. Call Backend Login API with dual identifier support
       const loginPayload: LoginRequest = {
-        studentId: cleanStudentId,
+        identifier: cleanIdentifier,
+        studentId: cleanIdentifier,
         password: formData.password,
       }
 
       const response = await api.post<LoginResponse>("/api/v1/auth/login", loginPayload)
+
+      // Handle Remember Me preference
+      if (typeof window !== "undefined") {
+        if (formData.rememberMe) {
+          localStorage.setItem("cbp-saved-identifier", cleanIdentifier)
+        } else {
+          localStorage.removeItem("cbp-saved-identifier")
+        }
+      }
 
       // 2. Dispatch success state to Redux (saves to localStorage automatically)
       dispatch(
@@ -103,16 +129,16 @@ export default function LoginPage() {
       if (err instanceof ApiError) {
         if (err.status === 400 && err.errorData?.errors) {
           const firstErrKey = Object.keys(err.errorData.errors)[0]
-          setError(err.errorData.errors[firstErrKey] || "Student ID and password are required")
+          setError(err.errorData.errors[firstErrKey] || "Invalid credentials. Please check your Student ID/email and password.")
         } else if (err.status === 401) {
-          setError("Invalid Student ID or password. Please check your credentials.")
+          setError("Invalid credentials. Please check your Student ID/email and password.")
         } else if (err.status === 403) {
           setError("Access denied. Your account is disabled or unauthorized.")
         } else {
-          setError(err.message || "Invalid Student ID or password")
+          setError(err.message || "Invalid credentials. Please check your Student ID/email and password.")
         }
       } else {
-        setError("An unexpected error occurred. Please try again.")
+        setError("Invalid credentials. Please check your Student ID/email and password.")
       }
     } finally {
       setLoading(false)
@@ -136,7 +162,7 @@ export default function LoginPage() {
             </Reveal>
             <Reveal delay={120}>
               <p className="mt-3 text-sm leading-relaxed text-slate-600">
-                Welcome back! You have successfully logged into the CBP 7.0 Student Portal.
+                Welcome back! You have successfully logged into the CBP 7.0 Portal.
               </p>
             </Reveal>
             <Reveal delay={160}>
@@ -147,7 +173,7 @@ export default function LoginPage() {
                   </div>
                   <div>
                     <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Logged in as</p>
-                    <p className="text-sm font-bold text-slate-900">{formData.studentId || "Student"}</p>
+                    <p className="text-sm font-bold text-slate-900">{formData.identifier || "User"}</p>
                   </div>
                 </div>
               </div>
@@ -181,7 +207,7 @@ export default function LoginPage() {
             </Reveal>
             <Reveal delay={80}>
               <p className="mt-3.5 max-w-xl mx-auto text-sm sm:text-base text-slate-600 leading-relaxed">
-                Enter your Student ID and Password to access your student dashboard, attendance records, and certificates.
+                Enter your Student ID or Email Address and Password to access your portal, attendance records, and certificates.
               </p>
             </Reveal>
           </div>
@@ -202,7 +228,7 @@ export default function LoginPage() {
                         Account Portal
                       </h2>
                       <p className="text-xs text-slate-500 mt-0.5">
-                        MNIT Jaipur Student Login
+                        MNIT Jaipur Single Sign-On
                       </p>
                     </div>
                   </div>
@@ -214,20 +240,20 @@ export default function LoginPage() {
                   )}
 
                   <div className="space-y-5">
-                    {/* Student ID */}
+                    {/* Student ID / Email */}
                     <div>
                       <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-700">
                         <FiUser className="text-cyan-600" />
-                        Student ID <span className="text-cyan-600">*</span>
+                        STUDENT ID / EMAIL <span className="text-cyan-600">*</span>
                       </label>
                       <input
                         type="text"
-                        name="studentId"
+                        name="identifier"
                         required
-                        value={formData.studentId}
+                        value={formData.identifier}
                         onChange={handleChange}
-                        className="mt-2 block w-full rounded-xl bg-slate-50 border border-slate-200 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 transition duration-200 focus:bg-white focus:border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 font-mono"
-                        placeholder="e.g. 2024UCH1190"
+                        className="mt-2 block w-full rounded-xl bg-slate-50 border border-slate-200 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 transition duration-200 focus:bg-white focus:border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
+                        placeholder="Enter Student ID or Email Address"
                       />
                     </div>
 
@@ -236,7 +262,7 @@ export default function LoginPage() {
                       <div className="flex items-center justify-between">
                         <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-700">
                           <FiLock className="text-cyan-600" />
-                          Password <span className="text-cyan-600">*</span>
+                          PASSWORD <span className="text-cyan-600">*</span>
                         </label>
                       </div>
                       <input
@@ -260,7 +286,7 @@ export default function LoginPage() {
                           onChange={handleChange}
                           className="h-4 w-4 rounded border-slate-300 text-cyan-600 focus:ring-cyan-500"
                         />
-                        <span>Remember my Student ID</span>
+                        <span>Remember my Student ID / Email</span>
                       </label>
                     </div>
 

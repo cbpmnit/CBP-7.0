@@ -63,7 +63,8 @@ export default function ProfileDropdown({
     ]
   } else if (normalizedRole === "ROLE_VOLUNTEER" || normalizedRole === "VOLUNTEER") {
     menuItems = [
-      { label: "Gate QR Scanner", href: "/volunteer/scanner", icon: <FiSettings /> },
+      { label: "My Profile", href: "/volunteer/profile", icon: <FiUser /> },
+      { label: "Attendance Scanner", href: "/volunteer/scanner", icon: <FiSettings /> },
     ]
   }
 

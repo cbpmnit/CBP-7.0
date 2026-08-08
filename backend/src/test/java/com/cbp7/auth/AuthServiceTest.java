@@ -6,6 +6,7 @@ import com.cbp7.auth.dto.RegisterRequest;
 import com.cbp7.auth.dto.UserResponse;
 import com.cbp7.auth.entity.Role;
 import com.cbp7.auth.entity.User;
+import com.cbp7.auth.identity.UserIdentityResolver;
 import com.cbp7.auth.repository.UserRepository;
 import com.cbp7.auth.security.JwtProvider;
 import com.cbp7.auth.service.AuthService;
@@ -14,6 +15,7 @@ import com.cbp7.common.exception.InvalidCredentialsException;
 import com.cbp7.common.exception.UnauthorizedException;
 import com.cbp7.notification.event.NotificationEventPublisher;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -27,6 +29,7 @@ import static org.mockito.Mockito.*;
 class AuthServiceTest {
 
     private UserRepository userRepository;
+    private UserIdentityResolver userIdentityResolver;
     private PasswordEncoder passwordEncoder;
     private JwtProvider jwtProvider;
     private NotificationEventPublisher notificationEventPublisher;
@@ -35,10 +38,11 @@ class AuthServiceTest {
     @BeforeEach
     void setUp() {
         userRepository = mock(UserRepository.class);
+        userIdentityResolver = new UserIdentityResolver(userRepository);
         passwordEncoder = new BCryptPasswordEncoder();
         jwtProvider = mock(JwtProvider.class);
         notificationEventPublisher = mock(NotificationEventPublisher.class);
-        authService = new AuthService(userRepository, passwordEncoder, jwtProvider, notificationEventPublisher);
+        authService = new AuthService(userRepository, userIdentityResolver, passwordEncoder, jwtProvider, notificationEventPublisher);
     }
 
     @Test
@@ -104,6 +108,7 @@ class AuthServiceTest {
     }
 
     @Test
+    @DisplayName("Login with Student ID (Case-Insensitive) succeeds")
     void login_CaseInsensitiveStudentId_Success() {
         String rawPassword = "myPassword123";
         String encodedPassword = passwordEncoder.encode(rawPassword);
@@ -117,7 +122,7 @@ class AuthServiceTest {
                 .enabled(true)
                 .build();
 
-        when(userRepository.findByStudentId("2024ucs1234")).thenReturn(Optional.of(existingUser));
+        when(userRepository.findByStudentIdIgnoreCase("2024ucs1234")).thenReturn(Optional.of(existingUser));
         when(jwtProvider.generateToken(existingUser)).thenReturn("mock.jwt.token");
 
         LoginRequest loginRequest = new LoginRequest("2024UCS1234", rawPassword);
@@ -129,6 +134,44 @@ class AuthServiceTest {
         assertEquals("2024ucs1234", response.studentId());
         assertEquals("John Doe", response.name());
         assertEquals("ROLE_STUDENT", response.role());
+    }
+
+    @Test
+    @DisplayName("Login with valid Email (Case-Insensitive) succeeds")
+    void login_ValidEmail_Success() {
+        String rawPassword = "myPassword123";
+        String encodedPassword = passwordEncoder.encode(rawPassword);
+
+        User existingUser = User.builder()
+                .studentId("2024ucs1234")
+                .email("student@cbp.com")
+                .name("John Doe")
+                .password(encodedPassword)
+                .role(Role.ROLE_STUDENT)
+                .enabled(true)
+                .build();
+
+        when(userRepository.findByEmailIgnoreCase("student@cbp.com")).thenReturn(Optional.of(existingUser));
+        when(jwtProvider.generateToken(existingUser)).thenReturn("mock.jwt.token.email");
+
+        LoginRequest loginRequest = new LoginRequest("STUDENT@CBP.COM", rawPassword);
+
+        LoginResponse response = authService.login(loginRequest);
+
+        assertNotNull(response);
+        assertEquals("mock.jwt.token.email", response.token());
+        assertEquals("2024ucs1234", response.studentId());
+        assertEquals("ROLE_STUDENT", response.role());
+    }
+
+    @Test
+    @DisplayName("Login with non-existent identifier throws generic InvalidCredentialsException")
+    void login_NonExistentIdentifier_ThrowsInvalidCredentialsException() {
+        when(userRepository.findByEmailIgnoreCase("unknown@cbp.com")).thenReturn(Optional.empty());
+
+        LoginRequest loginRequest = new LoginRequest("unknown@cbp.com", "anyPassword");
+
+        assertThrows(InvalidCredentialsException.class, () -> authService.login(loginRequest));
     }
 
     @Test
@@ -144,7 +187,7 @@ class AuthServiceTest {
                 .enabled(true)
                 .build();
 
-        when(userRepository.findByStudentId("2024ucs1234")).thenReturn(Optional.of(existingUser));
+        when(userRepository.findByStudentIdIgnoreCase("2024ucs1234")).thenReturn(Optional.of(existingUser));
 
         LoginRequest loginRequest = new LoginRequest("2024UCS1234", "wrongPassword");
 

@@ -39,7 +39,8 @@ export const ADMIN_NAV_ITEMS: NavItem[] = [
 ]
 
 export const VOLUNTEER_NAV_ITEMS: NavItem[] = [
-  { id: "volunteer-scanner", label: "QR Scanner", href: "/volunteer/scanner", icon: <FiCamera /> },
+  { id: "volunteer-scanner", label: "Attendance Scanner", href: "/volunteer/scanner", icon: <FiCamera /> },
+  { id: "volunteer-profile", label: "Volunteer Profile", href: "/volunteer/profile", icon: <FiUser /> },
 ]
 
 interface SidebarNavigationProps {
