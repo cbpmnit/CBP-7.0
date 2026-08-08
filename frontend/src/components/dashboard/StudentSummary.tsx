@@ -19,25 +19,25 @@ export default function StudentSummary({ name, studentId, profile }: StudentSumm
   const yearText = profile?.year ? `Year ${profile.year}` : "Year 1"
 
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 shadow-sm mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 cbp-card-interactive">
-      <div className="flex items-center gap-4">
+    <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 cbp-card-interactive">
+      <div className="flex items-center gap-4 sm:gap-5 min-w-0">
         <ProfileAvatar name={fullName} size="lg" />
-        <div>
-          <h1 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight truncate">
             {fullName}
           </h1>
-          <p className="text-xs font-semibold text-slate-700 mt-0.5">
+          <p className="text-xs sm:text-sm font-semibold text-slate-700 mt-0.5">
             {courseName} in {branchName}
           </p>
-          <p className="text-[11px] font-medium text-slate-500 font-mono mt-0.5">
+          <p className="text-xs font-medium text-slate-500 font-mono mt-1">
             {yearText} &middot; Student ID: <span className="font-bold text-cyan-800">{safeText(studentId)}</span>
           </p>
         </div>
       </div>
 
-      <div className="shrink-0 self-end sm:self-center">
+      <div className="shrink-0 self-start sm:self-center">
         <span
-          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold ${
+          className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold ${
             isProfileComplete
               ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
               : "bg-amber-50 text-amber-800 border border-amber-200"
