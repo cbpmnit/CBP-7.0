@@ -26,27 +26,8 @@ import {
   FiAward,
   FiArrowRight,
 } from "react-icons/fi"
-import { api, ApiError } from "@/utils/api"
-import { FiCheckCircle, FiAlertCircle, FiArrowRight } from "react-icons/fi"
 
-type WorkflowStep = "PROFILE_INCOMPLETE" | "REGISTRATION_PENDING" | "PAYMENT_PENDING" | "CONFIRMED"
 
-interface ProfileCompletion {
-  completed: boolean
-  completionPercentage: number
-  lastCompletedStep: string
-}
-
-interface CbpRegistration {
-  registrationId: string
-  registrationStatus: string
-}
-
-interface PaymentInfo {
-  paymentStatus: string
-  transactionId: string
-  amount: number
-}
 
 export default function DashboardPage() {
   const { studentId, name } = useAppSelector((state) => state.auth)
