@@ -146,7 +146,7 @@ export default function LoginPage() {
             </Reveal>
             <Reveal delay={80}>
               <p className="mt-3.5 max-w-xl mx-auto text-sm sm:text-base text-slate-600 leading-relaxed">
-                Enter your Roll Number / MNIT Email and Password to access your student dashboard, attendance records, and certificates.
+                Enter your Student ID / MNIT Email and Password to access your student dashboard, attendance records, and certificates.
               </p>
             </Reveal>
           </div>
@@ -183,7 +183,7 @@ export default function LoginPage() {
                     <div>
                       <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-700">
                         <FiUser className="text-cyan-600" />
-                        Roll Number / Email <span className="text-cyan-600">*</span>
+                        Student ID / Email <span className="text-cyan-600">*</span>
                       </label>
                       <input
                         type="text"

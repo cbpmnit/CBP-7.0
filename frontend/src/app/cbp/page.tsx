@@ -1,35 +1,59 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import Reveal from "@/components/animations/RevealOnScroll"
+import { cbpService } from "@/services/cbpService"
+import { CbpRegistrationDetailResponse } from "@/types/cbp"
 import PageTransition from "@/components/animations/PageTransition"
-import { api, ApiError } from "@/utils/api"
-import { FiCheckCircle, FiAlertCircle, FiArrowRight, FiFileText, FiAward, FiBookmark, FiClock } from "react-icons/fi"
-
-interface ProfileSnapshot {
-  studentId: string
-  firstName: string
-  middleName?: string
-  lastName: string
-  email: string
-  phoneNumber?: string
-  institute: string
-  course: string
-  branch: string
-  year: number
-  section: string
-}
-
-interface CbpRegistrationDetail {
-  registrationId: string
-  registrationStatus: string
-  createdAt: string
-  profile: ProfileSnapshot
-}
+import {
+  FiFileText,
+  FiCheckCircle,
+  FiArrowLeft,
+  FiUserCheck,
+} from "react-icons/fi"
 
 export default function CbpPage() {
+  const [loading, setLoading] = useState(true)
+  const [registering, setRegistering] = useState(false)
+  const [cbpRegistration, setCbpRegistration] = useState<CbpRegistrationDetailResponse | null>(null)
+  const [message, setMessage] = useState<string | null>(null)
+
+  useEffect(() => {
+    fetchCbpStatus()
+  }, [])
+
+  const fetchCbpStatus = async () => {
+    setLoading(true)
+    setMessage(null)
+    try {
+      const data = await cbpService.getMyRegistration()
+      setCbpRegistration(data)
+    } catch (err: any) {
+      if (err?.status !== 404) {
+        setMessage(err?.message || "Failed to load CBP registration status.")
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleRegisterCbp = async () => {
+    setRegistering(true)
+    setMessage(null)
+    try {
+      await cbpService.register()
+      setMessage("CBP Registration completed successfully!")
+      fetchCbpStatus()
+    } catch (err: any) {
+      setMessage(err?.message || "Failed to complete CBP registration. Ensure your student profile is complete first.")
+    } finally {
+      setRegistering(false)
+    }
+  }
+
+  const isRegistered = !!cbpRegistration
+
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -89,23 +113,23 @@ export default function CbpPage() {
 
   return (
     <PageTransition>
-      <main className="min-h-screen bg-black text-gray-100 bg-grid-cyber py-24 relative overflow-hidden">
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-cyan-500/10 rounded-full blur-[160px] pointer-events-none" />
+      <main className="min-h-screen bg-slate-50 text-slate-900 py-10 px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-4xl">
+          <div className="flex items-center justify-between mb-8">
+            <Link
+              href="/dashboard"
+              className="inline-flex items-center gap-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 px-4 py-2 text-xs font-semibold uppercase tracking-wider transition shadow-sm"
+            >
+              <FiArrowLeft /> Dashboard
+            </Link>
+            <span className="inline-flex items-center gap-2 rounded-full bg-cyan-50 border border-cyan-200 px-4 py-1 text-xs font-bold text-cyan-800 uppercase tracking-wider">
+              Program Registration
+            </span>
+          </div>
 
-        <div className="mx-auto max-w-3xl px-5 relative z-10">
-          
-          {/* Header */}
-          <Reveal>
-            <div className="text-center mb-12">
-              <span className="inline-flex items-center gap-2 rounded-full bg-cyan-500/10 border border-cyan-500/30 px-4 py-1.5 text-xs font-bold text-cyan-300 uppercase tracking-widest backdrop-blur-md">
-                Capacity Building Program
-              </span>
-              <h1 className="mt-4 text-4xl font-extrabold tracking-tight text-white sm:text-5xl">
-                CBP 7.0 <span className="gradient-text-cyan">Registration</span>
-              </h1>
-              <p className="mt-2 text-base text-gray-400">
-                Secure your seat in the premium 5-day Soft Skills development workshop at MNIT Jaipur.
-              </p>
+          <div className="text-center mb-10">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-cyan-50 border border-cyan-200 text-cyan-700 shadow-sm mb-6">
+              <FiFileText className="text-3xl" />
             </div>
           </Reveal>
 

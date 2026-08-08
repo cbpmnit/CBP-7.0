@@ -104,7 +104,7 @@ export default function RegisterPage() {
 
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-cyan-300">
-                      Student ID (Roll Number) <span className="text-cyan-400">*</span>
+                      Student ID <span className="text-cyan-400">*</span>
                     </label>
                     <input
                       type="text"

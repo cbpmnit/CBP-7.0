@@ -45,19 +45,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <>
-      <html lang="en" className={`${inter.variable} h-full antialiased light`} suppressHydrationWarning>
-        <body className="min-h-full flex flex-col font-sans transition-colors duration-300 bg-slate-50 text-slate-900 bg-grid-cyber selection:bg-cyan-600 selection:text-white" suppressHydrationWarning>
-          <StoreProvider>
-            <AuthGuard>
-              <TopBanner />
-              <Header />
+    <html lang="en" className={`${inter.variable} h-full antialiased light`} suppressHydrationWarning>
+      <body className="min-h-full flex flex-col font-sans transition-colors duration-300 bg-cbp-grid text-slate-900 selection:bg-cyan-600 selection:text-white" suppressHydrationWarning>
+        <StoreProvider>
+          <AuthGuard>
+            <TopBanner />
+            <Header />
+            <div className="flex-1 w-full relative">
               {children}
-              <Footer />
-            </AuthGuard>
-          </StoreProvider>
-        </body>
-      </html>
-    </>
+            </div>
+            <Footer />
+          </AuthGuard>
+        </StoreProvider>
+      </body>
+    </html>
   );
 }

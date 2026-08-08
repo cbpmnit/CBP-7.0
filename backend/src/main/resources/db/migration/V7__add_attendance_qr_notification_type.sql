@@ -1,0 +1,2 @@
+-- Flyway migration documentation for ATTENDANCE_QR_GENERATED notification type
+-- NotificationType is stored as VARCHAR in notification.notification_templates
