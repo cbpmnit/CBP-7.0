@@ -1,11 +1,11 @@
 package com.cbp7.auth.security;
 
 import com.cbp7.auth.service.AuthService;
+import com.cbp7.common.config.FrontendProperties;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -19,13 +19,12 @@ import java.io.IOException;
 public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccessHandler {
 
     private final AuthService authService;
+    private final FrontendProperties frontendProperties;
 
-    public OAuth2AuthenticationSuccessHandler(@Lazy AuthService authService) {
+    public OAuth2AuthenticationSuccessHandler(@Lazy AuthService authService, FrontendProperties frontendProperties) {
         this.authService = authService;
+        this.frontendProperties = frontendProperties;
     }
-
-    @Value("${cors.frontend-url:${frontend.url:http://localhost:3000}}")
-    private String frontendUrl;
 
     @Override
     public void onAuthenticationSuccess(
@@ -42,14 +41,14 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
 
             if (email == null || email.isBlank()) {
                 log.error("Google OAuth2 authentication succeeded but email attribute is missing");
-                String errorUrl = frontendUrl + "/login?error=email_missing";
+                String errorUrl = frontendProperties.buildUrl("/login?error=email_missing");
                 log.info("Frontend redirect URL: {}", errorUrl);
                 response.sendRedirect(errorUrl);
                 return;
             }
 
             String token = authService.processGoogleUser(email, name, sub);
-            String redirectUrl = frontendUrl + "/auth/callback?token=" + token;
+            String redirectUrl = frontendProperties.buildUrl("/auth/callback?token=" + token);
 
             log.info("Google authentication successful for email: {}", email);
             log.info("Frontend redirect URL: {}", redirectUrl);
@@ -57,7 +56,7 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
             response.sendRedirect(redirectUrl);
         } catch (Exception e) {
             log.error("Google OAuth redirect failed", e);
-            String errorUrl = frontendUrl + "/login?error=oauth_processing_failed";
+            String errorUrl = frontendProperties.buildUrl("/login?error=oauth_processing_failed");
             log.info("Frontend redirect URL: {}", errorUrl);
             response.sendRedirect(errorUrl);
         }

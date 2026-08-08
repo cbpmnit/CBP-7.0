@@ -22,9 +22,7 @@ public class PhonePeGateway implements PaymentGateway {
 
     private final PhonePeConfig phonePeConfig;
     private final StandardCheckoutClient standardCheckoutClient;
-
-    @org.springframework.beans.factory.annotation.Value("${frontend.payment-status-url}")
-    private String paymentStatusUrl;
+    private final com.cbp7.common.config.FrontendProperties frontendProperties;
 
     @Override
     public String initiatePayment(Payment payment) {
@@ -39,7 +37,7 @@ public class PhonePeGateway implements PaymentGateway {
                 metaInfo.setUdf2(payment.getUserId().toString());
             }
 
-            String finalRedirectUrl = paymentStatusUrl + "/" + payment.getTransactionId();
+            String finalRedirectUrl = frontendProperties.getPaymentStatusUrl() + "/" + payment.getTransactionId();
 
             StandardCheckoutPayRequest payRequest = StandardCheckoutPayRequest.builder()
                     .merchantOrderId(payment.getTransactionId())

@@ -64,11 +64,12 @@ jwt:
   expiration: ${JWT_EXPIRATION:86400000}
 
 cors:
-  frontend-url: ${FRONTEND_URL}
-  allowed-origins: ${CORS_ALLOWED_ORIGINS:${FRONTEND_URL}}
+  frontend-url: ${FRONTEND_URL:http://localhost:3000}
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:${FRONTEND_URL:http://localhost:3000}}
 
 frontend:
-  payment-status-url: ${FRONTEND_PAYMENT_STATUS_URL:${FRONTEND_URL}/payment-status}
+  url: ${FRONTEND_URL:http://localhost:3000}
+  payment-status-url: ${FRONTEND_PAYMENT_STATUS_URL:${FRONTEND_URL:http://localhost:3000}/payment-status}
 
 phonepe:
   client-id: ${PHONEPE_CLIENT_ID}

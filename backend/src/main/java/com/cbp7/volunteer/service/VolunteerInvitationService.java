@@ -13,7 +13,7 @@ import com.cbp7.volunteer.entity.VolunteerInvitationStatus;
 import com.cbp7.volunteer.repository.VolunteerInvitationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
+import com.cbp7.common.config.FrontendProperties;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,8 +31,7 @@ public class VolunteerInvitationService {
     private final PasswordEncoder passwordEncoder;
     private final EmailSender emailSender;
 
-    @Value("${frontend.url:http://localhost:3000}")
-    private String frontendUrl;
+    private final FrontendProperties frontendProperties;
 
     @Transactional
     public VolunteerInvitationResponse inviteVolunteer(InviteVolunteerRequest request, String adminId) {
@@ -75,7 +74,7 @@ public class VolunteerInvitationService {
         }
 
         invitation = invitationRepository.save(invitation);
-        String activationLink = frontendUrl + "/volunteer/setup-password?token=" + token;
+        String activationLink = frontendProperties.buildUrl("/volunteer/setup-password?token=" + token);
 
         sendInvitationEmail(email, name, activationLink);
 
@@ -106,7 +105,7 @@ public class VolunteerInvitationService {
         invitation.setCreatedBy(adminId != null ? adminId : "admin");
         invitation = invitationRepository.save(invitation);
 
-        String activationLink = frontendUrl + "/volunteer/setup-password?token=" + token;
+        String activationLink = frontendProperties.buildUrl("/volunteer/setup-password?token=" + token);
         sendInvitationEmail(invitation.getEmail(), invitation.getName(), activationLink);
 
         return new VolunteerInvitationResponse(
@@ -254,7 +253,7 @@ public class VolunteerInvitationService {
                 if (inv.getStatus() == VolunteerInvitationStatus.PENDING && inv.getExpiresAt().isBefore(LocalDateTime.now())) {
                     status = "EXPIRED";
                 }
-                String activationLink = frontendUrl + "/volunteer/setup-password?token=" + inv.getInvitationToken();
+                String activationLink = frontendProperties.buildUrl("/volunteer/setup-password?token=" + inv.getInvitationToken());
                 return new VolunteerDetailResponse(
                         inv.getId().toString(),
                         inv.getName() != null ? inv.getName() : inv.getEmail().split("@")[0],
@@ -278,7 +277,7 @@ public class VolunteerInvitationService {
             if (inv.getStatus() == VolunteerInvitationStatus.PENDING && inv.getExpiresAt().isBefore(LocalDateTime.now())) {
                 status = "EXPIRED";
             }
-            String activationLink = frontendUrl + "/volunteer/setup-password?token=" + inv.getInvitationToken();
+            String activationLink = frontendProperties.buildUrl("/volunteer/setup-password?token=" + inv.getInvitationToken());
             return new VolunteerDetailResponse(
                     inv.getId().toString(),
                     inv.getName() != null ? inv.getName() : inv.getEmail().split("@")[0],
