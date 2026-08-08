@@ -123,6 +123,7 @@ export interface ScanAttendanceResponse {
   studentName: string
   studentId: string
   sessionTitle: string
+  dayNumber?: number
   markedAt: string
 }
 

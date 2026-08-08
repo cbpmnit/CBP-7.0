@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation"
 import {
   FiGrid,
   FiUser,
+  FiUsers,
   FiCamera,
   FiCreditCard,
   FiAward,
@@ -27,6 +28,14 @@ export const STUDENT_NAV_ITEMS: NavItem[] = [
   { id: "payments", label: "Payments", href: "/payment", icon: <FiCreditCard />, permission: "PAYMENTS_VIEW" },
   { id: "certificates", label: "Certificates", href: "/certificate", icon: <FiAward />, permission: "CERTIFICATES_VIEW" },
   { id: "email-tools", label: "Email Tools", href: "/admin/notifications", icon: <FiMail />, permission: "EMAIL_TOOLS_VIEW" },
+]
+
+export const ADMIN_NAV_ITEMS: NavItem[] = [
+  { id: "admin-dashboard", label: "Admin Dashboard", href: "/admin/dashboard", icon: <FiGrid /> },
+  { id: "admin-students", label: "Student Directory", href: "/admin/students", icon: <FiUsers /> },
+  { id: "admin-attendance", label: "Attendance & QR", href: "/attendance", icon: <FiCamera /> },
+  { id: "admin-notifications", label: "Email Templates", href: "/admin/notifications", icon: <FiMail /> },
+  { id: "admin-certificates", label: "Certificates", href: "/certificate", icon: <FiAward /> },
 ]
 
 interface SidebarNavigationProps {
@@ -73,8 +82,10 @@ export default function SidebarNavigation({
     }
   }, [])
 
-  // Show student items by default; only show Email Tools if explicitly permitted
-  const visibleNavItems = STUDENT_NAV_ITEMS.filter((item) => {
+  const isAdminPath = pathname.startsWith("/admin")
+  const baseItems = isAdminPath ? ADMIN_NAV_ITEMS : STUDENT_NAV_ITEMS
+
+  const visibleNavItems = baseItems.filter((item) => {
     if (item.id === "email-tools") {
       return allowedPermissions ? allowedPermissions.includes("EMAIL_TOOLS_VIEW") || allowedPermissions.includes("ADMIN_VIEW") : false
     }

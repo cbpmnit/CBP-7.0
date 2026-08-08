@@ -176,7 +176,7 @@ export default function StudentAttendanceView() {
       </div>
 
       {/* 2. Personal Student Session QR Code Card */}
-      {studentQr && (
+      {studentQr ? (
         <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col sm:flex-row items-center gap-6">
           <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl shrink-0 text-center">
             <img src={studentQr.qrImageBase64} alt="Personal Session QR" className="w-40 h-40 mx-auto" />
@@ -214,6 +214,18 @@ export default function StudentAttendanceView() {
                 </span>
               )}
             </div>
+          </div>
+        </div>
+      ) : (
+        <div className="bg-amber-50/80 border border-amber-200 rounded-2xl p-5 shadow-sm flex items-center gap-3.5 text-amber-950">
+          <div className="h-10 w-10 rounded-xl bg-amber-500 text-white flex items-center justify-center text-lg shrink-0">
+            <FiCamera />
+          </div>
+          <div>
+            <h4 className="text-xs font-extrabold uppercase tracking-wider text-amber-900">Session Gate Pass Pending</h4>
+            <p className="text-xs text-amber-800 mt-0.5">
+              QR will be available once the admin generates attendance passes.
+            </p>
           </div>
         </div>
       )}

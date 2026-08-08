@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 :root {
+  --font-inter: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --background: #f8fafc;
   --foreground: #0f172a;
   --cyber-cyan: #0284c7;
@@ -23,15 +24,15 @@
   --color-mnit-gold: var(--mnit-gold);
   --color-mnit-blue: var(--mnit-blue);
   --color-mnit-navy: var(--mnit-navy);
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
 /* Force Normal Straight Font Style Globally */
 *, *::before, *::after, h1, h2, h3, h4, h5, h6, p, span, a, button, input, select, textarea, dt, dd, label, div, em, i, cite {
   box-sizing: border-box;
   font-style: normal !important;
-  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
 html {
@@ -42,7 +43,7 @@ html {
 body {
   background: #f8fafc;
   color: #0f172a;
-  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   font-style: normal !important;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

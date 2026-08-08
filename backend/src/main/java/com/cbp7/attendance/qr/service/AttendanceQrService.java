@@ -96,22 +96,8 @@ public class AttendanceQrService {
         if (existingQr.isPresent()) {
             qrCode = existingQr.get();
         } else {
-            // Auto-generate student QR on demand if not pre-generated
-            String token = TOKEN_PREFIX + studentId + "_" + sessionId + "_" + UUID.randomUUID().toString().substring(0, 8);
-            LocalDateTime now = LocalDateTime.now();
-            LocalDateTime expiresAt = session.getEndTime() != null
-                    ? LocalDateTime.of(session.getSessionDate(), session.getEndTime())
-                    : session.getSessionDate().atTime(23, 59, 59);
-
-            qrCode = AttendanceQrCode.builder()
-                    .sessionId(sessionId)
-                    .studentId(studentId)
-                    .token(token)
-                    .generatedAt(now)
-                    .expiresAt(expiresAt)
-                    .active(true)
-                    .build();
-            qrCode = attendanceQrRepository.save(qrCode);
+            // QR codes should NOT exist for students until admin generates them
+            return null;
         }
 
         String qrImage = qrImageGenerator.generateBase64DataUri(qrCode.getToken());
