@@ -28,6 +28,7 @@ import {
   FiAlertCircle,
   FiShield,
   FiEdit,
+  FiMail,
 } from "react-icons/fi"
 
 export default function AdminStudentDashboardPage() {
@@ -461,6 +462,13 @@ export default function AdminStudentDashboardPage() {
                             >
                               <FiEdit /> Edit
                             </button>
+                            <a
+                              href={`mailto:${item.email}?subject=CBP%207.0%20Academic%20Notification%20-%20MNIT%20Jaipur`}
+                              className="px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-800 text-[11px] font-bold transition inline-flex items-center gap-1 border border-blue-200"
+                              title="Send Email"
+                            >
+                              <FiMail /> Email
+                            </a>
                             <button
                               onClick={(e) => handlePrintPdf(item.studentId, e)}
                               className="px-2.5 py-1 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-800 text-[11px] font-bold transition inline-flex items-center gap-1 border border-purple-200"

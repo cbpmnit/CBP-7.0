@@ -32,8 +32,8 @@ export const STUDENT_NAV_ITEMS: NavItem[] = [
 export const ADMIN_NAV_ITEMS: NavItem[] = [
   { id: "admin-dashboard", label: "Dashboard", href: "/admin/dashboard", icon: <FiGrid /> },
   { id: "admin-students", label: "Students", href: "/admin/students", icon: <FiUsers /> },
-  { id: "admin-attendance", label: "Attendance", href: "/attendance", icon: <FiCamera /> },
   { id: "admin-volunteers", label: "Volunteers", href: "/admin/volunteers", icon: <FiUsers /> },
+  { id: "admin-attendance", label: "Attendance", href: "/admin/attendance", icon: <FiCamera /> },
   { id: "admin-notifications", label: "Email Templates", href: "/admin/notifications", icon: <FiMail /> },
   { id: "admin-certificates", label: "Certificates", href: "/certificate", icon: <FiAward /> },
 ]

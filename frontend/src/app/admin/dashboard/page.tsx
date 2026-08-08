@@ -12,8 +12,10 @@ import PageTransition from "@/components/animations/PageTransition"
 
 import {
   FiGrid,
-  FiCalendar,
   FiUsers,
+  FiUserCheck,
+  FiCalendar,
+  FiCamera,
   FiCreditCard,
   FiAward,
   FiMail,
@@ -22,14 +24,16 @@ import {
 
 export default function AdminDashboardPage() {
   const [activeTab, setActiveTab] = useState<
-    "overview" | "sessions" | "students" | "payments" | "certificates" | "templates"
+    "overview" | "students" | "volunteers" | "sessions" | "attendance" | "payments" | "certificates" | "templates"
   >("overview")
 
   const tabs = [
-    { id: "overview", label: "Program Overview", icon: <FiGrid /> },
+    { id: "overview", label: "Overview", icon: <FiGrid /> },
+    { id: "students", label: "Student Management", icon: <FiUsers /> },
+    { id: "volunteers", label: "Volunteer Management", icon: <FiUserCheck /> },
     { id: "sessions", label: "Session Management", icon: <FiCalendar /> },
-    { id: "students", label: "Student Directory", icon: <FiUsers /> },
-    { id: "payments", label: "Payment Overview", icon: <FiCreditCard /> },
+    { id: "attendance", label: "Attendance Management", icon: <FiCamera /> },
+    { id: "payments", label: "Payment Management", icon: <FiCreditCard /> },
     { id: "certificates", label: "Certificates", icon: <FiAward /> },
     { id: "templates", label: "Email Templates", icon: <FiMail /> },
   ]
@@ -43,7 +47,7 @@ export default function AdminDashboardPage() {
         {/* Main Admin Workspace */}
         <main className="py-8 px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-6xl space-y-6">
-            {/* 🌟 Professional Institutional Header Banner (NO Dark Navy Background) 🌟 */}
+            {/* Professional Institutional Header Banner */}
             <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div>
                 <div className="flex items-center gap-2 mb-2">
@@ -68,7 +72,7 @@ export default function AdminDashboardPage() {
               </div>
             </div>
 
-            {/* Navigation Tab Bar */}
+            {/* Navigation Tab Bar (All 8 Modules) */}
             <div className="bg-white border border-slate-200 rounded-2xl p-2 shadow-sm overflow-x-auto">
               <div className="flex items-center gap-1.5 min-w-max">
                 {tabs.map((t) => {
@@ -77,7 +81,7 @@ export default function AdminDashboardPage() {
                     <button
                       key={t.id}
                       onClick={() => setActiveTab(t.id as any)}
-                      className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition ${
+                      className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold transition ${
                         isActive
                           ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-sm shadow-cyan-600/30"
                           : "text-slate-600 hover:text-cyan-700 hover:bg-cyan-50/50"
@@ -96,8 +100,25 @@ export default function AdminDashboardPage() {
               {activeTab === "overview" && (
                 <AdminDashboardOverview onNavigateTab={(tab) => setActiveTab(tab as any)} />
               )}
-              {activeTab === "sessions" && <AdminAttendanceView />}
               {activeTab === "students" && <AdminStudentDirectory />}
+              {activeTab === "volunteers" && (
+                <div className="space-y-4">
+                  <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex items-center justify-between">
+                    <div>
+                      <h2 className="text-base font-bold text-slate-900">Volunteer Operations & Onboarding</h2>
+                      <p className="text-xs text-slate-500 mt-0.5">Invite, assign, and manage gate scanner volunteer accounts.</p>
+                    </div>
+                    <a
+                      href="/admin/volunteers"
+                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 text-white text-xs font-bold uppercase tracking-wider"
+                    >
+                      Open Full Volunteer Panel →
+                    </a>
+                  </div>
+                </div>
+              )}
+              {activeTab === "sessions" && <AdminAttendanceView />}
+              {activeTab === "attendance" && <AdminAttendanceView />}
               {activeTab === "payments" && <AdminPaymentOverview />}
               {activeTab === "certificates" && <AdminCertificateOverview />}
               {activeTab === "templates" && <EmailTemplateManager />}

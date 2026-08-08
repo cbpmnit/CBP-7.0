@@ -194,40 +194,40 @@ export default function AdminStudentDetailPage() {
             </span>
           </div>
 
-          {/* Profile Header Banner */}
-          <div className="bg-slate-900 text-white rounded-2xl p-6 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-6">
+          {/* Profile Header Banner (Clean Institutional White & Blue Card) */}
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-4 text-center sm:text-left">
-              <div className="h-16 w-16 rounded-2xl bg-cyan-600/30 border border-cyan-500/40 text-cyan-400 flex items-center justify-center text-3xl shrink-0">
+              <div className="h-16 w-16 rounded-2xl bg-cyan-50 border border-cyan-200 text-cyan-700 flex items-center justify-center text-3xl shrink-0 shadow-sm">
                 <FiUser />
               </div>
               <div>
                 <div className="flex items-center gap-2 justify-center sm:justify-start">
-                  <h1 className="text-xl font-extrabold text-white">{studentData.student.name}</h1>
-                  <span className="text-xs font-mono font-bold text-slate-400 bg-slate-800 px-2.5 py-0.5 rounded-md border border-slate-700">
+                  <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900">{studentData.student.name}</h1>
+                  <span className="text-xs font-mono font-bold text-cyan-900 bg-cyan-50 px-2.5 py-0.5 rounded-full border border-cyan-200">
                     {studentData.student.studentId}
                   </span>
                 </div>
-                <p className="text-xs text-slate-300 mt-1">
+                <p className="text-xs text-slate-500 mt-1">
                   {studentData.profile.course} in {studentData.profile.branch} • Year {studentData.profile.year}
                 </p>
               </div>
             </div>
 
             {/* Header Actions */}
-            <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <div className="flex flex-wrap items-center gap-2.5 shrink-0">
               <button
                 onClick={handlePrintPdf}
-                className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-extrabold uppercase tracking-wider shadow-sm transition inline-flex items-center gap-1.5"
+                className="px-4 py-2.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-800 text-xs font-bold uppercase tracking-wider transition inline-flex items-center gap-1.5 border border-purple-200 shadow-sm"
               >
                 <FiPrinter /> Print Profile (PDF)
               </button>
 
               <button
                 onClick={() => setIsEditing(!isEditing)}
-                className={`px-4 py-2 rounded-xl text-xs font-extrabold uppercase tracking-wider shadow-sm transition inline-flex items-center gap-1.5 ${
+                className={`px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider shadow-sm transition inline-flex items-center gap-1.5 ${
                   isEditing
-                    ? "bg-amber-600 hover:bg-amber-700 text-white"
-                    : "bg-cyan-600 hover:bg-cyan-700 text-white"
+                    ? "bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200"
+                    : "bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white shadow-cyan-600/20"
                 }`}
               >
                 {isEditing ? <FiX /> : <FiEdit />}

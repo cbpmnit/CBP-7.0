@@ -7,6 +7,7 @@ import {
   FiUsers,
   FiUserCheck,
   FiCreditCard,
+  FiClock,
   FiCheckSquare,
   FiAward,
   FiRefreshCw,
@@ -77,19 +78,14 @@ export default function AdminDashboardOverview({ onNavigateTab }: AdminDashboard
     )
   }
 
+  const registeredCount = summary?.registeredStudents || summary?.totalStudents || 0
+  const paidCount = summary?.paidStudents || 0
+  const pendingPaymentCount = Math.max(0, registeredCount - paidCount)
+
   const statCards = [
     {
-      title: "Total Students",
-      value: summary?.totalStudents ?? 0,
-      subtext: "Platform Enrollments",
-      icon: <FiUsers className="text-cyan-700" />,
-      bgIcon: "bg-cyan-50 border-cyan-200",
-      accent: "text-slate-900",
-      tab: "students",
-    },
-    {
-      title: "Registered Students",
-      value: summary?.registeredStudents ?? 0,
+      title: "Total Registered Students",
+      value: registeredCount,
       subtext: "Verified Academic Dossiers",
       icon: <FiUserCheck className="text-blue-700" />,
       bgIcon: "bg-blue-50 border-blue-200",
@@ -98,11 +94,20 @@ export default function AdminDashboardOverview({ onNavigateTab }: AdminDashboard
     },
     {
       title: "Payment Completed",
-      value: summary?.paidStudents ?? 0,
+      value: paidCount,
       subtext: "Fee Verified Accounts",
       icon: <FiCreditCard className="text-emerald-700" />,
       bgIcon: "bg-emerald-50 border-emerald-200",
       accent: "text-emerald-700",
+      tab: "payments",
+    },
+    {
+      title: "Payment Pending",
+      value: pendingPaymentCount,
+      subtext: "Action Required Accounts",
+      icon: <FiClock className="text-amber-700" />,
+      bgIcon: "bg-amber-50 border-amber-200",
+      accent: "text-amber-700",
       tab: "payments",
     },
     {
@@ -112,7 +117,7 @@ export default function AdminDashboardOverview({ onNavigateTab }: AdminDashboard
       icon: <FiCheckSquare className="text-cyan-700" />,
       bgIcon: "bg-cyan-50 border-cyan-200",
       accent: "text-cyan-700",
-      tab: "sessions",
+      tab: "attendance",
     },
     {
       title: "Certificates Issued",
@@ -127,25 +132,16 @@ export default function AdminDashboardOverview({ onNavigateTab }: AdminDashboard
 
   const actionCards = [
     {
-      title: "Session Management",
-      description: "Schedule workshop days, configure session venues, and set start/end timings.",
-      icon: <FiCalendar className="text-cyan-700 text-lg" />,
-      iconBg: "bg-cyan-50 border-cyan-200",
-      ctaText: "Manage Sessions",
-      isPrimary: true,
-      onClick: () => onNavigateTab && onNavigateTab("sessions"),
-    },
-    {
-      title: "Attendance & Gate QR",
-      description: "Generate unique student passcodes and monitor live auditorium gate scanner logs.",
-      icon: <FiCamera className="text-blue-700 text-lg" />,
+      title: "Student Management",
+      description: "Search, filter, view profiles, and manage student registration dossiers.",
+      icon: <FiUsers className="text-blue-700 text-lg" />,
       iconBg: "bg-blue-50 border-blue-200",
-      ctaText: "Session Passes",
-      isPrimary: false,
-      onClick: () => onNavigateTab && onNavigateTab("sessions"),
+      ctaText: "Open Student Directory",
+      isPrimary: true,
+      onClick: () => onNavigateTab && onNavigateTab("students"),
     },
     {
-      title: "Volunteer Team Roster",
+      title: "Volunteer Management",
       description: "Send 24-hour invitation links to student volunteers and assign scanner access.",
       icon: <FiUserPlus className="text-cyan-700 text-lg" />,
       iconBg: "bg-cyan-50 border-cyan-200",
@@ -154,7 +150,34 @@ export default function AdminDashboardOverview({ onNavigateTab }: AdminDashboard
       href: "/admin/volunteers",
     },
     {
-      title: "Batch Certificates",
+      title: "Session Management",
+      description: "Schedule workshop days, configure session venues, and set start/end timings.",
+      icon: <FiCalendar className="text-cyan-700 text-lg" />,
+      iconBg: "bg-cyan-50 border-cyan-200",
+      ctaText: "Manage Sessions",
+      isPrimary: false,
+      onClick: () => onNavigateTab && onNavigateTab("sessions"),
+    },
+    {
+      title: "Attendance Management",
+      description: "Generate unique student passcodes and monitor live auditorium gate scanner logs.",
+      icon: <FiCamera className="text-blue-700 text-lg" />,
+      iconBg: "bg-blue-50 border-blue-200",
+      ctaText: "Session Passes & Gate",
+      isPrimary: false,
+      onClick: () => onNavigateTab && onNavigateTab("attendance"),
+    },
+    {
+      title: "Payment Management",
+      description: "Inspect PhonePe transaction IDs, fee reconciliation, and payment status logs.",
+      icon: <FiCreditCard className="text-emerald-700 text-lg" />,
+      iconBg: "bg-emerald-50 border-emerald-200",
+      ctaText: "Review Payments",
+      isPrimary: false,
+      onClick: () => onNavigateTab && onNavigateTab("payments"),
+    },
+    {
+      title: "Certificates",
       description: "Issue cryptographic completion credentials to students meeting 75% attendance.",
       icon: <FiAward className="text-purple-700 text-lg" />,
       iconBg: "bg-purple-50 border-purple-200",
@@ -162,29 +185,11 @@ export default function AdminDashboardOverview({ onNavigateTab }: AdminDashboard
       isPrimary: false,
       onClick: () => onNavigateTab && onNavigateTab("certificates"),
     },
-    {
-      title: "Email Templates",
-      description: "Customize automated email notification templates, subjects, and parameters.",
-      icon: <FiMail className="text-slate-700 text-lg" />,
-      iconBg: "bg-slate-100 border-slate-200",
-      ctaText: "Notification Templates",
-      isPrimary: false,
-      href: "/admin/notifications",
-    },
-    {
-      title: "Student Directory",
-      description: "Filter student dossiers by course, branch, fee status, and download reports.",
-      icon: <FiUsers className="text-blue-700 text-lg" />,
-      iconBg: "bg-blue-50 border-blue-200",
-      ctaText: "Open Directory",
-      isPrimary: false,
-      onClick: () => onNavigateTab && onNavigateTab("students"),
-    },
   ]
 
   return (
     <div className="space-y-6">
-      {/* 1. Metric Overview Summary Cards (Clean White with Soft Blue Borders) */}
+      {/* 1. Metric Overview Summary Cards (Exact 5 Requested Live KPI Metrics) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {statCards.map((card) => (
           <div
