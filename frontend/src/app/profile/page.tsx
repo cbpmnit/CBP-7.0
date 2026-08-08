@@ -1,10 +1,25 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { api, ApiError } from "@/utils/api"
-import Reveal from "@/components/animations/RevealOnScroll"
+import ProfileAvatar from "@/components/navbar/ProfileAvatar"
 import PageTransition from "@/components/animations/PageTransition"
+import {
+  FiUser,
+  FiBookOpen,
+  FiMapPin,
+  FiEdit,
+  FiChevronDown,
+  FiChevronUp,
+  FiCheckCircle,
+  FiArrowLeft,
+  FiSave,
+  FiBriefcase,
+  FiHome,
+  FiPhone,
+  FiCalendar,
+} from "react-icons/fi"
 
 const GENDERS = ["MALE", "FEMALE", "OTHER", "PREFER_NOT_TO_SAY"]
 const COURSES = ["BTECH", "MTECH", "MBA"]
@@ -24,10 +39,17 @@ const BRANCHES = [
 ]
 
 export default function ProfilePage() {
-  const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [saveLoading, setSaveLoading] = useState(false)
-  const [mode, setMode] = useState<"CREATE" | "EDIT">("CREATE")
+  const [isEditing, setIsEditing] = useState(false)
+
+  const [openSections, setOpenSections] = useState({
+    identity: true,
+    academic: true,
+    personal: true,
+    hostel: true,
+  })
+
   const [formData, setFormData] = useState({
     firstName: "",
     middleName: "",
@@ -77,17 +99,20 @@ export default function ProfilePage() {
           city: data.city || "",
           state: data.state || "",
         })
-        setMode("EDIT")
       }
     } catch (err) {
       if (err instanceof ApiError && err.status === 404) {
-        setMode("CREATE")
+        setIsEditing(true)
       } else {
         setMessage("Failed to load profile details")
       }
     } finally {
       setLoading(false)
     }
+  }
+
+  const toggleSection = (sec: "identity" | "academic" | "personal" | "hostel") => {
+    setOpenSections((prev) => ({ ...prev, [sec]: !prev[sec] }))
   }
 
   const handleChange = (
@@ -118,17 +143,9 @@ export default function ProfilePage() {
     setMessage(null)
 
     try {
-      if (mode === "CREATE") {
-        await api.post("/api/v1/profile", formData)
-        setMessage("Profile created successfully!")
-        setMode("EDIT")
-      } else {
-        await api.put("/api/v1/profile", formData)
-        setMessage("Profile updated successfully!")
-      }
-      setTimeout(() => {
-        router.push("/dashboard")
-      }, 1500)
+      await api.put("/api/v1/profile", formData)
+      setMessage("Profile details saved successfully!")
+      setIsEditing(false)
     } catch (err) {
       if (err instanceof ApiError) {
         if (err.errorData?.errors) {
@@ -144,174 +161,152 @@ export default function ProfilePage() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-black text-white">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-cyan-500 border-t-transparent shadow-[0_0_15px_#00f0ff]" />
-          <span className="font-mono text-xs uppercase tracking-widest text-cyan-400">
-            Fetching Profile Data...
-          </span>
-        </div>
-      </div>
-    )
-  }
+  const fullName = `${formData.firstName} ${formData.lastName}`.trim() || "Student Profile"
 
   return (
     <PageTransition>
-      <main className="min-h-screen bg-black text-gray-100 bg-grid-cyber py-24 relative overflow-hidden">
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-cyan-500/10 rounded-full blur-[160px] pointer-events-none" />
+      <main className="min-h-[calc(100vh-80px)] bg-cbp-grid text-slate-900 py-8 px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-4xl">
+          {/* Header Bar */}
+          <div className="flex items-center justify-between mb-6">
+            <Link
+              href="/dashboard"
+              className="inline-flex items-center gap-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 px-4 py-2 text-xs font-bold uppercase tracking-wider shadow-sm transition"
+            >
+              <FiArrowLeft /> Dashboard
+            </Link>
 
-        <div className="mx-auto max-w-4xl px-5 relative z-10">
-          <Reveal>
-            <div className="text-center mb-12">
-              <span className="inline-flex items-center gap-2 rounded-full bg-cyan-500/10 border border-cyan-500/30 px-4 py-1.5 text-xs font-bold text-cyan-300 uppercase tracking-widest backdrop-blur-md">
-                Student Profile Setup
-              </span>
-              <h1 className="mt-4 text-4xl font-extrabold tracking-tight text-white sm:text-5xl">
-                {mode === "CREATE" ? "Complete Your" : "Manage Your"}{" "}
-                <span className="gradient-text-cyan">Profile</span>
-              </h1>
-              <p className="mt-2 text-base text-gray-400">
-                Please ensure your details match college records for certificate validation.
-              </p>
-            </div>
-          </Reveal>
+            <button
+              onClick={() => setIsEditing(!isEditing)}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 text-xs font-bold uppercase tracking-wider shadow-sm transition"
+            >
+              <FiEdit /> {isEditing ? "View Profile" : "Edit Profile"}
+            </button>
+          </div>
 
-          <Reveal delay={80}>
-            <form onSubmit={handleSubmit} className="space-y-8">
-              {message && (
-                <div
-                  className={`p-4 rounded-2xl border text-sm font-semibold text-center ${
-                    message.includes("success")
-                      ? "bg-cyan-500/10 border-cyan-500/40 text-cyan-300 shadow-[0_0_15px_rgba(0,240,255,0.15)]"
-                      : "bg-red-500/10 border-red-500/40 text-red-400"
-                  }`}
-                >
-                  {message}
-                </div>
-              )}
-
-              {/* SECTION 1: Personal Details */}
-              <div className="glass-card rounded-3xl p-8 border-cyan-500/30">
-                <h2 className="text-xl font-extrabold text-white mb-6 border-b border-white/5 pb-2">
-                  1. Personal Details
-                </h2>
-                <div className="grid gap-6 md:grid-cols-3">
+          {/* Student Identity Card */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm mb-6 cbp-card-interactive">
+            <div className="flex flex-col sm:flex-row items-center gap-5">
+              <ProfileAvatar name={fullName} size="lg" />
+              <div className="text-center sm:text-left flex-1 min-w-0">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-cyan-300">
-                      First Name <span className="text-cyan-400">*</span>
-                    </label>
+                    <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">{fullName}</h1>
+                    <p className="text-xs text-slate-600 font-semibold mt-0.5">
+                      {formData.course} in {formData.branch.replace(/_/g, " ")} &middot; Year {formData.year}
+                    </p>
+                  </div>
+                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 shrink-0 self-center sm:self-auto">
+                    <FiCheckCircle /> Profile Verified
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {message && (
+            <div
+              className={`p-3.5 rounded-xl border text-xs font-semibold text-center mb-6 ${
+                message.includes("success")
+                  ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+                  : "bg-rose-50 border-rose-200 text-rose-800"
+              }`}
+            >
+              {message}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* GROUP 1: Student Identity */}
+            <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+              <button
+                type="button"
+                onClick={() => toggleSection("identity")}
+                className="w-full px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-left"
+              >
+                <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                  <span className="text-cyan-700 text-base"><FiUser /></span>
+                  <span>1. Student Identity</span>
+                </h2>
+                {openSections.identity ? <FiChevronUp /> : <FiChevronDown />}
+              </button>
+
+              {openSections.identity && (
+                <div className="p-6 grid gap-4 sm:grid-cols-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">First Name</label>
                     <input
                       type="text"
                       name="firstName"
+                      disabled={!isEditing}
                       required
                       value={formData.firstName}
                       onChange={handleChange}
-                      className="mt-2 block w-full rounded-xl bg-black/60 border border-white/10 px-4 py-3 text-sm text-white transition focus:border-cyan-400 focus:outline-none"
+                      className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:border-cyan-600 focus:outline-none disabled:opacity-80 font-medium"
                     />
-                    {errors.firstName && (
-                      <p className="mt-1 text-xs text-red-400">{errors.firstName}</p>
-                    )}
                   </div>
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-cyan-300">
-                      Middle Name
-                    </label>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Middle Name</label>
                     <input
                       type="text"
                       name="middleName"
+                      disabled={!isEditing}
                       value={formData.middleName}
                       onChange={handleChange}
-                      className="mt-2 block w-full rounded-xl bg-black/60 border border-white/10 px-4 py-3 text-sm text-white transition focus:border-cyan-400 focus:outline-none"
+                      className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:border-cyan-600 focus:outline-none disabled:opacity-80 font-medium"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-cyan-300">
-                      Last Name <span className="text-cyan-400">*</span>
-                    </label>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Last Name</label>
                     <input
                       type="text"
                       name="lastName"
+                      disabled={!isEditing}
                       required
                       value={formData.lastName}
                       onChange={handleChange}
-                      className="mt-2 block w-full rounded-xl bg-black/60 border border-white/10 px-4 py-3 text-sm text-white transition focus:border-cyan-400 focus:outline-none"
+                      className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:border-cyan-600 focus:outline-none disabled:opacity-80 font-medium"
                     />
-                    {errors.lastName && (
-                      <p className="mt-1 text-xs text-red-400">{errors.lastName}</p>
-                    )}
                   </div>
                 </div>
+              )}
+            </div>
 
-                <div className="grid gap-6 md:grid-cols-2 mt-6">
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-cyan-300">
-                      Gender <span className="text-cyan-400">*</span>
-                    </label>
-                    <select
-                      name="gender"
-                      value={formData.gender}
-                      onChange={handleChange}
-                      className="mt-2 block w-full rounded-xl bg-black/80 border border-white/10 px-4 py-3 text-sm text-white transition focus:border-cyan-400 focus:outline-none"
-                    >
-                      {GENDERS.map((g) => (
-                        <option key={g} value={g}>
-                          {g.replace(/_/g, " ")}
-                        </option>
-                      ))}
-                    </select>
-                    {errors.gender && (
-                      <p className="mt-1 text-xs text-red-400">{errors.gender}</p>
-                    )}
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-cyan-300">
-                      Date Of Birth <span className="text-cyan-400">*</span>
-                    </label>
-                    <input
-                      type="date"
-                      name="dateOfBirth"
-                      required
-                      value={formData.dateOfBirth}
-                      onChange={handleChange}
-                      className="mt-2 block w-full rounded-xl bg-black/60 border border-white/10 px-4 py-3 text-sm text-white transition focus:border-cyan-400 focus:outline-none"
-                    />
-                    {errors.dateOfBirth && (
-                      <p className="mt-1 text-xs text-red-400">{errors.dateOfBirth}</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* SECTION 2: Academic Details */}
-              <div className="glass-card rounded-3xl p-8 border-cyan-500/30">
-                <h2 className="text-xl font-extrabold text-white mb-6 border-b border-white/5 pb-2">
-                  2. Academic Details
+            {/* GROUP 2: Academic Details */}
+            <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+              <button
+                type="button"
+                onClick={() => toggleSection("academic")}
+                className="w-full px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-left"
+              >
+                <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                  <span className="text-blue-700 text-base"><FiBookOpen /></span>
+                  <span>2. Academic Details</span>
                 </h2>
-                <div className="grid gap-6 md:grid-cols-2">
+                {openSections.academic ? <FiChevronUp /> : <FiChevronDown />}
+              </button>
+
+              {openSections.academic && (
+                <div className="p-6 grid gap-4 sm:grid-cols-2">
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-cyan-300">
-                      Institute <span className="text-cyan-400">*</span>
-                    </label>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Institute</label>
                     <input
                       type="text"
                       name="institute"
-                      required
+                      disabled={!isEditing}
                       value={formData.institute}
                       onChange={handleChange}
-                      className="mt-2 block w-full rounded-xl bg-black/60 border border-white/10 px-4 py-3 text-sm text-white transition focus:border-cyan-400 focus:outline-none"
+                      className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:border-cyan-600 focus:outline-none disabled:opacity-80 font-medium"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-cyan-300">
-                      Course / Program <span className="text-cyan-400">*</span>
-                    </label>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Course / Program</label>
                     <select
                       name="course"
+                      disabled={!isEditing}
                       value={formData.course}
                       onChange={handleChange}
-                      className="mt-2 block w-full rounded-xl bg-black/80 border border-white/10 px-4 py-3 text-sm text-white transition focus:border-cyan-400 focus:outline-none"
+                      className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:border-cyan-600 focus:outline-none disabled:opacity-80 font-medium"
                     >
                       {COURSES.map((c) => (
                         <option key={c} value={c}>
@@ -319,22 +314,15 @@ export default function ProfilePage() {
                         </option>
                       ))}
                     </select>
-                    {errors.course && (
-                      <p className="mt-1 text-xs text-red-400">{errors.course}</p>
-                    )}
                   </div>
-                </div>
-
-                <div className="grid gap-6 md:grid-cols-3 mt-6">
-                  <div className="md:col-span-2">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-cyan-300">
-                      Branch / Discipline <span className="text-cyan-400">*</span>
-                    </label>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Department / Branch</label>
                     <select
                       name="branch"
+                      disabled={!isEditing}
                       value={formData.branch}
                       onChange={handleChange}
-                      className="mt-2 block w-full rounded-xl bg-black/80 border border-white/10 px-4 py-3 text-sm text-white transition focus:border-cyan-400 focus:outline-none"
+                      className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:border-cyan-600 focus:outline-none disabled:opacity-80 font-medium"
                     >
                       {BRANCHES.map((b) => (
                         <option key={b} value={b}>
@@ -342,168 +330,178 @@ export default function ProfilePage() {
                         </option>
                       ))}
                     </select>
-                    {errors.branch && (
-                      <p className="mt-1 text-xs text-red-400">{errors.branch}</p>
-                    )}
                   </div>
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-cyan-300">
-                      Year <span className="text-cyan-400">*</span>
-                    </label>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Year of Study</label>
                     <input
                       type="number"
                       name="year"
                       min="1"
                       max="5"
-                      required
+                      disabled={!isEditing}
                       value={formData.year}
                       onChange={handleChange}
-                      className="mt-2 block w-full rounded-xl bg-black/60 border border-white/10 px-4 py-3 text-sm text-white transition focus:border-cyan-400 focus:outline-none"
+                      className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:border-cyan-600 focus:outline-none disabled:opacity-80 font-mono"
                     />
-                    {errors.year && (
-                      <p className="mt-1 text-xs text-red-400">{errors.year}</p>
-                    )}
                   </div>
                 </div>
+              )}
+            </div>
 
-                <div className="mt-6">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-cyan-300">
-                    Section <span className="text-cyan-400">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="section"
-                    required
-                    value={formData.section}
-                    onChange={handleChange}
-                    className="mt-2 block w-full rounded-xl bg-black/60 border border-white/10 px-4 py-3 text-sm text-white transition focus:border-cyan-400 focus:outline-none"
-                    placeholder="e.g. A"
-                  />
-                  {errors.section && (
-                    <p className="mt-1 text-xs text-red-400">{errors.section}</p>
-                  )}
-                </div>
-              </div>
-
-              {/* SECTION 3: Contact & Accommodation */}
-              <div className="glass-card rounded-3xl p-8 border-cyan-500/30">
-                <h2 className="text-xl font-extrabold text-white mb-6 border-b border-white/5 pb-2">
-                  3. Contact & Accommodation
+            {/* GROUP 3: Personal Details */}
+            <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+              <button
+                type="button"
+                onClick={() => toggleSection("personal")}
+                className="w-full px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-left"
+              >
+                <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                  <span className="text-emerald-700 text-base"><FiCalendar /></span>
+                  <span>3. Personal Details</span>
                 </h2>
-                <div className="grid gap-6 md:grid-cols-2">
+                {openSections.personal ? <FiChevronUp /> : <FiChevronDown />}
+              </button>
+
+              {openSections.personal && (
+                <div className="p-6 grid gap-4 sm:grid-cols-2">
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-cyan-300">
-                      Phone Number <span className="text-cyan-400">*</span>
-                    </label>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Gender</label>
+                    <select
+                      name="gender"
+                      disabled={!isEditing}
+                      value={formData.gender}
+                      onChange={handleChange}
+                      className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:border-cyan-600 focus:outline-none disabled:opacity-80 font-medium"
+                    >
+                      {GENDERS.map((g) => (
+                        <option key={g} value={g}>
+                          {g.replace(/_/g, " ")}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Date of Birth</label>
+                    <input
+                      type="date"
+                      name="dateOfBirth"
+                      disabled={!isEditing}
+                      value={formData.dateOfBirth}
+                      onChange={handleChange}
+                      className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:border-cyan-600 focus:outline-none disabled:opacity-80 font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Phone Number</label>
                     <input
                       type="tel"
                       name="phoneNumber"
-                      required
+                      disabled={!isEditing}
                       value={formData.phoneNumber}
                       onChange={handleChange}
-                      className="mt-2 block w-full rounded-xl bg-black/60 border border-white/10 px-4 py-3 text-sm text-white transition focus:border-cyan-400 focus:outline-none"
+                      className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:border-cyan-600 focus:outline-none disabled:opacity-80 font-mono"
                     />
-                    {errors.phoneNumber && (
-                      <p className="mt-1 text-xs text-red-400">{errors.phoneNumber}</p>
-                    )}
                   </div>
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-cyan-300">
-                      WhatsApp Number <span className="text-cyan-400">*</span>
-                    </label>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">WhatsApp Number</label>
                     <input
                       type="tel"
                       name="whatsappNumber"
-                      required
+                      disabled={!isEditing}
                       value={formData.whatsappNumber}
                       onChange={handleChange}
-                      className="mt-2 block w-full rounded-xl bg-black/60 border border-white/10 px-4 py-3 text-sm text-white transition focus:border-cyan-400 focus:outline-none"
+                      className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:border-cyan-600 focus:outline-none disabled:opacity-80 font-mono"
                     />
-                    {errors.whatsappNumber && (
-                      <p className="mt-1 text-xs text-red-400">{errors.whatsappNumber}</p>
-                    )}
                   </div>
                 </div>
+              )}
+            </div>
 
-                <div className="mt-6 flex items-center gap-3">
-                  <input
-                    type="checkbox"
-                    id="hosteller"
-                    name="hosteller"
-                    checked={formData.hosteller}
-                    onChange={handleChange}
-                    className="h-5 w-5 rounded bg-black border-white/10 text-cyan-500 focus:ring-cyan-500 focus:ring-offset-black"
-                  />
-                  <label htmlFor="hosteller" className="text-sm font-bold uppercase tracking-wider text-cyan-300">
-                    Are you a Hosteller?
-                  </label>
+            {/* GROUP 4: Hostel Details */}
+            <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+              <button
+                type="button"
+                onClick={() => toggleSection("hostel")}
+                className="w-full px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-left"
+              >
+                <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                  <span className="text-purple-700 text-base"><FiHome /></span>
+                  <span>4. Hostel Details</span>
+                </h2>
+                {openSections.hostel ? <FiChevronUp /> : <FiChevronDown />}
+              </button>
+
+              {openSections.hostel && (
+                <div className="p-6 space-y-4">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="hosteller"
+                      name="hosteller"
+                      disabled={!isEditing}
+                      checked={formData.hosteller}
+                      onChange={handleChange}
+                      className="h-4 w-4 rounded border-slate-300 text-cyan-600 focus:ring-cyan-500"
+                    />
+                    <label htmlFor="hosteller" className="text-xs font-bold text-slate-800">
+                      Residing in Campus Hostel Accommodation
+                    </label>
+                  </div>
+
+                  {formData.hosteller && (
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Hostel Room Number / Name</label>
+                      <input
+                        type="text"
+                        name="roomNumber"
+                        disabled={!isEditing}
+                        value={formData.roomNumber}
+                        onChange={handleChange}
+                        className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:border-cyan-600 focus:outline-none disabled:opacity-80 font-medium"
+                        placeholder="e.g. Room 204, Hostel H-14"
+                      />
+                    </div>
+                  )}
+
+                  <div className="grid gap-4 sm:grid-cols-2 pt-2">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Home City</label>
+                      <input
+                        type="text"
+                        name="city"
+                        disabled={!isEditing}
+                        value={formData.city}
+                        onChange={handleChange}
+                        className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:border-cyan-600 focus:outline-none disabled:opacity-80 font-medium"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Home State</label>
+                      <input
+                        type="text"
+                        name="state"
+                        disabled={!isEditing}
+                        value={formData.state}
+                        onChange={handleChange}
+                        className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:border-cyan-600 focus:outline-none disabled:opacity-80 font-medium"
+                      />
+                    </div>
+                  </div>
                 </div>
+              )}
+            </div>
 
-                {formData.hosteller && (
-                  <div className="mt-6">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-cyan-300">
-                      Room / Hostel Details <span className="text-cyan-400">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="roomNumber"
-                      required
-                      value={formData.roomNumber}
-                      onChange={handleChange}
-                      className="mt-2 block w-full rounded-xl bg-black/60 border border-white/10 px-4 py-3 text-sm text-white transition focus:border-cyan-400 focus:outline-none"
-                      placeholder="e.g. Room 101, Hostel H-10"
-                    />
-                    {errors.roomNumber && (
-                      <p className="mt-1 text-xs text-red-400">{errors.roomNumber}</p>
-                    )}
-                  </div>
-                )}
-
-                <div className="grid gap-6 md:grid-cols-2 mt-6">
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-cyan-300">
-                      City <span className="text-cyan-400">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="city"
-                      required
-                      value={formData.city}
-                      onChange={handleChange}
-                      className="mt-2 block w-full rounded-xl bg-black/60 border border-white/10 px-4 py-3 text-sm text-white transition focus:border-cyan-400 focus:outline-none"
-                    />
-                    {errors.city && (
-                      <p className="mt-1 text-xs text-red-400">{errors.city}</p>
-                    )}
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-cyan-300">
-                      State <span className="text-cyan-400">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="state"
-                      required
-                      value={formData.state}
-                      onChange={handleChange}
-                      className="mt-2 block w-full rounded-xl bg-black/60 border border-white/10 px-4 py-3 text-sm text-white transition focus:border-cyan-400 focus:outline-none"
-                    />
-                    {errors.state && (
-                      <p className="mt-1 text-xs text-red-400">{errors.state}</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-
+            {isEditing && (
               <button
                 type="submit"
                 disabled={saveLoading}
-                className="w-full rounded-xl neon-button-cyan py-4 text-sm font-extrabold uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white py-3 text-xs font-bold uppercase tracking-wider shadow-sm transition disabled:opacity-50 flex items-center justify-center gap-2"
               >
-                {saveLoading ? "Saving Details..." : "Save Profile Details"}
+                <FiSave className="text-sm" />
+                <span>{saveLoading ? "Saving Changes..." : "Save Profile Details"}</span>
               </button>
-            </form>
-          </Reveal>
+            )}
+          </form>
         </div>
       </main>
     </PageTransition>

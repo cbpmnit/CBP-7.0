@@ -163,7 +163,7 @@ class AttendanceControllerTest {
                         .header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data", hasSize(1)));
+                .andExpect(jsonPath("$.data.records", hasSize(1)));
     }
 
     @Test
@@ -182,7 +182,7 @@ class AttendanceControllerTest {
                         .header("Authorization", "Bearer " + studentToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data", hasSize(1)));
+                .andExpect(jsonPath("$.data.records", hasSize(1)));
     }
 
     @Test

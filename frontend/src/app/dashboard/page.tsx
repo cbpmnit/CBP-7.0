@@ -1,116 +1,260 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { useAppDispatch, useAppSelector } from "@/store/hooks"
-import { logout } from "@/store/slices/authSlice"
-import Reveal from "@/components/animations/RevealOnScroll"
-import PageTransition from "@/components/animations/PageTransition"
+import { useAppSelector } from "@/store/hooks"
+import { profileService } from "@/services/profileService"
+import { cbpService } from "@/services/cbpService"
+import { paymentService } from "@/services/paymentService"
+import { attendanceService } from "@/services/attendanceService"
+import { certificateService } from "@/services/certificateService"
+
+import { UserProfileResponse } from "@/types/profile"
+import { CbpRegistrationDetailResponse } from "@/types/cbp"
+import { PaymentDetailResponse } from "@/types/payment"
+import { StudentAttendanceSummaryResponse, AttendanceQrResponse } from "@/types/attendance"
+import { CertificateResponse } from "@/types/certificate"
+
+import StudentSummary from "@/components/dashboard/StudentSummary"
+import ProgressTimeline from "@/components/dashboard/ProgressTimeline"
+import SidebarNavigation from "@/components/dashboard/SidebarNavigation"
+
+import StatusCard from "@/components/dashboard/StatusCard"
+import PaymentCard from "@/components/dashboard/PaymentCard"
+import AttendanceCard from "@/components/cards/AttendanceCard"
+import AttendanceTable from "@/components/tables/AttendanceTable"
+import CertificateCard from "@/components/cards/CertificateCard"
+import NotificationPanel from "@/components/dashboard/NotificationPanel"
+
+import StudentQrCard from "@/components/dashboard/StudentQrCard"
+import DailyQrCard from "@/components/dashboard/DailyQrCard"
+import EmailTemplateManager from "@/components/dashboard/EmailTemplateManager"
+import EmailTester from "@/components/dashboard/EmailTester"
+
+import {
+  FiUser,
+  FiFileText,
+  FiCamera,
+  FiCreditCard,
+  FiAward,
+  FiBell,
+  FiArrowRight,
+  FiClock,
+  FiCheckCircle,
+} from "react-icons/fi"
 
 export default function DashboardPage() {
-  const router = useRouter()
-  const dispatch = useAppDispatch()
-  const { studentId, role, name } = useAppSelector((state) => state.auth)
+  const { studentId, name } = useAppSelector((state) => state.auth)
 
-  const handleLogout = () => {
-    dispatch(logout())
-    router.push("/login")
+  const [activeTab, setActiveTab] = useState("overview")
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [loading, setLoading] = useState(true)
+
+  const [profile, setProfile] = useState<UserProfileResponse | null>(null)
+  const [cbpReg, setCbpReg] = useState<CbpRegistrationDetailResponse | null>(null)
+  const [payment, setPayment] = useState<PaymentDetailResponse | null>(null)
+  const [attendance, setAttendance] = useState<StudentAttendanceSummaryResponse | null>(null)
+  const [certificate, setCertificate] = useState<CertificateResponse | null>(null)
+  const [qrCode, setQrCode] = useState<AttendanceQrResponse | null>(null)
+
+  useEffect(() => {
+    fetchDashboardData()
+  }, [])
+
+  const fetchDashboardData = async () => {
+    setLoading(true)
+    try {
+      const [profData, cbpData, payData, attData, certData, qrData] = await Promise.allSettled([
+        profileService.getProfile(),
+        cbpService.getMyRegistration(),
+        paymentService.getMyPayment(),
+        attendanceService.getMyAttendance(),
+        certificateService.getMyCertificate(),
+        attendanceService.getMyQr(),
+      ])
+
+      if (profData.status === "fulfilled") setProfile(profData.value)
+      if (cbpData.status === "fulfilled") setCbpReg(cbpData.value)
+      if (payData.status === "fulfilled") setPayment(payData.value)
+      if (attData.status === "fulfilled") setAttendance(attData.value)
+      if (certData.status === "fulfilled") setCertificate(certData.value)
+      if (qrData.status === "fulfilled") setQrCode(qrData.value)
+    } catch (e) {
+      console.error("Error fetching dashboard data", e)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const isProfileComplete = !!profile
+  const isCbpRegistered = !!cbpReg
+  const isPaymentSuccess = payment?.paymentStatus === "SUCCESS"
+  const attendancePct = attendance?.percentage ?? 0
+  const isCertAvailable = !!certificate
+
+  // Determine Next Action Step for Student Portal Overview
+  let nextActionTitle = "Session Attendance QR Active"
+  let nextActionDesc = "Present your daily session QR code to volunteers at the workshop hall entry."
+  let nextActionBtnText = "Access Attendance QR"
+  let nextActionTab = "attendance"
+  let nextActionIcon = <FiCamera />
+
+  if (!isPaymentSuccess) {
+    nextActionTitle = "Complete CBP Registration Fee Payment"
+    nextActionDesc = "Verify your PhonePe online transaction to complete program registration."
+    nextActionBtnText = "Go to Payments"
+    nextActionTab = "payments"
+    nextActionIcon = <FiCreditCard />
+  } else if (!isProfileComplete) {
+    nextActionTitle = "Complete Student Academic Profile"
+    nextActionDesc = "Provide your institute, branch, and hostel details for official certificate issue."
+    nextActionBtnText = "Update Profile"
+    nextActionTab = "profile"
+    nextActionIcon = <FiUser />
+  } else if (isCertAvailable) {
+    nextActionTitle = "CBP Completion Certificate Unlocked"
+    nextActionDesc = "Your official certificate has been issued and is available for PDF download."
+    nextActionBtnText = "Download Certificate"
+    nextActionTab = "certificates"
+    nextActionIcon = <FiAward />
   }
 
   return (
-    <PageTransition>
-      <main className="min-h-screen bg-black text-gray-100 bg-grid-cyber py-24 relative overflow-hidden">
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-cyan-500/10 rounded-full blur-[160px] pointer-events-none" />
+    <div className="flex-1 w-full bg-cbp-grid text-slate-900 min-h-[calc(100vh-72px)] relative">
+      {/* Product-Centric Student Navigation Dock */}
+      <SidebarNavigation
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        collapsed={sidebarCollapsed}
+        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+      />
 
-        <div className="mx-auto max-w-4xl px-5 relative z-10">
-          <Reveal>
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between border-b border-white/10 pb-8 mb-12">
-              <div>
-                <span className="inline-flex items-center gap-2 rounded-full bg-cyan-500/10 border border-cyan-500/30 px-4 py-1.5 text-xs font-bold text-cyan-300 uppercase tracking-widest backdrop-blur-md">
-                  Student Portal Dashboard
-                </span>
-                <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
-                  Welcome, <span className="gradient-text-cyan">{name || "Student"}</span>
-                </h1>
-                <p className="mt-1 text-sm text-gray-400 font-mono">
-                  Roll Number: {studentId} | Role: {role}
-                </p>
-              </div>
-              <button
-                onClick={handleLogout}
-                className="mt-6 md:mt-0 inline-flex items-center justify-center rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 px-6 py-2.5 text-sm font-bold uppercase tracking-wider transition duration-200"
-              >
-                Log Out
-              </button>
-            </div>
-          </Reveal>
+      {/* Main Workspace Area */}
+      <main
+        className={`transition-all duration-300 py-6 px-4 sm:px-6 lg:px-8 ${
+          sidebarCollapsed ? "lg:ml-[90px]" : "lg:ml-[240px]"
+        }`}
+      >
+        <div className="mx-auto max-w-6xl">
+          {/* 1. Student Identity Summary */}
+          <StudentSummary name={name} studentId={studentId} profile={profile} />
 
-          <div className="grid gap-6 md:grid-cols-3">
-            {/* Card 1: Profile Setup */}
-            <Reveal delay={80}>
-              <div className="glass-card rounded-3xl p-6 border-cyan-500/30 flex flex-col h-full justify-between">
+          {/* 2. CBP Progress Lifecycle Timeline */}
+          <ProgressTimeline
+            isProfileComplete={isProfileComplete}
+            isRegistered={isCbpRegistered}
+            isPaymentSuccess={isPaymentSuccess}
+            attendancePercentage={attendancePct}
+            isCertificateIssued={isCertAvailable}
+          />
+
+          {/* Workspace Content */}
+          <div className="space-y-6">
+            {/* OVERVIEW TAB */}
+            {activeTab === "overview" && (
+              <div className="space-y-6">
+                {/* 3. Today's Important Action Card */}
                 <div>
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xl font-bold shadow-[0_0_15px_rgba(0,240,255,0.2)] mb-6">
-                    👤
-                  </div>
-                  <h3 className="text-lg font-extrabold text-white mb-2">Student Profile</h3>
-                  <p className="text-sm text-gray-400 leading-relaxed mb-6">
-                    Set up or modify your personal, academic, and contact details. Keep your profile updated for correct certificate naming.
-                  </p>
-                </div>
-                <Link
-                  href="/profile"
-                  className="inline-flex items-center justify-center w-full rounded-xl bg-cyan-500 text-black py-3 text-xs font-extrabold uppercase tracking-widest hover:bg-cyan-400 transition"
-                >
-                  Manage Profile
-                </Link>
-              </div>
-            </Reveal>
+                  <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">
+                    Today's Next Action Step
+                  </h3>
+                  <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm cbp-card-interactive flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                      <div className="h-12 w-12 rounded-2xl bg-cyan-50 border border-cyan-200 text-cyan-700 flex items-center justify-center text-2xl shrink-0">
+                        {nextActionIcon}
+                      </div>
+                      <div>
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-cyan-800 bg-cyan-50 px-2.5 py-0.5 rounded-full border border-cyan-200 uppercase tracking-wider mb-1">
+                          <FiClock /> Immediate Action
+                        </span>
+                        <h4 className="text-base font-extrabold text-slate-900">{nextActionTitle}</h4>
+                        <p className="text-xs text-slate-600 mt-0.5">{nextActionDesc}</p>
+                      </div>
+                    </div>
 
-            {/* Card 2: CBP Registration */}
-            <Reveal delay={120}>
-              <div className="glass-card rounded-3xl p-6 border-cyan-500/30 flex flex-col h-full justify-between">
-                <div>
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xl font-bold shadow-[0_0_15px_rgba(0,240,255,0.2)] mb-6">
-                    📝
+                    <button
+                      onClick={() => setActiveTab(nextActionTab)}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white text-xs font-bold uppercase tracking-wider shadow-sm transition shrink-0 self-end sm:self-center"
+                    >
+                      <span>{nextActionBtnText}</span>
+                      <FiArrowRight />
+                    </button>
                   </div>
-                  <h3 className="text-lg font-extrabold text-white mb-2">CBP Program</h3>
-                  <p className="text-sm text-gray-400 leading-relaxed mb-6">
-                    Complete your Capacity Building Program event registration to attend standard 5-day soft skills training workshops.
-                  </p>
                 </div>
-                <Link
-                  href="/cbp"
-                  className="inline-flex items-center justify-center w-full rounded-xl bg-cyan-500 text-black py-3 text-xs font-extrabold uppercase tracking-widest hover:bg-cyan-400 transition"
-                >
-                  CBP Status
-                </Link>
-              </div>
-            </Reveal>
 
-            {/* Card 3: Payments */}
-            <Reveal delay={160}>
-              <div className="glass-card rounded-3xl p-6 border-cyan-500/30 flex flex-col h-full justify-between">
+                {/* 4. Recent Notifications Stream */}
                 <div>
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xl font-bold shadow-[0_0_15px_rgba(0,240,255,0.2)] mb-6">
-                    💳
-                  </div>
-                  <h3 className="text-lg font-extrabold text-white mb-2">Payments</h3>
-                  <p className="text-sm text-gray-400 leading-relaxed mb-6">
-                    Complete and review registrations transaction logs, generate receipts, and track online/offline fees processing status.
-                  </p>
+                  <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">
+                    Recent Announcements &amp; Updates
+                  </h3>
+                  <NotificationPanel
+                    isRegistered={isCbpRegistered}
+                    isPaid={isPaymentSuccess}
+                    attendancePct={attendancePct}
+                    isCertAvailable={isCertAvailable}
+                  />
                 </div>
-                <Link
-                  href="/payment"
-                  className="inline-flex items-center justify-center w-full rounded-xl bg-cyan-500 text-black py-3 text-xs font-extrabold uppercase tracking-widest hover:bg-cyan-400 transition"
-                >
-                  Payments Portal
-                </Link>
               </div>
-            </Reveal>
+            )}
+
+            {/* DETAILED MODULE TABS */}
+            {activeTab === "profile" && (
+              <div className="space-y-6">
+                <StatusCard
+                  icon={<FiUser />}
+                  title="Student Profile"
+                  subtitle="Personal, academic, and hostel details for official verification."
+                  statusText={isProfileComplete ? "Complete" : "Action Needed"}
+                  statusType={isProfileComplete ? "success" : "warning"}
+                  actionText="Open Full Profile Page"
+                  actionHref="/profile"
+                />
+              </div>
+            )}
+
+            {activeTab === "attendance" && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <StudentQrCard qrCode={qrCode} registrationId={cbpReg?.registrationId} loading={loading} />
+                  <AttendanceCard summary={attendance} loading={loading} />
+                </div>
+                <DailyQrCard studentQr={qrCode} />
+                <AttendanceTable records={attendance?.records || []} loading={loading} />
+              </div>
+            )}
+
+            {activeTab === "payments" && (
+              <div className="space-y-6">
+                <PaymentCard payment={payment} loading={loading} />
+              </div>
+            )}
+
+            {activeTab === "certificates" && (
+              <div className="space-y-6">
+                <CertificateCard certificate={certificate} loading={loading} />
+              </div>
+            )}
+
+            {activeTab === "notifications" && (
+              <div className="space-y-6">
+                <NotificationPanel
+                  isRegistered={isCbpRegistered}
+                  isPaid={isPaymentSuccess}
+                  attendancePct={attendancePct}
+                  isCertAvailable={isCertAvailable}
+                />
+              </div>
+            )}
+
+            {activeTab === "email" && (
+              <div className="space-y-6">
+                <EmailTemplateManager />
+                <EmailTester />
+              </div>
+            )}
           </div>
         </div>
       </main>
-    </PageTransition>
+    </div>
   )
 }
