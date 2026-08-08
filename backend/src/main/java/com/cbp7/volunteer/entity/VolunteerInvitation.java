@@ -6,6 +6,8 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -47,6 +49,16 @@ public class VolunteerInvitation {
     @Column(name = "created_by", nullable = false)
     private String createdBy;
 
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(
+            name = "volunteer_invitation_permissions",
+            schema = "identity",
+            joinColumns = @JoinColumn(name = "invitation_id")
+    )
+    @Column(name = "permission")
+    @Builder.Default
+    private Set<String> permissions = new HashSet<>();
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -65,6 +77,9 @@ public class VolunteerInvitation {
         }
         if (this.expiresAt == null) {
             this.expiresAt = LocalDateTime.now().plusHours(24);
+        }
+        if (this.permissions == null) {
+            this.permissions = new HashSet<>();
         }
     }
 }

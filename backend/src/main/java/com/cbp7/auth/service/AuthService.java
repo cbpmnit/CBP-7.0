@@ -4,6 +4,7 @@ import com.cbp7.auth.dto.LoginRequest;
 import com.cbp7.auth.dto.LoginResponse;
 import com.cbp7.auth.dto.RegisterRequest;
 import com.cbp7.auth.dto.UserResponse;
+import com.cbp7.auth.entity.AuthProvider;
 import com.cbp7.auth.entity.Role;
 import com.cbp7.auth.entity.User;
 import com.cbp7.auth.identity.UserIdentityResolver;
@@ -126,12 +127,78 @@ public class AuthService {
                 token,
                 user.getStudentId(),
                 user.getName(),
-                user.getRole().name()
+                user.getRole().name(),
+                user.getPermissions() != null ? user.getPermissions() : java.util.Set.of()
         );
     }
 
     public Optional<User> findUserByIdentifier(String identifier) {
         return userIdentityResolver.findUserByIdentifier(identifier);
+    }
+
+    @Transactional
+    public String processGoogleUser(String email, String name, String sub) {
+        if (email == null || email.isBlank()) {
+            throw new IllegalArgumentException("Google account email must not be null or empty");
+        }
+
+        String cleanEmail = email.trim().toLowerCase();
+        String cleanName = name != null && !name.isBlank() ? name.trim() : cleanEmail.split("@")[0];
+
+        Optional<User> existingUserOpt = userRepository.findByEmailIgnoreCase(cleanEmail);
+        User user;
+
+        if (existingUserOpt.isPresent()) {
+            user = existingUserOpt.get();
+            if (!Boolean.TRUE.equals(user.getEnabled())) {
+                throw new ForbiddenException("Account is disabled");
+            }
+            if (user.getAuthProvider() == null || user.getAuthProvider() == AuthProvider.LOCAL) {
+                user.setAuthProvider(AuthProvider.GOOGLE);
+            }
+            if (user.getProviderId() == null || user.getProviderId().isBlank()) {
+                user.setProviderId(sub);
+            }
+            user = userRepository.save(user);
+            log.info("Existing CBP user authenticated through Google: {}", cleanEmail);
+        } else {
+            String baseStudentId = "g_" + cleanEmail.split("@")[0].replaceAll("[^a-zA-Z0-9]", "");
+            String studentId = baseStudentId;
+            int counter = 1;
+            while (userRepository.existsByStudentIdIgnoreCase(studentId)) {
+                studentId = baseStudentId + counter++;
+            }
+
+            user = User.builder()
+                    .studentId(studentId)
+                    .email(cleanEmail)
+                    .name(cleanName)
+                    .role(Role.ROLE_STUDENT)
+                    .enabled(true)
+                    .authProvider(AuthProvider.GOOGLE)
+                    .providerId(sub)
+                    .password(null)
+                    .build();
+
+            user = userRepository.save(user);
+            log.info("Creating new CBP student account from Google: email={}, studentId={}", cleanEmail, studentId);
+
+            if (notificationEventPublisher != null) {
+                try {
+                    String userId = user.getId() != null ? user.getId().toString() : "";
+                    notificationEventPublisher.publish(new StudentRegisteredEvent(
+                            studentId,
+                            cleanEmail,
+                            cleanName,
+                            userId
+                    ));
+                } catch (Exception e) {
+                    log.error("Failed to publish StudentRegisteredEvent for Google user: {}", cleanEmail, e);
+                }
+            }
+        }
+
+        return jwtProvider.generateToken(user);
     }
 
     public String logout() {
@@ -148,7 +215,8 @@ public class AuthService {
                 user.getEmail(),
                 user.getName(),
                 user.getPhoneNumber(),
-                user.getRole().name()
+                user.getRole().name(),
+                user.getPermissions() != null ? user.getPermissions() : java.util.Set.of()
         );
     }
 }

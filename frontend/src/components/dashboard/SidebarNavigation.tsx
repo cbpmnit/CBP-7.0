@@ -39,7 +39,8 @@ export const ADMIN_NAV_ITEMS: NavItem[] = [
 ]
 
 export const VOLUNTEER_NAV_ITEMS: NavItem[] = [
-  { id: "volunteer-scanner", label: "Attendance Scanner", href: "/volunteer/scanner", icon: <FiCamera /> },
+  { id: "volunteer-scanner", label: "Attendance Scanner", href: "/volunteer/scanner", icon: <FiCamera />, permission: "ATTENDANCE_SCAN" },
+  { id: "volunteer-students", label: "Student Directory", href: "/admin/students", icon: <FiUsers />, permission: "STUDENT_VIEW" },
   { id: "volunteer-profile", label: "Volunteer Profile", href: "/volunteer/profile", icon: <FiUser /> },
 ]
 

@@ -4,6 +4,16 @@ server:
   port: ${PORT:9900}
 
 spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID:mock-google-client-id}
+            client-secret: ${GOOGLE_CLIENT_SECRET:mock-google-client-secret}
+            scope:
+              - email
+              - profile
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:local}
   config:

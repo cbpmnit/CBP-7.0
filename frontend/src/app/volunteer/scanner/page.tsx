@@ -53,7 +53,12 @@ export default function VolunteerScannerPage() {
   const fetchActiveSessions = async () => {
     setLoadingSessions(true)
     try {
-      const data = await attendanceService.getAllSessions()
+      let data: AttendanceSessionDto[] = []
+      try {
+        data = await attendanceService.getVolunteerSessions()
+      } catch {
+        data = await attendanceService.getAllSessions()
+      }
       const list = data || []
       setSessions(list)
       const active = list.find((s) => s.status === "ACTIVE")
@@ -65,7 +70,7 @@ export default function VolunteerScannerPage() {
         setSelectedSessionId("")
       }
     } catch (err) {
-      console.warn("Failed to load attendance sessions", err)
+      console.error("API authorization failure: Failed to load volunteer attendance sessions", err)
       setSessions([])
       setSelectedSessionId("")
     } finally {

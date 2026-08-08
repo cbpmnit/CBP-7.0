@@ -11,11 +11,11 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
-
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 @Component
@@ -58,11 +58,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             userRepository.findByStudentId(studentId).ifPresent(user -> {
                 if (Boolean.TRUE.equals(user.getEnabled())) {
-                    SimpleGrantedAuthority authority = new SimpleGrantedAuthority(user.getRole().name());
+                    List<SimpleGrantedAuthority> authorities = new ArrayList<>();
+                    authorities.add(new SimpleGrantedAuthority(user.getRole().name()));
+                    if (user.getPermissions() != null) {
+                        for (String perm : user.getPermissions()) {
+                            if (perm != null && !perm.isBlank()) {
+                                authorities.add(new SimpleGrantedAuthority(perm));
+                            }
+                        }
+                    }
+
                     UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                             user,
                             null,
-                            List.of(authority)
+                            authorities
                     );
                     authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authentication);

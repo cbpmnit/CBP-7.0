@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
+@lombok.extern.slf4j.Slf4j
 public class AuthController {
 
     private final AuthService authService;
@@ -40,6 +41,12 @@ public class AuthController {
     public ResponseEntity<ApiResponse<Void>> logout() {
         String message = authService.logout();
         return ResponseEntity.ok(ApiResponse.success(message));
+    }
+
+    @GetMapping("/google")
+    public void redirectToGoogleOauth(jakarta.servlet.http.HttpServletResponse response) throws java.io.IOException {
+        log.info("Google OAuth authentication initiated");
+        response.sendRedirect("/oauth2/authorization/google");
     }
 
     @GetMapping("/me")

@@ -2,37 +2,49 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { volunteerService, VolunteerListItemResponse } from "@/services/volunteerService"
+import SidebarNavigation from "@/components/dashboard/SidebarNavigation"
 import PageTransition from "@/components/animations/PageTransition"
+import {
+  adminVolunteerService,
+  VolunteerListItem,
+  ALL_PERMISSION_SCOPES,
+  CreateVolunteerPayload,
+} from "@/services/adminVolunteerService"
 import {
   FiUsers,
   FiUserPlus,
-  FiMail,
-  FiRefreshCw,
-  FiSlash,
-  FiArrowLeft,
+  FiShield,
   FiCheckCircle,
-  FiClock,
-  FiX,
+  FiAlertCircle,
+  FiRefreshCw,
   FiEye,
+  FiEdit,
+  FiSend,
+  FiSlash,
+  FiCheck,
+  FiX,
   FiSearch,
+  FiArrowLeft,
+  FiCalendar,
+  FiActivity,
 } from "react-icons/fi"
 
 export default function AdminVolunteersPage() {
-  const [volunteers, setVolunteers] = useState<VolunteerListItemResponse[]>([])
+  const [volunteers, setVolunteers] = useState<VolunteerListItem[]>([])
   const [loading, setLoading] = useState(true)
-  const [message, setMessage] = useState<string | null>(null)
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const [searchQuery, setSearchQuery] = useState("")
+  const [error, setError] = useState<string | null>(null)
+  const [search, setSearch] = useState("")
 
-  // Invite Modal
-  const [modalOpen, setModalOpen] = useState(false)
-  const [inviteLoading, setInviteLoading] = useState(false)
-  const [volunteerName, setVolunteerName] = useState("")
-  const [volunteerEmail, setVolunteerEmail] = useState("")
-
-  // Detail Modal
-  const [selectedVolunteer, setSelectedVolunteer] = useState<VolunteerListItemResponse | null>(null)
+  // Modal State
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false)
+  const [inviteEmail, setInviteEmail] = useState("")
+  const [inviteName, setInviteName] = useState("")
+  const [selectedScopes, setSelectedScopes] = useState<string[]>([
+    "ATTENDANCE_SCAN",
+    "ATTENDANCE_VIEW",
+  ])
+  const [inviting, setInviting] = useState(false)
+  const [actionMessage, setActionMessage] = useState<string | null>(null)
 
   useEffect(() => {
     fetchVolunteers()
@@ -40,366 +52,398 @@ export default function AdminVolunteersPage() {
 
   const fetchVolunteers = async () => {
     setLoading(true)
-    setMessage(null)
-    setErrorMessage(null)
+    setError(null)
     try {
-      const data = await volunteerService.getAllVolunteers()
+      const data = await adminVolunteerService.getAllVolunteers()
       setVolunteers(data || [])
     } catch (err: any) {
-      setErrorMessage(err?.message || "Failed to load volunteer directory.")
+      setError(err?.message || "Failed to load volunteer roster.")
     } finally {
       setLoading(false)
     }
   }
 
+  const handleScopeToggle = (scopeId: string) => {
+    setSelectedScopes((prev) =>
+      prev.includes(scopeId) ? prev.filter((s) => s !== scopeId) : [...prev, scopeId]
+    )
+  }
+
   const handleInviteSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!volunteerEmail.trim()) {
-      setErrorMessage("Volunteer email address is required.")
-      return
-    }
+    if (!inviteEmail.trim()) return
 
-    setInviteLoading(true)
-    setErrorMessage(null)
-    setMessage(null)
-
+    setInviting(true)
+    setActionMessage(null)
     try {
-      await volunteerService.inviteVolunteer({
-        email: volunteerEmail.trim(),
-        name: volunteerName.trim() || undefined,
-      })
-      setMessage(`Invitation sent successfully to ${volunteerEmail}!`)
-      setModalOpen(false)
-      setVolunteerName("")
-      setVolunteerEmail("")
+      const payload: CreateVolunteerPayload = {
+        email: inviteEmail.trim(),
+        name: inviteName.trim() || undefined,
+        permissions: selectedScopes,
+      }
+      await adminVolunteerService.createVolunteer(payload)
+      setActionMessage(`Volunteer invitation sent successfully to ${inviteEmail} ✓`)
+      setIsInviteModalOpen(false)
+      setInviteEmail("")
+      setInviteName("")
       fetchVolunteers()
     } catch (err: any) {
-      setErrorMessage(err?.message || "Failed to send volunteer invitation.")
+      setError(err?.message || "Failed to send volunteer invitation.")
     } finally {
-      setInviteLoading(false)
+      setInviting(false)
     }
   }
 
-  const handleResend = async (id: string, email: string) => {
-    setMessage(null)
-    setErrorMessage(null)
+  const handleToggleDisable = async (id: string) => {
     try {
-      await volunteerService.resendInvitation(id)
-      setMessage(`Invitation renewed and resent to ${email} ✓`)
+      await adminVolunteerService.disableVolunteer(id)
+      setActionMessage("Volunteer status updated successfully ✓")
       fetchVolunteers()
     } catch (err: any) {
-      setErrorMessage(err?.message || "Failed to resend volunteer invitation.")
+      setError(err?.message || "Failed to update status.")
     }
   }
 
-  const handleDisable = async (id: string, name: string) => {
-    if (!confirm(`Are you sure you want to disable volunteer access for ${name}?`)) return
-    setMessage(null)
-    setErrorMessage(null)
+  const handleResend = async (id: string) => {
     try {
-      await volunteerService.disableVolunteer(id)
-      setMessage(`Volunteer ${name} has been disabled.`)
-      fetchVolunteers()
+      const msg = await adminVolunteerService.resendInvitation(id)
+      setActionMessage(msg)
     } catch (err: any) {
-      setErrorMessage(err?.message || "Failed to disable volunteer.")
+      setError(err?.message || "Failed to resend invitation.")
     }
   }
 
   const filteredVolunteers = volunteers.filter((v) => {
-    const query = searchQuery.toLowerCase()
-    return (
-      (v.name || "").toLowerCase().includes(query) ||
-      (v.email || "").toLowerCase().includes(query) ||
-      (v.status || "").toLowerCase().includes(query)
-    )
+    const q = search.toLowerCase().trim()
+    if (!q) return true
+    return v.name.toLowerCase().includes(q) || v.email.toLowerCase().includes(q)
   })
+
+  // Group permission scopes by category for modal
+  const scopeCategories = Array.from(new Set(ALL_PERMISSION_SCOPES.map((s) => s.category)))
 
   return (
     <PageTransition>
-      <main className="min-h-screen bg-slate-50 text-slate-900 py-10 px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-6xl space-y-6">
-          {/* Top Breadcrumb Header */}
-          <div className="flex items-center justify-between">
-            <Link
-              href="/admin/dashboard"
-              className="inline-flex items-center gap-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 px-4 py-2 text-xs font-bold uppercase tracking-wider transition shadow-sm"
-            >
-              <FiArrowLeft /> Admin Dashboard
-            </Link>
-            <span className="inline-flex items-center gap-2 rounded-full bg-cyan-50 border border-cyan-200 px-4 py-1 text-xs font-bold text-cyan-800 uppercase tracking-wider">
-              Volunteer Management Portal
-            </span>
-          </div>
+      <div className="flex-1 w-full text-slate-900 min-h-[calc(100vh-72px)] relative bg-slate-50">
+        <SidebarNavigation />
 
-          {/* Title and Invite Action Banner */}
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between border-b border-slate-200 pb-6 gap-4">
-            <div>
-              <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
-                Volunteer <span className="gradient-text-cyan">Roster</span>
-              </h1>
-              <p className="mt-1 text-sm text-slate-600">
-                Onboard, manage, and monitor event gate scanner volunteers and their invitation status.
-              </p>
+        <main className="py-8 px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-6xl space-y-6">
+            {/* Top Bar Navigation */}
+            <div className="flex items-center justify-between">
+              <Link
+                href="/admin/dashboard"
+                className="inline-flex items-center gap-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 px-4 py-2 text-xs font-bold uppercase tracking-wider transition shadow-sm"
+              >
+                <FiArrowLeft /> Back to Admin Dashboard
+              </Link>
+              <span className="text-[11px] font-bold text-cyan-800 bg-cyan-50 px-3.5 py-1 rounded-full border border-cyan-200 uppercase tracking-wider">
+                Permission Scopes & Role Control
+              </span>
             </div>
 
-            <button
-              onClick={() => {
-                setModalOpen(true)
-                setErrorMessage(null)
-              }}
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white px-5 py-3 text-xs font-bold uppercase tracking-wider shadow-sm transition shadow-cyan-600/20 shrink-0"
-            >
-              <FiUserPlus className="text-base" /> Add Volunteer
-            </button>
-          </div>
-
-          {/* Feedback Messages */}
-          {message && (
-            <div className="p-4 rounded-2xl border bg-emerald-50 border-emerald-200 text-emerald-950 text-xs font-bold text-center flex items-center justify-center gap-2">
-              <FiCheckCircle className="text-base text-emerald-600" />
-              <span>{message}</span>
-            </div>
-          )}
-
-          {errorMessage && (
-            <div className="p-4 rounded-2xl border bg-rose-50 border-rose-200 text-rose-900 text-xs font-bold text-center">
-              {errorMessage}
-            </div>
-          )}
-
-          {/* Search & Filter Bar */}
-          <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="relative w-full sm:w-80">
-              <FiSearch className="absolute left-3.5 top-3 text-slate-400 text-sm" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by name, email, or status..."
-                className="w-full pl-10 pr-4 py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:bg-white focus:outline-none focus:border-cyan-600 font-medium"
-              />
-            </div>
-            <div className="text-xs text-slate-500 font-medium">
-              Showing <span className="font-bold text-slate-900">{filteredVolunteers.length}</span> volunteers
-            </div>
-          </div>
-
-          {/* Volunteers Table Card */}
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-            {loading ? (
-              <div className="p-12 text-center text-xs text-slate-500 font-medium animate-pulse">
-                Loading volunteer records...
+            {/* Header Banner */}
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-cyan-50 text-cyan-800 border border-cyan-200">
+                    <FiShield /> RBAC Scope Authorization
+                  </span>
+                  <span className="text-[10px] font-mono font-bold text-slate-400">MNIT Jaipur</span>
+                </div>
+                <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+                  Volunteer Operations <span className="gradient-text-cyan">Roster</span>
+                </h1>
+                <p className="mt-1.5 text-xs sm:text-sm text-slate-600 leading-relaxed max-w-xl">
+                  Manage volunteer team accounts, assign fine-grained permission scopes, and provision gate access.
+                </p>
               </div>
-            ) : filteredVolunteers.length === 0 ? (
-              <div className="p-12 text-center">
-                <FiUsers className="mx-auto text-4xl text-slate-300 mb-2" />
-                <h4 className="text-sm font-bold text-slate-700">No Volunteers Found</h4>
-                <p className="text-xs text-slate-400 mt-0.5">Click &quot;Add Volunteer&quot; to invite a volunteer to CBP 7.0.</p>
+
+              <div className="flex items-center gap-3 shrink-0">
+                <button
+                  onClick={() => setIsInviteModalOpen(true)}
+                  className="px-5 py-3 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white text-xs font-bold uppercase tracking-wider transition inline-flex items-center gap-2 shadow-sm shadow-cyan-600/20"
+                >
+                  <FiUserPlus className="text-base" /> Invite New Volunteer
+                </button>
               </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200">
-                    <tr>
-                      <th className="py-3.5 px-6">Name & Identifier</th>
-                      <th className="py-3.5 px-6">Email Address</th>
-                      <th className="py-3.5 px-6">Role</th>
-                      <th className="py-3.5 px-6">Status</th>
-                      <th className="py-3.5 px-6">Created / Invited Date</th>
-                      <th className="py-3.5 px-6 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 text-slate-700 font-medium">
-                    {filteredVolunteers.map((vol) => (
-                      <tr key={vol.id} className="hover:bg-slate-50/70 transition">
-                        <td className="py-4 px-6 font-bold text-slate-900">{vol.name}</td>
-                        <td className="py-4 px-6 font-mono text-slate-600">{vol.email}</td>
-                        <td className="py-4 px-6">
-                          <span className="bg-slate-100 text-slate-700 font-bold px-2 py-0.5 rounded text-[10px] uppercase tracking-wider">
-                            {vol.role}
-                          </span>
-                        </td>
-                        <td className="py-4 px-6">
-                          {vol.status === "ACTIVE" && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                              <FiCheckCircle /> ACTIVE
-                            </span>
-                          )}
-                          {vol.status === "PENDING" || vol.status === "INVITED" ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
-                              <FiClock /> INVITED (PENDING)
-                            </span>
-                          ) : null}
-                          {vol.status === "DISABLED" && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-800 border border-rose-200">
-                              <FiSlash /> DISABLED
-                            </span>
-                          )}
-                          {vol.status === "EXPIRED" && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
-                              EXPIRED
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-4 px-6 text-slate-500 font-mono text-[11px]">
-                          {vol.createdAt ? vol.createdAt.substring(0, 10) : "Recent"}
-                        </td>
-                        <td className="py-4 px-6 text-right">
-                          <div className="inline-flex items-center gap-1.5">
-                            <button
-                              onClick={() => setSelectedVolunteer(vol)}
-                              className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition"
-                              title="View Details"
-                            >
-                              <FiEye />
-                            </button>
+            </div>
 
-                            {vol.status !== "ACTIVE" && (
-                              <button
-                                onClick={() => handleResend(vol.id, vol.email)}
-                                className="p-2 rounded-xl bg-cyan-50 hover:bg-cyan-100 text-cyan-800 transition border border-cyan-200"
-                                title="Resend Invitation"
-                              >
-                                <FiRefreshCw />
-                              </button>
-                            )}
-
-                            {vol.status !== "DISABLED" && (
-                              <button
-                                onClick={() => handleDisable(vol.id, vol.name)}
-                                className="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 transition border border-rose-200"
-                                title="Disable Volunteer"
-                              >
-                                <FiSlash />
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            {/* Action Feedback Banners */}
+            {actionMessage && (
+              <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-bold flex items-center gap-2.5 shadow-sm">
+                <FiCheckCircle className="text-emerald-600 text-base shrink-0" />
+                <span>{actionMessage}</span>
               </div>
             )}
-          </div>
-        </div>
 
-        {/* MODAL 1: Invite Volunteer Form */}
-        {modalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-            <div className="bg-white rounded-3xl p-8 max-w-md w-full border border-slate-200 shadow-2xl relative">
-              <button
-                onClick={() => setModalOpen(false)}
-                className="absolute right-5 top-5 text-slate-400 hover:text-slate-700"
-              >
-                <FiX className="text-xl" />
-              </button>
-
-              <div className="flex items-center gap-2 mb-1">
-                <span className="h-8 w-8 rounded-xl bg-cyan-600 text-white flex items-center justify-center text-sm shadow-sm shadow-cyan-600/30">
-                  <FiMail />
-                </span>
-                <h3 className="text-lg font-bold text-slate-900">Invite Volunteer</h3>
+            {error && (
+              <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 text-xs font-semibold flex items-center gap-2.5 shadow-sm">
+                <FiAlertCircle className="text-rose-600 text-base shrink-0" />
+                <span>{error}</span>
               </div>
-              <p className="text-xs text-slate-500 mb-6">
-                Send an official CBP 7.0 onboarding email with a 24-hour secure activation token.
-              </p>
+            )}
 
-              <form onSubmit={handleInviteSubmit} className="space-y-4 text-xs">
-                <div>
-                  <label className="block font-bold uppercase tracking-wider text-slate-700 mb-1">
-                    Volunteer Name
-                  </label>
-                  <input
-                    type="text"
-                    value={volunteerName}
-                    onChange={(e) => setVolunteerName(e.target.value)}
-                    placeholder="e.g. John Doe"
-                    className="w-full rounded-xl bg-slate-50 border border-slate-200 px-4 py-2.5 text-sm text-slate-900 focus:bg-white focus:border-cyan-600 focus:outline-none font-medium"
-                  />
+            {/* Search & Toolbar */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="relative flex-1 w-full max-w-md">
+                <FiSearch className="absolute left-3.5 top-3 text-slate-400 text-xs" />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search volunteer by name or email..."
+                  className="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium text-slate-900 focus:bg-white focus:outline-none focus:border-cyan-600"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
+                <span>Total Roster: <strong className="text-slate-900">{filteredVolunteers.length}</strong></span>
+              </div>
+            </div>
+
+            {/* Volunteers Directory Data Table */}
+            <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
+              {loading ? (
+                <div className="p-12 text-center text-slate-400 space-y-2">
+                  <FiRefreshCw className="animate-spin text-2xl mx-auto text-cyan-600" />
+                  <p className="text-xs font-semibold">Loading volunteer team roster...</p>
                 </div>
+              ) : filteredVolunteers.length === 0 ? (
+                <div className="p-12 text-center text-slate-500 space-y-2">
+                  <FiUsers className="text-3xl mx-auto text-slate-300" />
+                  <h3 className="text-xs font-bold text-slate-700">No Volunteer Accounts Found</h3>
+                  <p className="text-[11px] text-slate-400">Click &quot;Invite New Volunteer&quot; to provision access.</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50/80 border-b border-slate-200 text-[10px] font-extrabold uppercase tracking-wider text-slate-500">
+                        <th className="px-6 py-3.5">Volunteer Name</th>
+                        <th className="px-6 py-3.5">Email Address</th>
+                        <th className="px-6 py-3.5">Status</th>
+                        <th className="px-6 py-3.5">Assigned Permission Scopes</th>
+                        <th className="px-6 py-3.5">Assigned Duties</th>
+                        <th className="px-6 py-3.5 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 font-medium text-slate-800">
+                      {filteredVolunteers.map((v) => {
+                        const isInvited = v.status === "INVITED" || v.status === "PENDING"
+                        const isActive = v.status === "ACTIVE"
+                        const isDisabled = v.status === "DISABLED"
 
+                        return (
+                          <tr key={v.id} className="hover:bg-cyan-50/30 transition">
+                            <td className="px-6 py-4 font-extrabold text-slate-900">
+                              {v.name}
+                            </td>
+                            <td className="px-6 py-4 font-mono text-slate-600">
+                              {v.email}
+                            </td>
+                            <td className="px-6 py-4">
+                              <span
+                                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase border ${
+                                  isActive
+                                    ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                                    : isInvited
+                                    ? "bg-amber-50 text-amber-800 border-amber-200 animate-pulse"
+                                    : "bg-slate-100 text-slate-600 border-slate-200"
+                                }`}
+                              >
+                                {isActive && <FiCheckCircle />}
+                                {isInvited && <FiActivity />}
+                                {isDisabled && <FiSlash />}
+                                {v.status}
+                              </span>
+                            </td>
+
+                            {/* Assigned Permission Scope Chips */}
+                            <td className="px-6 py-4">
+                              <div className="flex flex-wrap gap-1 max-w-xs">
+                                {v.permissions && v.permissions.length > 0 ? (
+                                  v.permissions.map((scope) => (
+                                    <span
+                                      key={scope}
+                                      className="inline-block px-2 py-0.5 rounded text-[9px] font-bold font-mono uppercase bg-cyan-50 text-cyan-900 border border-cyan-200"
+                                    >
+                                      {scope}
+                                    </span>
+                                  ))
+                                ) : (
+                                  <span className="text-[10px] text-slate-400 italic">No scopes assigned</span>
+                                )}
+                              </div>
+                            </td>
+
+                            <td className="px-6 py-4 text-slate-600 text-[11px]">
+                              {v.assignedSessions?.join(", ") || "Auditorium Gate Scanner"}
+                            </td>
+
+                            {/* Actions Column */}
+                            <td className="px-6 py-4 text-right space-x-1.5">
+                              <Link
+                                href={`/admin/volunteers/${v.id}`}
+                                className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold transition inline-flex items-center gap-1"
+                                title="View & Edit Volunteer Profile"
+                              >
+                                <FiEye /> View Profile
+                              </Link>
+                              <Link
+                                href={`/admin/volunteers/${v.id}`}
+                                className="px-2.5 py-1 rounded-lg bg-cyan-50 hover:bg-cyan-100 text-cyan-800 text-[11px] font-bold transition inline-flex items-center gap-1 border border-cyan-200"
+                                title="Manage Permission Scopes"
+                              >
+                                <FiEdit /> Scopes
+                              </Link>
+                              {isInvited && (
+                                <button
+                                  onClick={() => handleResend(v.id)}
+                                  className="px-2.5 py-1 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-800 text-[11px] font-bold transition inline-flex items-center gap-1 border border-purple-200"
+                                  title="Resend Invitation Email"
+                                >
+                                  <FiSend /> Resend
+                                </button>
+                              )}
+                              <button
+                                onClick={() => handleToggleDisable(v.id)}
+                                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition inline-flex items-center gap-1 border ${
+                                  isDisabled
+                                    ? "bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100"
+                                    : "bg-rose-50 text-rose-800 border-rose-200 hover:bg-rose-100"
+                                }`}
+                                title={isDisabled ? "Enable Volunteer Account" : "Disable Volunteer Account"}
+                              >
+                                {isDisabled ? <FiCheck /> : <FiSlash />}
+                                <span>{isDisabled ? "Enable" : "Disable"}</span>
+                              </button>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        </main>
+
+        {/* INVITE VOLUNTEER MODAL */}
+        {isInviteModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 max-w-xl w-full shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div className="flex items-center gap-2">
+                  <div className="h-9 w-9 rounded-xl bg-cyan-50 border border-cyan-200 text-cyan-700 flex items-center justify-center text-lg">
+                    <FiUserPlus />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-extrabold text-slate-900">Invite New Volunteer</h3>
+                    <p className="text-[11px] text-slate-500">Provision account and assign scope-based permissions.</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsInviteModalOpen(false)}
+                  className="h-8 w-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center"
+                >
+                  <FiX />
+                </button>
+              </div>
+
+              <form onSubmit={handleInviteSubmit} className="space-y-4">
                 <div>
-                  <label className="block font-bold uppercase tracking-wider text-slate-700 mb-1">
-                    Volunteer Email *
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
+                    Volunteer Email Address <span className="text-cyan-600">*</span>
                   </label>
                   <input
                     type="email"
                     required
-                    value={volunteerEmail}
-                    onChange={(e) => setVolunteerEmail(e.target.value)}
-                    placeholder="e.g. volunteer@mnit.ac.in"
-                    className="w-full rounded-xl bg-slate-50 border border-slate-200 px-4 py-2.5 text-sm text-slate-900 focus:bg-white focus:border-cyan-600 focus:outline-none font-medium"
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                    placeholder="volunteer@mnit.ac.in"
+                    className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-mono text-slate-900 focus:bg-white focus:outline-none focus:border-cyan-600"
                   />
                 </div>
 
-                <div className="flex gap-3 pt-4">
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
+                    Volunteer Full Name (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={inviteName}
+                    onChange={(e) => setInviteName(e.target.value)}
+                    placeholder="e.g. Aarav Sharma"
+                    className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-900 focus:bg-white focus:outline-none focus:border-cyan-600"
+                  />
+                </div>
+
+                {/* Permission Scope Checkboxes Grouped by Category */}
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-2">
+                    Assign Permission Scopes
+                  </label>
+                  <div className="space-y-3 p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                    {scopeCategories.map((cat) => (
+                      <div key={cat} className="space-y-1.5">
+                        <span className="text-[10px] font-extrabold uppercase text-cyan-800 tracking-wider">
+                          {cat} Permissions
+                        </span>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {ALL_PERMISSION_SCOPES.filter((s) => s.category === cat).map((scope) => {
+                            const isChecked = selectedScopes.includes(scope.id)
+                            return (
+                              <label
+                                key={scope.id}
+                                className={`flex items-center gap-2 p-2 rounded-xl border text-xs font-medium cursor-pointer transition ${
+                                  isChecked
+                                    ? "bg-cyan-50 border-cyan-200 text-cyan-950 font-bold"
+                                    : "bg-white border-slate-200 text-slate-600 hover:border-slate-300"
+                                }`}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={() => handleScopeToggle(scope.id)}
+                                  className="h-4 w-4 rounded border-slate-300 text-cyan-600 focus:ring-cyan-500"
+                                />
+                                <div>
+                                  <p className="text-[11px] font-bold leading-none">{scope.id}</p>
+                                  <p className="text-[10px] text-slate-400 mt-0.5">{scope.label}</p>
+                                </div>
+                              </label>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
                   <button
                     type="button"
-                    onClick={() => setModalOpen(false)}
-                    className="w-1/2 rounded-xl bg-slate-100 border border-slate-200 py-3 text-xs font-bold uppercase tracking-wider text-slate-700 hover:bg-slate-200 transition"
+                    onClick={() => setIsInviteModalOpen(false)}
+                    className="px-4 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-bold uppercase tracking-wider"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    disabled={inviteLoading}
-                    className="w-1/2 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white py-3 text-xs font-bold uppercase tracking-wider shadow-sm transition disabled:opacity-50"
+                    disabled={inviting || !inviteEmail.trim()}
+                    className="px-5 py-2 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white text-xs font-bold uppercase tracking-wider shadow-sm transition disabled:opacity-50 inline-flex items-center gap-1.5"
                   >
-                    {inviteLoading ? "Sending..." : "Send Invitation"}
+                    {inviting ? <FiRefreshCw className="animate-spin" /> : <FiSend />}
+                    <span>{inviting ? "Sending..." : "Send Invitation"}</span>
                   </button>
                 </div>
               </form>
             </div>
           </div>
         )}
-
-        {/* MODAL 2: View Volunteer Details */}
-        {selectedVolunteer && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-            <div className="bg-white rounded-3xl p-8 max-w-md w-full border border-slate-200 shadow-2xl relative space-y-4">
-              <button
-                onClick={() => setSelectedVolunteer(null)}
-                className="absolute right-5 top-5 text-slate-400 hover:text-slate-700"
-              >
-                <FiX className="text-xl" />
-              </button>
-
-              <h3 className="text-lg font-bold text-slate-900">Volunteer Details</h3>
-
-              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3 text-xs">
-                <div>
-                  <span className="text-[10px] font-bold uppercase text-slate-500">Name</span>
-                  <p className="text-slate-900 font-bold mt-0.5">{selectedVolunteer.name}</p>
-                </div>
-
-                <div>
-                  <span className="text-[10px] font-bold uppercase text-slate-500">Email</span>
-                  <p className="text-slate-900 font-mono mt-0.5">{selectedVolunteer.email}</p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <span className="text-[10px] font-bold uppercase text-slate-500">Role</span>
-                    <p className="text-slate-900 font-bold mt-0.5">{selectedVolunteer.role}</p>
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-bold uppercase text-slate-500">Status</span>
-                    <p className="text-cyan-800 font-bold mt-0.5">{selectedVolunteer.status}</p>
-                  </div>
-                </div>
-              </div>
-
-              <button
-                onClick={() => setSelectedVolunteer(null)}
-                className="w-full py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold uppercase tracking-wider transition"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        )}
-      </main>
+      </div>
     </PageTransition>
   )
 }

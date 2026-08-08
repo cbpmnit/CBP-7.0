@@ -218,4 +218,65 @@ class AuthServiceTest {
         assertEquals("9876543210", response.phoneNumber());
         assertEquals("ROLE_STUDENT", response.role());
     }
+
+    @Test
+    @DisplayName("processGoogleUser creates new student user and returns JWT token when user does not exist")
+    void processGoogleUser_NewUser_Success() {
+        String email = "google.student@gmail.com";
+        String name = "Google Student";
+        String sub = "google_sub_12345";
+
+        when(userRepository.findByEmailIgnoreCase(email)).thenReturn(Optional.empty());
+        when(userRepository.existsByStudentIdIgnoreCase(anyString())).thenReturn(false);
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(jwtProvider.generateToken(any(User.class))).thenReturn("mock.oauth.jwt.token");
+
+        String token = authService.processGoogleUser(email, name, sub);
+
+        assertEquals("mock.oauth.jwt.token", token);
+
+        ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
+        verify(userRepository).save(captor.capture());
+
+        User savedUser = captor.getValue();
+        assertEquals(email, savedUser.getEmail());
+        assertEquals(name, savedUser.getName());
+        assertEquals(Role.ROLE_STUDENT, savedUser.getRole());
+        assertEquals(com.cbp7.auth.entity.AuthProvider.GOOGLE, savedUser.getAuthProvider());
+        assertEquals(sub, savedUser.getProviderId());
+        assertNull(savedUser.getPassword());
+        assertTrue(savedUser.getEnabled());
+    }
+
+    @Test
+    @DisplayName("processGoogleUser updates existing user and returns JWT token when user already exists")
+    void processGoogleUser_ExistingUser_Success() {
+        String email = "existing.student@mnit.ac.in";
+        String name = "Existing Student";
+        String sub = "google_sub_67890";
+
+        User existing = User.builder()
+                .studentId("2024ucs9999")
+                .email(email)
+                .name(name)
+                .role(Role.ROLE_STUDENT)
+                .enabled(true)
+                .authProvider(com.cbp7.auth.entity.AuthProvider.LOCAL)
+                .build();
+
+        when(userRepository.findByEmailIgnoreCase(email)).thenReturn(Optional.of(existing));
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(jwtProvider.generateToken(any(User.class))).thenReturn("mock.oauth.jwt.token.existing");
+
+        String token = authService.processGoogleUser(email, name, sub);
+
+        assertEquals("mock.oauth.jwt.token.existing", token);
+
+        ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
+        verify(userRepository).save(captor.capture());
+
+        User savedUser = captor.getValue();
+        assertEquals(com.cbp7.auth.entity.AuthProvider.GOOGLE, savedUser.getAuthProvider());
+        assertEquals(sub, savedUser.getProviderId());
+    }
 }

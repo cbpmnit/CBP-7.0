@@ -30,6 +30,10 @@ export const attendanceService = {
   getMyActiveAttendanceQr: () =>
     api.get<StudentSessionQrResponse>("/api/v1/student/attendance/qr"),
 
+  // Volunteer & Shared Session APIs
+  getVolunteerSessions: () =>
+    api.get<AttendanceSessionDto[]>("/api/v1/attendance/sessions"),
+
   // Admin Session & Batch Student QR Management APIs
   getAllSessions: () =>
     api.get<AttendanceSessionDto[]>("/api/v1/admin/attendance/sessions"),

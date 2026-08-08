@@ -10,3 +10,25 @@ spring:
 logging:
   level:
     root: INFO
+
+    # Your application logs
+    com.cbp7: INFO
+
+    # Spring framework
+    org.springframework: WARN
+
+    # Hibernate
+    org.hibernate: WARN
+
+    # SQL logs
+    org.hibernate.SQL: WARN
+    org.hibernate.orm.jdbc.bind: WARN
+
+    # Spring Security
+    org.springframework.security: WARN
+
+    # OAuth debugging (keep only while debugging)
+    org.springframework.security.oauth2: INFO
+
+    # Database connection pool
+    com.zaxxer.hikari: WARN

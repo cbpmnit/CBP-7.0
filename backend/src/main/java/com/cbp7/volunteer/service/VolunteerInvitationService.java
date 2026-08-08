@@ -43,7 +43,10 @@ public class VolunteerInvitationService {
             throw new DuplicateResourceException("A registered user account already exists with email: " + email);
         }
 
-        // Clean up or revoke previous pending invitations for this email
+        Set<String> perms = request.permissions() != null && !request.permissions().isEmpty()
+                ? new HashSet<>(request.permissions())
+                : new HashSet<>(List.of("ATTENDANCE_SCAN", "ATTENDANCE_VIEW"));
+
         Optional<VolunteerInvitation> existing = invitationRepository.findByEmailIgnoreCase(email);
         VolunteerInvitation invitation;
 
@@ -57,6 +60,7 @@ public class VolunteerInvitationService {
             invitation.setInvitationToken(token);
             invitation.setStatus(VolunteerInvitationStatus.PENDING);
             invitation.setExpiresAt(expiresAt);
+            invitation.setPermissions(perms);
             invitation.setCreatedBy(adminId != null ? adminId : "admin");
         } else {
             invitation = VolunteerInvitation.builder()
@@ -65,6 +69,7 @@ public class VolunteerInvitationService {
                     .invitationToken(token)
                     .status(VolunteerInvitationStatus.PENDING)
                     .expiresAt(expiresAt)
+                    .permissions(perms)
                     .createdBy(adminId != null ? adminId : "admin")
                     .build();
         }
@@ -72,7 +77,6 @@ public class VolunteerInvitationService {
         invitation = invitationRepository.save(invitation);
         String activationLink = frontendUrl + "/volunteer/setup-password?token=" + token;
 
-        // Dispatch invitation email
         sendInvitationEmail(email, name, activationLink);
 
         return new VolunteerInvitationResponse(
@@ -118,17 +122,19 @@ public class VolunteerInvitationService {
 
     @Transactional
     public void disableVolunteer(String idOrEmail, String adminId) {
-        // Check in users table
         Optional<User> userOpt = userRepository.findByEmail(idOrEmail.trim().toLowerCase());
+        if (userOpt.isEmpty()) {
+            userOpt = userRepository.findByStudentId(idOrEmail.trim().toLowerCase());
+        }
+
         if (userOpt.isPresent()) {
             User user = userOpt.get();
-            user.setEnabled(false);
+            user.setEnabled(!Boolean.TRUE.equals(user.getEnabled()));
             userRepository.save(user);
-            log.info("Admin {} disabled volunteer account {}", adminId, user.getEmail());
+            log.info("Admin {} toggled volunteer enabled status to {} for {}", adminId, user.getEnabled(), user.getEmail());
             return;
         }
 
-        // Check in invitations
         try {
             UUID id = UUID.fromString(idOrEmail);
             Optional<VolunteerInvitation> invOpt = invitationRepository.findById(id);
@@ -159,13 +165,20 @@ public class VolunteerInvitationService {
 
         for (User u : activeVolunteers) {
             String status = Boolean.TRUE.equals(u.getEnabled()) ? "ACTIVE" : "DISABLED";
+            Set<String> perms = u.getPermissions() != null && !u.getPermissions().isEmpty()
+                    ? u.getPermissions()
+                    : Set.of("ATTENDANCE_SCAN", "ATTENDANCE_VIEW");
+
             list.add(new VolunteerListItemResponse(
                     u.getId() != null ? u.getId().toString() : u.getStudentId(),
                     u.getName(),
                     u.getEmail(),
                     "ROLE_VOLUNTEER",
                     status,
-                    u.getCreatedAt() != null ? u.getCreatedAt() : LocalDateTime.now()
+                    perms,
+                    Set.of("All Workshop Sessions"),
+                    u.getCreatedAt() != null ? u.getCreatedAt() : LocalDateTime.now(),
+                    u.getUpdatedAt()
             ));
             processedEmails.add(u.getEmail().toLowerCase());
         }
@@ -178,18 +191,152 @@ public class VolunteerInvitationService {
                 if (inv.getStatus() == VolunteerInvitationStatus.PENDING && inv.getExpiresAt().isBefore(LocalDateTime.now())) {
                     status = "EXPIRED";
                 }
+                Set<String> perms = inv.getPermissions() != null && !inv.getPermissions().isEmpty()
+                        ? inv.getPermissions()
+                        : Set.of("ATTENDANCE_SCAN", "ATTENDANCE_VIEW");
+
                 list.add(new VolunteerListItemResponse(
                         inv.getId().toString(),
                         inv.getName() != null ? inv.getName() : inv.getEmail().split("@")[0],
                         inv.getEmail(),
                         "ROLE_VOLUNTEER",
                         status,
-                        inv.getCreatedAt() != null ? inv.getCreatedAt() : LocalDateTime.now()
+                        perms,
+                        Set.of("Auditorium Gate Scanner"),
+                        inv.getCreatedAt() != null ? inv.getCreatedAt() : LocalDateTime.now(),
+                        null
                 ));
             }
         }
 
         return list;
+    }
+
+    @Transactional(readOnly = true)
+    public VolunteerDetailResponse getVolunteerById(String idOrEmail) {
+        String clean = idOrEmail.trim().toLowerCase();
+
+        // 1. Registered user
+        Optional<User> userOpt = userRepository.findByEmail(clean);
+        if (userOpt.isEmpty()) {
+            userOpt = userRepository.findByStudentId(clean);
+        }
+
+        if (userOpt.isPresent()) {
+            User u = userOpt.get();
+            String status = Boolean.TRUE.equals(u.getEnabled()) ? "ACTIVE" : "DISABLED";
+            Set<String> perms = u.getPermissions() != null && !u.getPermissions().isEmpty()
+                    ? u.getPermissions()
+                    : Set.of("ATTENDANCE_SCAN", "ATTENDANCE_VIEW");
+
+            return new VolunteerDetailResponse(
+                    u.getId() != null ? u.getId().toString() : u.getStudentId(),
+                    u.getName(),
+                    u.getEmail(),
+                    u.getPhoneNumber() != null ? u.getPhoneNumber() : "",
+                    "ROLE_VOLUNTEER",
+                    status,
+                    perms,
+                    Set.of("All Active Workshop Sessions"),
+                    u.getCreatedAt() != null ? u.getCreatedAt() : LocalDateTime.now(),
+                    u.getUpdatedAt(),
+                    null
+            );
+        }
+
+        // 2. Invitation
+        try {
+            UUID uuid = UUID.fromString(idOrEmail);
+            Optional<VolunteerInvitation> invOpt = invitationRepository.findById(uuid);
+            if (invOpt.isPresent()) {
+                VolunteerInvitation inv = invOpt.get();
+                String status = inv.getStatus().name();
+                if (inv.getStatus() == VolunteerInvitationStatus.PENDING && inv.getExpiresAt().isBefore(LocalDateTime.now())) {
+                    status = "EXPIRED";
+                }
+                String activationLink = frontendUrl + "/volunteer/setup-password?token=" + inv.getInvitationToken();
+                return new VolunteerDetailResponse(
+                        inv.getId().toString(),
+                        inv.getName() != null ? inv.getName() : inv.getEmail().split("@")[0],
+                        inv.getEmail(),
+                        "",
+                        "ROLE_VOLUNTEER",
+                        status,
+                        inv.getPermissions() != null && !inv.getPermissions().isEmpty() ? inv.getPermissions() : Set.of("ATTENDANCE_SCAN"),
+                        Set.of("Gate Access Verification"),
+                        inv.getCreatedAt() != null ? inv.getCreatedAt() : LocalDateTime.now(),
+                        null,
+                        activationLink
+                );
+            }
+        } catch (Exception ignored) {}
+
+        Optional<VolunteerInvitation> invByEmail = invitationRepository.findByEmailIgnoreCase(clean);
+        if (invByEmail.isPresent()) {
+            VolunteerInvitation inv = invByEmail.get();
+            String status = inv.getStatus().name();
+            if (inv.getStatus() == VolunteerInvitationStatus.PENDING && inv.getExpiresAt().isBefore(LocalDateTime.now())) {
+                status = "EXPIRED";
+            }
+            String activationLink = frontendUrl + "/volunteer/setup-password?token=" + inv.getInvitationToken();
+            return new VolunteerDetailResponse(
+                    inv.getId().toString(),
+                    inv.getName() != null ? inv.getName() : inv.getEmail().split("@")[0],
+                    inv.getEmail(),
+                    "",
+                    "ROLE_VOLUNTEER",
+                    status,
+                    inv.getPermissions() != null && !inv.getPermissions().isEmpty() ? inv.getPermissions() : Set.of("ATTENDANCE_SCAN"),
+                    Set.of("Gate Access Verification"),
+                    inv.getCreatedAt() != null ? inv.getCreatedAt() : LocalDateTime.now(),
+                    null,
+                    activationLink
+            );
+        }
+
+        throw new ResourceNotFoundException("Volunteer record not found for: " + idOrEmail);
+    }
+
+    @Transactional
+    public VolunteerDetailResponse updateVolunteerPermissions(String idOrEmail, UpdateVolunteerPermissionsRequest request) {
+        String clean = idOrEmail.trim().toLowerCase();
+        Set<String> newPerms = request.permissions() != null ? request.permissions() : Set.of();
+
+        Optional<User> userOpt = userRepository.findByEmail(clean);
+        if (userOpt.isEmpty()) {
+            userOpt = userRepository.findByStudentId(clean);
+        }
+
+        if (userOpt.isPresent()) {
+            User u = userOpt.get();
+            u.setPermissions(new HashSet<>(newPerms));
+            userRepository.save(u);
+            log.info("Updated permission scopes for volunteer user {}", u.getEmail());
+            return getVolunteerById(clean);
+        }
+
+        try {
+            UUID uuid = UUID.fromString(idOrEmail);
+            Optional<VolunteerInvitation> invOpt = invitationRepository.findById(uuid);
+            if (invOpt.isPresent()) {
+                VolunteerInvitation inv = invOpt.get();
+                inv.setPermissions(new HashSet<>(newPerms));
+                invitationRepository.save(inv);
+                log.info("Updated permission scopes for volunteer invitation {}", inv.getEmail());
+                return getVolunteerById(clean);
+            }
+        } catch (Exception ignored) {}
+
+        Optional<VolunteerInvitation> invByEmail = invitationRepository.findByEmailIgnoreCase(clean);
+        if (invByEmail.isPresent()) {
+            VolunteerInvitation inv = invByEmail.get();
+            inv.setPermissions(new HashSet<>(newPerms));
+            invitationRepository.save(inv);
+            log.info("Updated permission scopes for volunteer invitation {}", inv.getEmail());
+            return getVolunteerById(clean);
+        }
+
+        throw new ResourceNotFoundException("Volunteer record not found for: " + idOrEmail);
     }
 
     @Transactional
@@ -248,13 +395,16 @@ public class VolunteerInvitationService {
                 ? invitation.getName().trim()
                 : email.split("@")[0];
 
-        // Unique studentId/identifier for login
         String baseId = "vol_" + email.split("@")[0].replaceAll("[^a-zA-Z0-9]", "");
         String studentId = baseId;
         int count = 1;
         while (userRepository.existsByStudentId(studentId)) {
             studentId = baseId + count++;
         }
+
+        Set<String> perms = invitation.getPermissions() != null && !invitation.getPermissions().isEmpty()
+                ? new HashSet<>(invitation.getPermissions())
+                : new HashSet<>(List.of("ATTENDANCE_SCAN", "ATTENDANCE_VIEW"));
 
         User user = User.builder()
                 .studentId(studentId)
@@ -263,6 +413,7 @@ public class VolunteerInvitationService {
                 .password(passwordEncoder.encode(rawPassword))
                 .role(Role.ROLE_VOLUNTEER)
                 .enabled(true)
+                .permissions(perms)
                 .build();
 
         userRepository.save(user);
@@ -271,7 +422,7 @@ public class VolunteerInvitationService {
         invitation.setUpdatedAt(LocalDateTime.now());
         invitationRepository.save(invitation);
 
-        log.info("Volunteer account activated for {} (ID: {})", email, studentId);
+        log.info("Volunteer account activated for {} (ID: {}) with permissions {}", email, studentId, perms);
         return "Volunteer account activated successfully! You can now log in with your email or Student ID: " + studentId;
     }
 

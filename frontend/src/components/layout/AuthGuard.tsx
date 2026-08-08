@@ -16,6 +16,7 @@ const PUBLIC_EXACT_ROUTES = [
   "/gallery",
   "/faq",
   "/schedule",
+  "/auth/callback",
 ]
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
