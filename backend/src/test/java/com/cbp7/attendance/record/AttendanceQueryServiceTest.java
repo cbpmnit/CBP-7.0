@@ -69,7 +69,7 @@ class AttendanceQueryServiceTest {
                 .title("Day 1 Orientation")
                 .sessionDate(LocalDate.now())
                 .startTime(LocalTime.of(9, 0))
-                .endTime(LocalTime.of(12, 0))
+                .endTime(LocalTime.of(23, 59))
                 .venue("APJ Hall")
                 .status(SessionStatus.ACTIVE)
                 .createdBy("admin001")

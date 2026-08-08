@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { useAppDispatch } from "@/store/hooks"
 import { loginSuccess } from "@/store/slices/authSlice"
 import { api, ApiError } from "@/utils/api"
+import { profileService } from "@/services/profileService"
 import Reveal from "@/components/animations/RevealOnScroll"
 import PageTransition from "@/components/animations/PageTransition"
 import { FiUser, FiLock, FiArrowRight, FiShield, FiCheckCircle } from "react-icons/fi"
@@ -39,9 +40,9 @@ export default function LoginPage() {
     setError(null)
 
     try {
-      // 1. Call login endpoint
+      // 1. Call Backend Login API
       const response: any = await api.post("/api/v1/auth/login", {
-        studentId: formData.identifier,
+        identifier: formData.identifier.trim(),
         password: formData.password,
       })
 
@@ -58,9 +59,11 @@ export default function LoginPage() {
       // 3. Check profile completion to determine redirect path
       let redirectPath = "/profile"
       try {
-        const completion: any = await api.get("/api/v1/profile/completion")
-        if (completion && completion.completed) {
+        const completion: any = await profileService.getCompletion()
+        if (completion && completion.completed && completion.completionPercentage === 100) {
           redirectPath = "/dashboard"
+        } else {
+          redirectPath = "/profile"
         }
       } catch (err) {
         // Fallback to profile creation if completion check fails/404s

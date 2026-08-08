@@ -62,8 +62,8 @@ public class CbpRegistrationService {
                 .lastName(profile.getLastName())
                 .phoneNumber(profile.getPhoneNumber())
                 .institute(profile.getInstitute())
-                .course(profile.getCourse().name())
-                .branch(profile.getBranch().name())
+                .course(profile.getCourse() != null ? profile.getCourse().name() : null)
+                .branch(profile.getBranch() != null ? profile.getBranch().name() : null)
                 .year(profile.getYear())
                 .section(profile.getSection())
                 .hosteller(profile.getHosteller())
@@ -74,9 +74,45 @@ public class CbpRegistrationService {
 
         CbpRegistration savedRegistration = cbpRegistrationRepository.save(registration);
 
+        ProfileSnapshotDto snapshot = new ProfileSnapshotDto(
+                savedRegistration.getStudentId(),
+                savedRegistration.getFirstName(),
+                savedRegistration.getMiddleName(),
+                savedRegistration.getLastName(),
+                savedRegistration.getEmail(),
+                savedRegistration.getPhoneNumber(),
+                savedRegistration.getInstitute(),
+                savedRegistration.getCourse(),
+                savedRegistration.getBranch(),
+                savedRegistration.getYear(),
+                savedRegistration.getSection(),
+                savedRegistration.getHosteller(),
+                savedRegistration.getRoomNumber(),
+                savedRegistration.getCity(),
+                savedRegistration.getState()
+        );
+
         return new CbpRegistrationResponse(
                 savedRegistration.getRegistrationId(),
-                savedRegistration.getRegistrationStatus()
+                savedRegistration.getRegistrationStatus(),
+                savedRegistration.getCreatedAt(),
+                savedRegistration.getStudentId(),
+                savedRegistration.getFirstName(),
+                savedRegistration.getMiddleName(),
+                savedRegistration.getLastName(),
+                savedRegistration.getEmail(),
+                savedRegistration.getPhoneNumber(),
+                savedRegistration.getInstitute(),
+                savedRegistration.getCourse(),
+                savedRegistration.getBranch(),
+                savedRegistration.getYear(),
+                savedRegistration.getSection(),
+                savedRegistration.getHosteller(),
+                savedRegistration.getRoomNumber(),
+                savedRegistration.getCity(),
+                savedRegistration.getState(),
+                savedRegistration.getRegistrationStatus() == RegistrationStatus.REGISTERED,
+                snapshot
         );
     }
 
@@ -109,6 +145,22 @@ public class CbpRegistrationService {
                 registration.getRegistrationId(),
                 registration.getRegistrationStatus(),
                 registration.getCreatedAt(),
+                registration.getStudentId(),
+                registration.getFirstName(),
+                registration.getMiddleName(),
+                registration.getLastName(),
+                registration.getEmail(),
+                registration.getPhoneNumber(),
+                registration.getInstitute(),
+                registration.getCourse(),
+                registration.getBranch(),
+                registration.getYear(),
+                registration.getSection(),
+                registration.getHosteller(),
+                registration.getRoomNumber(),
+                registration.getCity(),
+                registration.getState(),
+                registration.getRegistrationStatus() == RegistrationStatus.REGISTERED,
                 snapshot
         );
     }

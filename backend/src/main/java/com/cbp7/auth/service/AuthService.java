@@ -12,18 +12,25 @@ import com.cbp7.common.exception.DuplicateResourceException;
 import com.cbp7.common.exception.ForbiddenException;
 import com.cbp7.common.exception.InvalidCredentialsException;
 import com.cbp7.common.exception.UnauthorizedException;
+import com.cbp7.notification.event.NotificationEventPublisher;
+import com.cbp7.notification.event.StudentRegisteredEvent;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
+    private final NotificationEventPublisher notificationEventPublisher;
 
+    @Transactional
     public String register(RegisterRequest request) {
         if (request == null) {
             throw new IllegalArgumentException("Registration request cannot be null");
@@ -34,7 +41,11 @@ public class AuthService {
         String name = request.name() != null ? request.name().trim() : "";
         String phoneNumber = request.phoneNumber() != null ? request.phoneNumber().trim() : "";
         String password = request.password() != null ? request.password().trim() : "";
-        String confirmPassword = request.confirmPassword() != null ? request.confirmPassword().trim() : "";
+        String confirmPassword = request.confirmPassword() != null && !request.confirmPassword().isBlank()
+                ? request.confirmPassword().trim()
+                : password;
+
+        log.info("Register request received for student ID: {}, email: {}", studentId, email);
 
         if (studentId.isEmpty() || email.isEmpty() || name.isEmpty() || password.isEmpty()) {
             throw new IllegalArgumentException("All required fields must be provided");
@@ -45,13 +56,16 @@ public class AuthService {
         }
 
         if (userRepository.existsByStudentId(studentId)) {
+            log.warn("Registration failed: Student ID {} is already registered", studentId);
             throw new DuplicateResourceException("Student ID is already registered");
         }
 
         if (userRepository.existsByEmail(email)) {
+            log.warn("Registration failed: Email {} is already registered", email);
             throw new DuplicateResourceException("Email is already registered");
         }
 
+        log.info("Saving new user to database: {}", studentId);
         User user = User.builder()
                 .studentId(studentId)
                 .email(email)
@@ -62,7 +76,23 @@ public class AuthService {
                 .enabled(true)
                 .build();
 
-        userRepository.save(user);
+        User savedUser = userRepository.save(user);
+        String userId = savedUser != null && savedUser.getId() != null ? savedUser.getId().toString() : "";
+        log.info("User created successfully with ID: {} and student ID: {}", userId, studentId);
+
+        if (notificationEventPublisher != null) {
+            try {
+                log.info("Publishing StudentRegisteredEvent for student ID: {}", studentId);
+                notificationEventPublisher.publish(new StudentRegisteredEvent(
+                        studentId,
+                        email,
+                        name,
+                        userId
+                ));
+            } catch (Exception e) {
+                log.error("Failed to publish StudentRegisteredEvent for student ID: {}", studentId, e);
+            }
+        }
 
         return "User registered successfully";
     }

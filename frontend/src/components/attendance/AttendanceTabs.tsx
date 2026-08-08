@@ -2,35 +2,32 @@
 
 import { FiUser, FiSliders, FiCamera } from "react-icons/fi"
 
-export type AttendanceViewMode = "student" | "admin" | "volunteer"
+export type AttendanceTabMode = "student" | "admin" | "volunteer"
 
 interface AttendanceTabsProps {
-  activeView: AttendanceViewMode
-  onViewChange: (view: AttendanceViewMode) => void
+  activeTab: AttendanceTabMode
+  onTabChange: (tab: AttendanceTabMode) => void
 }
 
-export default function AttendanceTabs({ activeView, onViewChange }: AttendanceTabsProps) {
+export default function AttendanceTabs({ activeTab, onTabChange }: AttendanceTabsProps) {
   const tabs = [
     {
-      id: "student" as AttendanceViewMode,
+      id: "student" as AttendanceTabMode,
       label: "Student View",
-      sublabel: "Show My QR",
+      sublabel: "My Attendance & Schedule",
       icon: <FiUser />,
-      permissionRole: "STUDENT (VIEW_STUDENT_QR)",
     },
     {
-      id: "admin" as AttendanceViewMode,
+      id: "admin" as AttendanceTabMode,
       label: "Admin View",
-      sublabel: "Create & Manage QR",
+      sublabel: "Session CRUD & Analytics",
       icon: <FiSliders />,
-      permissionRole: "ADMIN (GENERATE_SESSION_QR)",
     },
     {
-      id: "volunteer" as AttendanceViewMode,
-      label: "Volunteer Scanner",
-      sublabel: "Scan & Mark Attendance",
+      id: "volunteer" as AttendanceTabMode,
+      label: "Volunteer View",
+      sublabel: "Session QR Scanner",
       icon: <FiCamera />,
-      permissionRole: "VOLUNTEER (SCAN_QR)",
     },
   ]
 
@@ -38,14 +35,14 @@ export default function AttendanceTabs({ activeView, onViewChange }: AttendanceT
     <div className="bg-white border border-slate-200 rounded-2xl p-2 shadow-sm mb-6">
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
         {tabs.map((tab) => {
-          const isActive = activeView === tab.id
+          const isActive = activeTab === tab.id
           return (
             <button
               key={tab.id}
-              onClick={() => onViewChange(tab.id)}
+              onClick={() => onTabChange(tab.id)}
               className={`p-3 rounded-xl transition-all duration-200 text-left flex items-center gap-3 ${
                 isActive
-                  ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-md shadow-cyan-600/20"
+                  ? "bg-slate-900 text-white shadow-md shadow-slate-900/10"
                   : "bg-slate-50 border border-slate-200 hover:bg-slate-100 text-slate-700"
               }`}
             >
@@ -57,10 +54,8 @@ export default function AttendanceTabs({ activeView, onViewChange }: AttendanceT
                 {tab.icon}
               </div>
               <div className="min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <h4 className="text-xs font-bold truncate">{tab.label}</h4>
-                </div>
-                <p className={`text-[10px] truncate ${isActive ? "text-cyan-100" : "text-slate-500"}`}>
+                <h4 className="text-xs font-bold truncate">{tab.label}</h4>
+                <p className={`text-[10px] truncate ${isActive ? "text-slate-300" : "text-slate-500"}`}>
                   {tab.sublabel}
                 </p>
               </div>

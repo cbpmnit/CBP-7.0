@@ -1,169 +1,256 @@
 "use client"
 
-import { useState } from "react"
-import { StudentAttendanceSummaryResponse, AttendanceQrResponse } from "@/types/attendance"
-import AttendanceCard from "@/components/cards/AttendanceCard"
-import AttendanceTable from "@/components/tables/AttendanceTable"
-import StudentQrCard from "@/components/dashboard/StudentQrCard"
-import { FiCalendar, FiClock, FiMapPin, FiCopy, FiCheck, FiCheckCircle } from "react-icons/fi"
+import { useState, useEffect } from "react"
+import { attendanceService } from "@/services/attendanceService"
+import {
+  AttendanceSessionDto,
+  StudentAttendanceSummaryResponse,
+} from "@/types/attendance"
+import {
+  FiCalendar,
+  FiClock,
+  FiMapPin,
+  FiCheckCircle,
+  FiXCircle,
+  FiAlertCircle,
+  FiLayers,
+  FiPercent,
+  FiRefreshCw,
+} from "react-icons/fi"
 
-const WORKSHOP_DAYS = [
-  {
-    day: 1,
-    title: "Day 1: Orientation & Communication Skills",
-    time: "09:30 AM - 04:30 PM",
-    venue: "VLTC Auditorium 1, MNIT Jaipur",
-    description: "Foundational soft skills, personal branding, and corporate communication.",
-  },
-  {
-    day: 2,
-    title: "Day 2: Leadership & Team Dynamics",
-    time: "09:30 AM - 04:30 PM",
-    venue: "VLTC Auditorium 1, MNIT Jaipur",
-    description: "Interactive team building activities, conflict resolution, and leadership strategies.",
-  },
-  {
-    day: 3,
-    title: "Day 3: Technical Problem Solving & Ethics",
-    time: "09:30 AM - 04:30 PM",
-    venue: "VLTC Hall L002, MNIT Jaipur",
-    description: "Analytical thinking workshops, case studies, and engineering ethics.",
-  },
-  {
-    day: 4,
-    title: "Day 4: Resume Building & Mock Interviews",
-    time: "09:30 AM - 04:30 PM",
-    venue: "VLTC Hall L002, MNIT Jaipur",
-    description: "Resume critique sessions, group discussions, and 1-on-1 mock interview rounds.",
-  },
-  {
-    day: 5,
-    title: "Day 5: Capstone Project & Valedictory",
-    time: "09:30 AM - 04:30 PM",
-    venue: "Central Auditorium, MNIT Jaipur",
-    description: "Final group presentations, guest keynote address, and certificate award ceremony.",
-  },
-]
+export default function StudentAttendanceView() {
+  const [loading, setLoading] = useState(true)
+  const [upcomingSession, setUpcomingSession] = useState<AttendanceSessionDto | null>(null)
+  const [historySummary, setHistorySummary] = useState<StudentAttendanceSummaryResponse | null>(null)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-interface StudentAttendanceViewProps {
-  summary: StudentAttendanceSummaryResponse | null
-  qrCode: AttendanceQrResponse | null
-  loading: boolean
-}
+  useEffect(() => {
+    fetchStudentData()
+  }, [])
 
-export default function StudentAttendanceView({
-  summary,
-  qrCode,
-  loading,
-}: StudentAttendanceViewProps) {
-  const [selectedDay, setSelectedDay] = useState<number>(1)
-  const [copied, setCopied] = useState(false)
+  const fetchStudentData = async () => {
+    setLoading(true)
+    setErrorMessage(null)
+    try {
+      const [upcomingRes, historyRes] = await Promise.allSettled([
+        attendanceService.getUpcomingSession(),
+        attendanceService.getMyAttendance(),
+      ])
 
-  const handleCopyToken = () => {
-    if (!qrCode?.token) return
-    navigator.clipboard.writeText(qrCode.token)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+      if (upcomingRes.status === "fulfilled") {
+        setUpcomingSession(upcomingRes.value)
+      }
+
+      if (historyRes.status === "fulfilled") {
+        setHistorySummary(historyRes.value)
+      }
+    } catch (err: any) {
+      setErrorMessage("Unable to load student attendance details at this moment.")
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const records = summary?.records || []
-  const activeDayDetails = WORKSHOP_DAYS.find((d) => d.day === selectedDay) || WORKSHOP_DAYS[0]
+  const formatTimeRange = (start?: string | null, end?: string | null) => {
+    if (!start && !end) return "Time not announced"
+    if (start && end) return `${start} - ${end}`
+    return start || end || ""
+  }
+
+  const formatMarkedTime = (isoString?: string | null) => {
+    if (!isoString) return "-"
+    try {
+      const d = new Date(isoString)
+      return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    } catch {
+      return isoString
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center text-slate-500">
+        <div className="h-7 w-7 border-2 border-cyan-600 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+        <p className="text-xs font-semibold">Loading student attendance information...</p>
+      </div>
+    )
+  }
+
+  const totalSessions = historySummary?.totalSessions ?? 0
+  const presentCount = historySummary?.attendedSessions ?? 0
+  const percentage = historySummary?.attendancePercentage ?? 0
+  const records = historySummary?.sessions || []
 
   return (
     <div className="space-y-6">
-      {/* Current Active Session & QR Code Display */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 mb-4 border-b border-slate-100">
-          <div>
-            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-cyan-800 bg-cyan-50 px-2.5 py-0.5 rounded-full border border-cyan-200 uppercase tracking-wider mb-1">
-              Active Workshop Session
-            </span>
-            <h3 className="text-base font-extrabold text-slate-900">{activeDayDetails.title}</h3>
+      {errorMessage && (
+        <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-medium flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <FiAlertCircle className="shrink-0 text-base" />
+            <span>{errorMessage}</span>
           </div>
-          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 shrink-0 self-start sm:self-auto">
-            Ready for Gate Scanning
-          </span>
+          <button
+            onClick={fetchStudentData}
+            className="inline-flex items-center gap-1 font-bold underline hover:text-amber-950"
+          >
+            <FiRefreshCw /> Retry
+          </button>
         </div>
+      )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <StudentQrCard qrCode={qrCode} loading={loading} />
-          <AttendanceCard summary={summary} loading={loading} />
-        </div>
-
-        {qrCode && (
-          <div className="mt-6 pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div className="flex items-center gap-2 text-xs font-mono text-slate-700 min-w-0">
-              <span className="font-bold text-cyan-800 shrink-0">Encrypted Token Payload:</span>
-              <span className="truncate font-semibold text-slate-900 bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-200">
-                {qrCode.token}
-              </span>
-            </div>
-            <button
-              onClick={handleCopyToken}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-cyan-50 border border-cyan-200 text-cyan-800 text-xs font-bold hover:bg-cyan-100 transition shrink-0"
+      {/* 1. Upcoming / Current Session */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+        <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+            <FiCalendar className="text-cyan-600 text-sm" /> Upcoming Session
+          </h3>
+          {upcomingSession && (
+            <span
+              className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border uppercase tracking-wider ${
+                upcomingSession.status === "ACTIVE"
+                  ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                  : "bg-blue-50 text-blue-800 border-blue-200"
+              }`}
             >
-              {copied ? <FiCheck className="text-emerald-600" /> : <FiCopy />}
-              <span>{copied ? "Token Copied!" : "Copy Payload String"}</span>
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* 5-Day Workshop Schedule Selector */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-        <h3 className="text-sm font-bold text-slate-900 mb-4 flex items-center gap-2">
-          <span className="text-cyan-700"><FiCalendar /></span>
-          <span>5-Day Workshop Schedule Selector</span>
-        </h3>
-
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 mb-6">
-          {WORKSHOP_DAYS.map((d, idx) => {
-            const recordForDay = records[idx]
-            const isAttended = recordForDay?.status === "PRESENT"
-            const isSelected = selectedDay === d.day
-
-            return (
-              <button
-                key={d.day}
-                onClick={() => setSelectedDay(d.day)}
-                className={`p-3 rounded-xl border text-left transition-all duration-200 ${
-                  isSelected
-                    ? "bg-cyan-50 border-cyan-600 ring-2 ring-cyan-600/20 shadow-sm"
-                    : "bg-slate-50 border-slate-200 hover:bg-slate-100"
-                }`}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-extrabold text-slate-900">Day {d.day}</span>
-                  {isAttended ? (
-                    <FiCheckCircle className="text-emerald-600 text-xs" />
-                  ) : (
-                    <span className="h-2 w-2 rounded-full bg-slate-300" />
-                  )}
-                </div>
-                <p className="text-[10px] font-semibold text-slate-600 truncate">{d.time}</p>
-              </button>
-            )
-          })}
+              {upcomingSession.status}
+            </span>
+          )}
         </div>
 
-        {activeDayDetails && (
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-1">
-              <h4 className="font-bold text-slate-900">{activeDayDetails.title}</h4>
-              <span className="font-mono text-cyan-800">{activeDayDetails.time}</span>
+        {upcomingSession ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+              <span className="text-[10px] font-bold text-slate-500 uppercase">Day Number</span>
+              <p className="text-sm font-extrabold text-slate-900 mt-0.5">Day {upcomingSession.dayNumber}</p>
+              <p className="text-xs font-semibold text-slate-700 mt-0.5 truncate">{upcomingSession.title}</p>
             </div>
-            <p className="text-slate-600 mb-2">{activeDayDetails.description}</p>
-            <div className="text-[11px] font-mono text-slate-500">
-              Venue: <span className="font-bold text-slate-800">{activeDayDetails.venue}</span>
+
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+              <span className="text-[10px] font-bold text-slate-500 uppercase">Date</span>
+              <p className="text-sm font-bold text-slate-900 mt-0.5">{upcomingSession.sessionDate}</p>
+              <p className="text-xs text-slate-500 mt-0.5">Scheduled Date</p>
             </div>
+
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+              <span className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-1">
+                <FiClock /> Timing
+              </span>
+              <p className="text-xs font-bold text-slate-900 mt-1">
+                {formatTimeRange(upcomingSession.startTime, upcomingSession.endTime)}
+              </p>
+            </div>
+
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+              <span className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-1">
+                <FiMapPin /> Venue
+              </span>
+              <p className="text-xs font-bold text-slate-900 mt-1 truncate">
+                {upcomingSession.venue || "VLTC Auditorium, MNIT"}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="p-6 text-center bg-slate-50 border border-slate-200 rounded-xl">
+            <p className="text-xs font-semibold text-slate-600">No upcoming sessions</p>
+            <p className="text-[11px] text-slate-400 mt-0.5">All scheduled sessions have either concluded or not yet published.</p>
           </div>
         )}
       </div>
 
-      {/* Verified Attendance History Table */}
-      <div>
-        <h3 className="text-sm font-bold text-slate-900 mb-3">Attendance History Log</h3>
-        <AttendanceTable records={records} loading={loading} />
+      {/* 2. Student Attendance Metrics Summary */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Total Sessions</p>
+              <h4 className="text-2xl font-extrabold text-slate-900 mt-1">{totalSessions}</h4>
+            </div>
+            <div className="h-10 w-10 rounded-xl bg-slate-100 border border-slate-200 text-slate-700 flex items-center justify-center text-lg">
+              <FiLayers />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Present Count</p>
+              <h4 className="text-2xl font-extrabold text-emerald-700 mt-1">{presentCount}</h4>
+            </div>
+            <div className="h-10 w-10 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center text-lg">
+              <FiCheckCircle />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Attendance Percentage</p>
+              <h4 className="text-2xl font-extrabold text-cyan-700 mt-1">{percentage.toFixed(1)}%</h4>
+            </div>
+            <div className="h-10 w-10 rounded-xl bg-cyan-50 border border-cyan-200 text-cyan-700 flex items-center justify-center text-lg">
+              <FiPercent />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 3. Student Attendance History List */}
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">
+            Attendance History Log
+          </h3>
+          <span className="text-xs text-slate-500 font-semibold">{records.length} Recorded Sessions</span>
+        </div>
+
+        {records.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs text-slate-700">
+              <thead className="bg-slate-50/50 text-[11px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200">
+                <tr>
+                  <th className="px-6 py-3">Day</th>
+                  <th className="px-6 py-3">Session Title</th>
+                  <th className="px-6 py-3">Date</th>
+                  <th className="px-6 py-3">Status</th>
+                  <th className="px-6 py-3">Marked Time</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {records.map((rec) => {
+                  const isPresent = rec.status === "PRESENT"
+                  return (
+                    <tr key={rec.sessionId || rec.dayNumber} className="hover:bg-slate-50/60 transition">
+                      <td className="px-6 py-3.5 font-extrabold text-slate-900">Day {rec.dayNumber}</td>
+                      <td className="px-6 py-3.5 font-medium text-slate-800">{rec.title}</td>
+                      <td className="px-6 py-3.5 font-mono text-slate-600">{rec.sessionDate}</td>
+                      <td className="px-6 py-3.5">
+                        <span
+                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+                            isPresent
+                              ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                              : "bg-slate-100 text-slate-600 border-slate-200"
+                          }`}
+                        >
+                          {isPresent ? <FiCheckCircle /> : <FiXCircle />}
+                          {isPresent ? "Present" : "Absent"}
+                        </span>
+                      </td>
+                      <td className="px-6 py-3.5 font-mono text-slate-600">
+                        {formatMarkedTime(rec.markedAt)}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="p-8 text-center text-xs text-slate-500">
+            No attendance records found yet.
+          </div>
+        )}
       </div>
     </div>
   )

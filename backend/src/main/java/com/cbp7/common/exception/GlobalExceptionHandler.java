@@ -42,8 +42,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DuplicateResourceException.class)
     public ResponseEntity<ErrorResponse> handleDuplicateResourceException(DuplicateResourceException ex, HttpServletRequest request) {
-        ErrorResponse response = ErrorResponse.of(HttpStatus.BAD_REQUEST.value(), "Bad Request", ex.getMessage(), request.getRequestURI());
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        ErrorResponse response = ErrorResponse.of(HttpStatus.CONFLICT.value(), "Conflict", ex.getMessage(), request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
     }
 
     @ExceptionHandler(ProfileIncompleteException.class)
@@ -145,7 +145,14 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ErrorResponse> handleDataIntegrityViolationException(DataIntegrityViolationException ex, HttpServletRequest request) {
-        ErrorResponse response = ErrorResponse.of(HttpStatus.BAD_REQUEST.value(), "Data Integrity Violation", "Database constraint violation occurred", request.getRequestURI());
+        log.warn("Data integrity violation at {}: {}", request.getRequestURI(), ex.getMessage());
+        String msg = "Data integrity violation occurred";
+        if (ex.getMessage() != null && (ex.getMessage().contains("duplicate key") || ex.getMessage().contains("users_student_id") || ex.getMessage().contains("users_email") || ex.getMessage().contains("uq_") || ex.getMessage().contains("student_id") || ex.getMessage().contains("email"))) {
+            msg = "Duplicate student ID or email address";
+            ErrorResponse response = ErrorResponse.of(HttpStatus.CONFLICT.value(), "Conflict", msg, request.getRequestURI());
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+        }
+        ErrorResponse response = ErrorResponse.of(HttpStatus.BAD_REQUEST.value(), "Data Integrity Violation", msg, request.getRequestURI());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 

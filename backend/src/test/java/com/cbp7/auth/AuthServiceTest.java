@@ -12,6 +12,7 @@ import com.cbp7.auth.service.AuthService;
 import com.cbp7.common.exception.DuplicateResourceException;
 import com.cbp7.common.exception.InvalidCredentialsException;
 import com.cbp7.common.exception.UnauthorizedException;
+import com.cbp7.notification.event.NotificationEventPublisher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -28,6 +29,7 @@ class AuthServiceTest {
     private UserRepository userRepository;
     private PasswordEncoder passwordEncoder;
     private JwtProvider jwtProvider;
+    private NotificationEventPublisher notificationEventPublisher;
     private AuthService authService;
 
     @BeforeEach
@@ -35,7 +37,8 @@ class AuthServiceTest {
         userRepository = mock(UserRepository.class);
         passwordEncoder = new BCryptPasswordEncoder();
         jwtProvider = mock(JwtProvider.class);
-        authService = new AuthService(userRepository, passwordEncoder, jwtProvider);
+        notificationEventPublisher = mock(NotificationEventPublisher.class);
+        authService = new AuthService(userRepository, passwordEncoder, jwtProvider, notificationEventPublisher);
     }
 
     @Test
@@ -51,6 +54,7 @@ class AuthServiceTest {
 
         when(userRepository.existsByStudentId("2024ucs1234")).thenReturn(false);
         when(userRepository.existsByEmail("student@cbp.com")).thenReturn(false);
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         String result = authService.register(request);
 

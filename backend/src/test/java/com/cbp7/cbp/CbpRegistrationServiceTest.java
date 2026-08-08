@@ -114,6 +114,9 @@ class CbpRegistrationServiceTest {
         assertNotNull(response);
         assertEquals("CBP7000001", response.registrationId());
         assertEquals(RegistrationStatus.PAYMENT_PENDING, response.registrationStatus());
+        assertEquals("2023ucp1234", response.studentId());
+        assertEquals("Parv", response.firstName());
+        assertEquals("Agrawal", response.lastName());
 
         ArgumentCaptor<CbpRegistration> captor = ArgumentCaptor.forClass(CbpRegistration.class);
         verify(cbpRegistrationRepository).save(captor.capture());

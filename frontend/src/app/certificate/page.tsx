@@ -37,12 +37,12 @@ export default function CertificatePage() {
 
       if (certRes.status === "fulfilled") setCertificate(certRes.value)
       else if (certRes.status === "rejected" && (certRes.reason as any)?.status === 404) {
-        setError("Your certificate has not been generated yet.")
+        setError("Certificate will be generated after completing eligibility requirements.")
       }
 
       if (cbpRes.status === "fulfilled") setIsRegistered(true)
       if (payRes.status === "fulfilled" && payRes.value.paymentStatus === "SUCCESS") setIsPaid(true)
-      if (attRes.status === "fulfilled") setAttendancePct(attRes.value.percentage || 0)
+      if (attRes.status === "fulfilled") setAttendancePct(attRes.value.attendancePercentage || 0)
     } catch (err: any) {
       setError("Failed to load certificate information.")
     } finally {

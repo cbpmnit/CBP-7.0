@@ -24,17 +24,13 @@ export default function StudentNotificationsPage() {
   const fetchData = async () => {
     setLoading(true)
     try {
-      const [cbpRes, payRes, attRes, certRes] = await Promise.allSettled([
-        cbpService.getMyRegistration(),
-        paymentService.getMyPayment(),
-        attendanceService.getMyAttendance(),
-        certificateService.getMyCertificate(),
-      ])
-
-      if (cbpRes.status === "fulfilled") setIsRegistered(true)
-      if (payRes.status === "fulfilled" && payRes.value.paymentStatus === "SUCCESS") setIsPaid(true)
-      if (attRes.status === "fulfilled") setAttendancePct(attRes.value.percentage || 0)
-      if (certRes.status === "fulfilled") setIsCertAvailable(true)
+      const cbpRes = await cbpService.getMyRegistration().catch(() => null)
+      if (cbpRes) {
+        setIsRegistered(true)
+        if (cbpRes.paymentCompleted || cbpRes.registrationStatus === "REGISTERED") {
+          setIsPaid(true)
+        }
+      }
     } catch (e) {
       console.error("Error loading notification context", e)
     } finally {

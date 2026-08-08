@@ -127,7 +127,7 @@ class AttendanceControllerTest {
                 .title("Day 1 Orientation")
                 .sessionDate(LocalDate.now())
                 .startTime(LocalTime.of(9, 0))
-                .endTime(LocalTime.of(12, 0))
+                .endTime(LocalTime.of(23, 59))
                 .venue("APJ Hall")
                 .status(SessionStatus.ACTIVE)
                 .createdBy("2024admin001")
@@ -191,5 +191,109 @@ class AttendanceControllerTest {
     void unauthenticatedRequestReturns401() throws Exception {
         mockMvc.perform(post("/api/v1/attendance/mark"))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("5. Expired session QR rejected -> HTTP 400 Bad Request")
+    void expiredQrTokenRejectedReturns400() throws Exception {
+        SessionQrCodeResponse qrCode = attendanceQrService.generateSessionQr(session.getId());
+
+        attendanceQrRepository.findByToken(qrCode.token()).ifPresent(qr -> {
+            qr.setExpiresAt(java.time.LocalDateTime.now().minusHours(1));
+            attendanceQrRepository.save(qr);
+        });
+
+        MarkAttendanceRequest request = new MarkAttendanceRequest(qrCode.token(), null, studentUser.getStudentId());
+
+        mockMvc.perform(post("/api/v1/attendance/mark")
+                        .header("Authorization", "Bearer " + volunteerToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false));
+    }
+
+    @Test
+    @DisplayName("6. Closed session scan rejected -> HTTP 400 Bad Request")
+    void closedSessionScanRejectedReturns400() throws Exception {
+        SessionQrCodeResponse qrCode = attendanceQrService.generateSessionQr(session.getId());
+
+        session.setStatus(SessionStatus.CLOSED);
+        sessionRepository.save(session);
+
+        MarkAttendanceRequest request = new MarkAttendanceRequest(qrCode.token(), null, studentUser.getStudentId());
+
+        mockMvc.perform(post("/api/v1/attendance/mark")
+                        .header("Authorization", "Bearer " + volunteerToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false));
+    }
+
+    @Test
+    @DisplayName("7. Duplicate scan rejected -> HTTP 409 Conflict")
+    void duplicateScanRejectedReturns409() throws Exception {
+        SessionQrCodeResponse qrCode = attendanceQrService.generateSessionQr(session.getId());
+        MarkAttendanceRequest request = new MarkAttendanceRequest(qrCode.token(), null, studentUser.getStudentId());
+
+        // First scan succeeds
+        mockMvc.perform(post("/api/v1/attendance/mark")
+                        .header("Authorization", "Bearer " + volunteerToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk());
+
+        // Duplicate scan fails with 409
+        mockMvc.perform(post("/api/v1/attendance/mark")
+                        .header("Authorization", "Bearer " + volunteerToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.success").value(false));
+    }
+
+    @Test
+    @DisplayName("8. Multiple sessions attendance for same student allowed")
+    void multipleSessionsAttendanceAllowed() throws Exception {
+        // Mark Day 1
+        SessionQrCodeResponse qr1 = attendanceQrService.generateSessionQr(session.getId());
+        MarkAttendanceRequest req1 = new MarkAttendanceRequest(qr1.token(), null, studentUser.getStudentId());
+
+        mockMvc.perform(post("/api/v1/attendance/mark")
+                        .header("Authorization", "Bearer " + volunteerToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req1)))
+                .andExpect(status().isOk());
+
+        // Create Day 2 Session
+        AttendanceSession session2 = sessionRepository.save(AttendanceSession.builder()
+                .dayNumber(2)
+                .title("Day 2 Soft Skills")
+                .sessionDate(LocalDate.now())
+                .startTime(LocalTime.of(0, 0))
+                .endTime(LocalTime.of(23, 59))
+                .venue("APJ Hall")
+                .status(SessionStatus.ACTIVE)
+                .createdBy("2024admin001")
+                .build());
+
+        // Mark Day 2
+        SessionQrCodeResponse qr2 = attendanceQrService.generateSessionQr(session2.getId());
+        MarkAttendanceRequest req2 = new MarkAttendanceRequest(qr2.token(), null, studentUser.getStudentId());
+
+        mockMvc.perform(post("/api/v1/attendance/mark")
+                        .header("Authorization", "Bearer " + volunteerToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req2)))
+                .andExpect(status().isOk());
+
+        // Check student summary has 2 attended sessions
+        mockMvc.perform(get("/api/v1/student/attendance")
+                        .header("Authorization", "Bearer " + studentToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.attendedSessions").value(2))
+                .andExpect(jsonPath("$.data.totalSessions").value(2))
+                .andExpect(jsonPath("$.data.attendancePercentage").value(100.0));
     }
 }

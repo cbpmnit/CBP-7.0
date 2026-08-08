@@ -1,32 +1,112 @@
+export type AttendanceStatus = "PRESENT" | "ABSENT"
+export type SessionStatus = "UPCOMING" | "ACTIVE" | "CLOSED"
+
 export interface AttendanceRecordResponse {
   id: string
+  sessionId: string
   studentId: string
-  qrCodeId: string
-  markedBy: string
-  attendanceDate: string
-  attendanceTime: string
-  status: "PRESENT" | "ABSENT"
+  markedBy?: string
+  markedAt?: string
+  attendanceDate?: string
+  attendanceTime?: string
+  status: AttendanceStatus
+}
+
+export interface SessionAttendanceStatusDto {
+  sessionId: string
+  dayNumber: number
+  title: string
+  sessionDate: string
+  status: AttendanceStatus
+  markedAt?: string | null
 }
 
 export interface StudentAttendanceSummaryResponse {
   studentId: string
-  totalClasses: number
-  present: number
-  percentage: number
-  records: AttendanceRecordResponse[]
+  totalSessions: number
+  totalClasses?: number
+  attendedSessions: number
+  present?: number
+  attendancePercentage: number
+  percentage?: number
+  sessions: SessionAttendanceStatusDto[]
+  records?: SessionAttendanceStatusDto[] | AttendanceRecordResponse[]
+}
+
+export interface AttendanceSessionDto {
+  id: string
+  dayNumber: number
+  title: string
+  description?: string | null
+  sessionDate: string
+  startTime?: string | null
+  endTime?: string | null
+  venue?: string | null
+  status: SessionStatus
+  visibility: boolean
+  createdBy?: string | null
+  createdAt?: string | null
+  attendanceCount?: number
+}
+
+export interface SessionSummaryResponse {
+  sessionId: string
+  dayNumber: number
+  sessionTitle: string
+  sessionDate: string
+  totalRegisteredStudents: number
+  presentCount: number
+  absentCount: number
+  attendancePercentage: number
+}
+
+export interface StudentSessionRecordDto {
+  studentId: string
+  studentName?: string | null
+  studentEmail?: string | null
+  status: AttendanceStatus
+  markedAt?: string | null
+  markedBy?: string | null
+}
+
+export interface PageResponse<T> {
+  content: T[]
+  totalElements: number
+  totalPages: number
+  size: number
+  number: number
+  first: boolean
+  last: boolean
+  empty: boolean
+}
+
+export interface SessionQrCodeResponse {
+  id: string
+  sessionId: string
+  token: string
+  qrImageBase64: string
+  generatedAt: string
+  expiresAt: string
+  active: boolean
+}
+
+export interface MarkAttendanceRequest {
+  qrToken?: string
+  sessionId?: string
+  studentId: string
+}
+
+export interface AdminAttendanceSummaryResponse {
+  totalStudents: number
+  todayAttendanceCount: number
+  totalAttendanceRecords: number
+  averageAttendancePercentage: number
 }
 
 export interface DailyAttendanceReportResponse {
   date: string
   totalPresent: number
   records: AttendanceRecordResponse[]
-}
-
-export interface AdminAttendanceSummaryResponse {
-  totalStudents: number
-  totalAttendanceRecords: number
-  averageAttendancePercentage: number
-  todayAttendanceCount: number
 }
 
 export interface AttendanceQrResponse {

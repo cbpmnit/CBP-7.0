@@ -48,7 +48,18 @@ async function request<T>(
     headers,
   }
 
-  const response = await fetch(url, config)
+  let response: Response
+  try {
+    response = await fetch(url, config)
+  } catch (networkErr: any) {
+    const errorData: ApiErrorResponse = {
+      success: false,
+      status: 0,
+      error: "NetworkError",
+      message: networkErr?.message || "Unable to reach the server. Please check your network connection and retry.",
+    }
+    throw new ApiError(0, errorData)
+  }
 
   if (!response.ok) {
     let errorData: ApiErrorResponse
@@ -59,13 +70,19 @@ async function request<T>(
         success: false,
         status: response.status,
         error: response.statusText,
-        message: "An unexpected error occurred",
+        message: response.status === 403 
+          ? "Access denied. You do not have permission to perform this action."
+          : response.status === 404
+          ? "The requested resource was not found."
+          : response.status >= 500
+          ? "Internal server error. Please try again later."
+          : "An unexpected error occurred",
       }
     }
 
-    // Auto-logout on 401 or 403, unless it's the login endpoint
+    // Auto-logout ONLY on 401 Unauthorized (session expired or invalid token), not on 403 Forbidden
     if (
-      (response.status === 401 || response.status === 403) &&
+      response.status === 401 &&
       !path.endsWith("/auth/login") &&
       typeof window !== "undefined"
     ) {

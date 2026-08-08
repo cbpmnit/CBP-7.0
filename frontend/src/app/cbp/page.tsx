@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { cbpService } from "@/services/cbpService"
+import { profileService } from "@/services/profileService"
 import { CbpRegistrationDetailResponse } from "@/types/cbp"
 import PageTransition from "@/components/animations/PageTransition"
 import {
@@ -14,9 +16,11 @@ import {
   FiAward,
   FiArrowRight,
   FiAlertCircle,
+  FiUserCheck,
 } from "react-icons/fi"
 
 export default function CbpPage() {
+  const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -33,7 +37,7 @@ export default function CbpPage() {
       const data = await cbpService.getMyRegistration()
       setRegistration(data)
     } catch (err: any) {
-      if (err?.status !== 404) {
+      if (err?.status !== 404 && err?.message?.indexOf("No CBP registration") === -1) {
         setError(err?.message || "Failed to retrieve registration status.")
       }
     } finally {
@@ -44,15 +48,55 @@ export default function CbpPage() {
   const handleRegister = async () => {
     setActionLoading(true)
     setError(null)
+
     try {
-      await cbpService.register()
-      await fetchRegistrationDetails()
+      // 1. Verify profile completion before triggering backend registration
+      const comp = await profileService.getCompletion().catch(() => null)
+      if (comp && (!comp.completed || comp.completionPercentage < 100)) {
+        setError("Your profile information is incomplete. Redirecting to complete your profile...")
+        setTimeout(() => {
+          router.push("/profile")
+        }, 1500)
+        return
+      }
+
+      // 2. Submit CBP registration
+      const response = await cbpService.register()
+      if (response) {
+        // Immediately load detail view from returned response or backend query
+        await fetchRegistrationDetails()
+      }
     } catch (err: any) {
-      setError(err?.message || "Failed to submit CBP registration. Ensure your profile is complete.")
+      const msg = err?.message || ""
+      if (msg.toLowerCase().includes("profile") || err?.status === 400 || err?.status === 422) {
+        setError("Profile information incomplete. Please complete your profile before registering.")
+        setTimeout(() => {
+          router.push("/profile")
+        }, 1500)
+      } else {
+        setError(msg || "Failed to submit CBP registration. Please verify your profile.")
+      }
     } finally {
       setActionLoading(false)
     }
   }
+
+  // Defensive Helper field extraction
+  const getFieldValue = (field: "studentId" | "firstName" | "lastName" | "email" | "course" | "branch") => {
+    if (!registration) return null
+    const directVal = registration[field]
+    const profileVal = registration.profile?.[field]
+    return directVal || profileVal || null
+  }
+
+  const studentId = getFieldValue("studentId") || "Profile information incomplete"
+  const firstName = getFieldValue("firstName") || ""
+  const lastName = getFieldValue("lastName") || ""
+  const fullName = [firstName, lastName].filter(Boolean).join(" ") || "Profile information incomplete"
+  const course = getFieldValue("course")
+  const branch = getFieldValue("branch")
+  const courseBranch = course && branch ? `${course} - ${branch}` : course || branch || "Profile information incomplete"
+  const email = getFieldValue("email") || "Profile information incomplete"
 
   if (loading) {
     return (
@@ -60,12 +104,14 @@ export default function CbpPage() {
         <div className="flex flex-col items-center gap-4">
           <div className="h-10 w-10 animate-spin rounded-full border-4 border-cyan-500 border-t-transparent shadow-[0_0_15px_#00f0ff]" />
           <span className="font-mono text-xs uppercase tracking-widest text-cyan-400">
-            Checking Registration...
+            Checking Registration Status...
           </span>
         </div>
       </div>
     )
   }
+
+  const isConfirmed = registration?.registrationStatus === "REGISTERED" || registration?.paymentCompleted
 
   return (
     <PageTransition>
@@ -97,9 +143,17 @@ export default function CbpPage() {
 
           {/* Action error alerts */}
           {error && (
-            <div className="mb-8 p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-sm font-semibold flex items-center gap-3">
-              <FiAlertCircle className="h-5 w-5 flex-shrink-0" />
-              <span>{error}</span>
+            <div className="mb-8 p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-sm font-semibold flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <FiAlertCircle className="h-5 w-5 flex-shrink-0" />
+                <span>{error}</span>
+              </div>
+              <button
+                onClick={() => router.push("/profile")}
+                className="px-3 py-1 bg-white border border-rose-300 hover:bg-rose-100 text-rose-900 text-xs font-bold rounded-lg shrink-0"
+              >
+                Complete Profile
+              </button>
             </div>
           )}
 
@@ -156,23 +210,25 @@ export default function CbpPage() {
             <div className="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm">
               <div className="flex flex-col items-center text-center mb-8 pb-6 border-b border-slate-100">
                 <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-3xl mb-4">
-                  {registration.registrationStatus === "REGISTERED" ? "🎉" : "📝"}
+                  {isConfirmed ? "🎉" : "📝"}
                 </div>
-                
+
                 <h3 className="text-2xl font-extrabold text-slate-900">
-                  Registration {registration.registrationStatus === "REGISTERED" ? "Confirmed" : "Created"}
+                  Registration {isConfirmed ? "Confirmed" : "Created"}
                 </h3>
-                
+
                 <p className="text-xs text-slate-500 mt-1 font-mono">
                   Registration ID: {registration.registrationId}
                 </p>
 
-                <span className={`mt-4 inline-flex items-center gap-1.5 rounded-full border px-4 py-1 text-xs font-bold uppercase tracking-wider ${
-                  registration.registrationStatus === "REGISTERED"
-                    ? "bg-emerald-50 border-emerald-200 text-emerald-800"
-                    : "bg-amber-50 border-amber-200 text-amber-800"
-                }`}>
-                  {registration.registrationStatus === "REGISTERED" ? (
+                <span
+                  className={`mt-4 inline-flex items-center gap-1.5 rounded-full border px-4 py-1 text-xs font-bold uppercase tracking-wider ${
+                    isConfirmed
+                      ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+                      : "bg-amber-50 border-amber-200 text-amber-800"
+                  }`}
+                >
+                  {isConfirmed ? (
                     <>
                       <FiCheckCircle className="text-emerald-600" />
                       Confirmed / Paid
@@ -186,17 +242,17 @@ export default function CbpPage() {
                 </span>
               </div>
 
-              {/* Summary list */}
-              <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">
-                Registration Details Summary
+              {/* Verified Snapshot details list */}
+              <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-1.5">
+                <FiUserCheck className="text-cyan-700" /> Verified Student Profile Snapshot
               </h4>
-              
+
               <dl className="grid gap-4 sm:grid-cols-2 text-xs mb-8">
                 {[
-                  ["Student Name", `${registration.firstName} ${registration.lastName}`],
-                  ["Student ID", registration.studentId],
-                  ["Branch & Course", `${registration.course} - ${registration.branch}`],
-                  ["Official Email", registration.email],
+                  ["Student Name", fullName],
+                  ["Student ID", studentId],
+                  ["Branch & Course", courseBranch],
+                  ["Official Email", email],
                 ].map(([label, value]) => (
                   <div key={label} className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
                     <dt className="text-[11px] text-slate-500 font-medium uppercase tracking-wider mb-1">{label}</dt>
@@ -205,7 +261,7 @@ export default function CbpPage() {
                 ))}
               </dl>
 
-              {/* Button actions */}
+              {/* Action buttons */}
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link
                   href="/dashboard"
@@ -214,7 +270,7 @@ export default function CbpPage() {
                   Back to Dashboard
                 </Link>
 
-                {registration.registrationStatus !== "REGISTERED" && (
+                {!isConfirmed && (
                   <Link
                     href="/payment"
                     className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white px-6 py-3 text-xs font-bold uppercase tracking-wider shadow-md transition"
@@ -226,7 +282,6 @@ export default function CbpPage() {
               </div>
             </div>
           )}
-
         </div>
       </main>
     </PageTransition>

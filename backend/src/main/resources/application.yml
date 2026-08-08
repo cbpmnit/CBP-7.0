@@ -17,10 +17,10 @@ spring:
       connection-timeout: 30000
       idle-timeout: 300000
       max-lifetime: 1800000
-      connection-init-sql: CREATE SCHEMA IF NOT EXISTS cbp; CREATE SCHEMA IF NOT EXISTS profile; CREATE SCHEMA IF NOT EXISTS payment; CREATE SCHEMA IF NOT EXISTS notification; CREATE SCHEMA IF NOT EXISTS attendance; CREATE SCHEMA IF NOT EXISTS certificate;
+      connection-init-sql: CREATE SCHEMA IF NOT EXISTS identity; CREATE SCHEMA IF NOT EXISTS program; CREATE SCHEMA IF NOT EXISTS platform;
   flyway:
     enabled: true
-    schemas: cbp, profile, notification, payment, attendance, certificate, public
+    schemas: identity, program, platform, public
     create-schemas: true
     baseline-on-migrate: true
   jpa:
@@ -28,7 +28,7 @@ spring:
       ddl-auto: update
     properties:
       hibernate:
-        default_schema: cbp
+        default_schema: identity
   devtools:
     restart:
       enabled: true

@@ -19,10 +19,10 @@ export default function AttendanceCard({ summary, loading }: AttendanceCardProps
     )
   }
 
-  const percentage = summary?.percentage ?? 0
+  const percentage = summary?.attendancePercentage ?? summary?.percentage ?? 0
   const isEligible = percentage >= 75
-  const present = summary?.present ?? 0
-  const total = summary?.totalClasses ?? 0
+  const present = summary?.attendedSessions ?? summary?.present ?? 0
+  const total = summary?.totalSessions ?? summary?.totalClasses ?? 0
 
   return (
     <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm cbp-card-interactive flex flex-col justify-between">

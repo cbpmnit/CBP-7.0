@@ -68,7 +68,7 @@ class AttendanceServiceTest {
                 .title("Day 1 Orientation")
                 .sessionDate(LocalDate.now())
                 .startTime(LocalTime.of(9, 0))
-                .endTime(LocalTime.of(12, 0))
+                .endTime(LocalTime.of(23, 59))
                 .venue("APJ Hall")
                 .status(SessionStatus.ACTIVE)
                 .createdBy("admin001")
@@ -124,5 +124,67 @@ class AttendanceServiceTest {
         List<AttendanceRecordResponse> studentHistory = attendanceService.getStudentAttendanceHistory(studentId);
         assertEquals(1, studentHistory.size());
         assertEquals(studentId, studentHistory.get(0).studentId());
+    }
+
+    @Test
+    @DisplayName("5. Expired session QR token is rejected")
+    void expiredQrTokenThrowsException() {
+        String studentId = "2024student106";
+        SessionQrCodeResponse qrCode = attendanceQrService.generateSessionQr(session.getId());
+
+        // Set QR expiry to the past
+        attendanceQrRepository.findByToken(qrCode.token()).ifPresent(qr -> {
+            qr.setExpiresAt(java.time.LocalDateTime.now().minusHours(1));
+            attendanceQrRepository.save(qr);
+        });
+
+        assertThrows(IllegalStateException.class, () ->
+                attendanceService.markAttendanceViaQr(qrCode.token(), studentId, "2024volunteer001")
+        );
+    }
+
+    @Test
+    @DisplayName("6. Inactive or closed session rejects attendance marking")
+    void closedSessionRejectsAttendance() {
+        String studentId = "2024student107";
+        SessionQrCodeResponse qrCode = attendanceQrService.generateSessionQr(session.getId());
+
+        session.setStatus(SessionStatus.CLOSED);
+        sessionRepository.save(session);
+
+        assertThrows(IllegalStateException.class, () ->
+                attendanceService.markAttendanceViaQr(qrCode.token(), studentId, "2024volunteer001")
+        );
+    }
+
+    @Test
+    @DisplayName("7. Multiple sessions for the same student are allowed")
+    void multipleSessionsForSameStudentAllowed() {
+        String studentId = "2024student108";
+
+        // Mark Day 1
+        SessionQrCodeResponse qr1 = attendanceQrService.generateSessionQr(session.getId());
+        AttendanceRecordResponse rec1 = attendanceService.markAttendanceViaQr(qr1.token(), studentId, "2024volunteer001");
+        assertNotNull(rec1.id());
+
+        // Create Day 2 Session
+        AttendanceSession session2 = sessionRepository.save(AttendanceSession.builder()
+                .dayNumber(2)
+                .title("Day 2 Workshop")
+                .sessionDate(LocalDate.now())
+                .startTime(LocalTime.of(0, 0))
+                .endTime(LocalTime.of(23, 59))
+                .venue("APJ Hall")
+                .status(SessionStatus.ACTIVE)
+                .createdBy("admin001")
+                .build());
+
+        // Mark Day 2
+        SessionQrCodeResponse qr2 = attendanceQrService.generateSessionQr(session2.getId());
+        AttendanceRecordResponse rec2 = attendanceService.markAttendanceViaQr(qr2.token(), studentId, "2024volunteer001");
+        assertNotNull(rec2.id());
+
+        List<AttendanceRecordResponse> studentHistory = attendanceService.getStudentAttendanceHistory(studentId);
+        assertEquals(2, studentHistory.size());
     }
 }

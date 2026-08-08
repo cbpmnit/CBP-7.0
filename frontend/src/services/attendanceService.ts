@@ -1,29 +1,75 @@
 import { api } from "@/utils/api"
 import {
-  StudentAttendanceSummaryResponse,
-  AttendanceQrResponse,
-  DailyAttendanceReportResponse,
-  AdminAttendanceSummaryResponse,
   AttendanceRecordResponse,
+  StudentAttendanceSummaryResponse,
+  AttendanceSessionDto,
+  SessionSummaryResponse,
+  StudentSessionRecordDto,
+  PageResponse,
+  SessionQrCodeResponse,
+  MarkAttendanceRequest,
+  AdminAttendanceSummaryResponse,
+  DailyAttendanceReportResponse,
 } from "@/types/attendance"
 
 export const attendanceService = {
-  // Student
-  getMyAttendance: () => api.get<StudentAttendanceSummaryResponse>("/api/v1/student/attendance"),
-  getMyQr: () => api.get<AttendanceQrResponse>("/api/v1/student/attendance/qr"),
+  // Student APIs
+  getUpcomingSession: () =>
+    api.get<AttendanceSessionDto | null>("/api/v1/attendance/sessions/upcoming"),
 
-  // Volunteer / QR Scanning
-  markAttendance: (qrToken: string) =>
-    api.post<AttendanceRecordResponse>("/api/v1/attendance/mark", { qrToken }),
+  getMyAttendance: () =>
+    api.get<StudentAttendanceSummaryResponse>("/api/v1/student/attendance"),
 
-  // Admin
-  getAdminSummary: () => api.get<AdminAttendanceSummaryResponse>("/api/v1/admin/attendance/summary"),
+  // Admin Session Management APIs
+  getAllSessions: () =>
+    api.get<AttendanceSessionDto[]>("/api/v1/admin/attendance/sessions"),
+
+  getSessionById: (sessionId: string) =>
+    api.get<AttendanceSessionDto>(`/api/v1/admin/attendance/sessions/${sessionId}`),
+
+  getSessionSummary: (sessionId: string) =>
+    api.get<SessionSummaryResponse>(`/api/v1/admin/attendance/sessions/${sessionId}/summary`),
+
+  getSessionRecords: (
+    sessionId: string,
+    search?: string,
+    status?: string,
+    page = 0,
+    size = 20
+  ) => {
+    const params = new URLSearchParams()
+    if (search && search.trim()) params.append("search", search.trim())
+    if (status && status !== "ALL") params.append("status", status)
+    params.append("page", page.toString())
+    params.append("size", size.toString())
+    return api.get<PageResponse<StudentSessionRecordDto>>(
+      `/api/v1/admin/attendance/sessions/${sessionId}/records?${params.toString()}`
+    )
+  },
+
+  generateSessionQr: (sessionId: string) =>
+    api.post<SessionQrCodeResponse>(`/api/v1/admin/attendance/sessions/${sessionId}/qr`),
+
+  getActiveSessionQr: (sessionId: string) =>
+    api.get<SessionQrCodeResponse>(`/api/v1/admin/attendance/sessions/${sessionId}/qr`),
+
+  activateSession: (sessionId: string) =>
+    api.post<AttendanceSessionDto>(`/api/v1/admin/attendance/sessions/${sessionId}/activate`),
+
+  closeSession: (sessionId: string) =>
+    api.post<AttendanceSessionDto>(`/api/v1/admin/attendance/sessions/${sessionId}/close`),
+
+  // Admin Overview & Reporting APIs
+  getAdminSummary: () =>
+    api.get<AdminAttendanceSummaryResponse>("/api/v1/admin/attendance/summary"),
+
   getAttendanceByDate: (date: string) =>
     api.get<DailyAttendanceReportResponse>(`/api/v1/admin/attendance/date/${date}`),
-  getStudentAttendanceByAdmin: (studentId: string) =>
-    api.get<StudentAttendanceSummaryResponse>(`/api/v1/admin/attendance/student/${studentId}`),
-  generateStudentQr: (studentId: string) =>
-    api.post<AttendanceQrResponse>(`/api/v1/admin/attendance/qr/generate/${studentId}`),
-  getStudentQrByAdmin: (studentId: string) =>
-    api.get<AttendanceQrResponse>(`/api/v1/admin/attendance/qr/${studentId}`),
+
+  // Volunteer Gate Scanning APIs
+  scanAttendance: (payload: MarkAttendanceRequest) =>
+    api.post<AttendanceRecordResponse>("/api/v1/attendance/mark", payload),
+
+  markAttendance: (token: string, studentId?: string) =>
+    api.post<AttendanceRecordResponse>("/api/v1/attendance/mark", { qrToken: token, studentId }),
 }
