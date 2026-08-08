@@ -65,6 +65,7 @@ function HeaderComponent() {
   }, [dispatch])
 
   const navLinks = useMemo(() => NAV_LINKS, [])
+  const normalizedRole = (role || "").toUpperCase()
 
   return (
     <>
@@ -128,15 +129,27 @@ function HeaderComponent() {
               {isAuthenticated ? (
                 <>
                   <Link
-                    href="/dashboard"
+                    href={
+                      normalizedRole === "ROLE_ADMIN" || normalizedRole === "ADMIN"
+                        ? "/admin/dashboard"
+                        : normalizedRole === "ROLE_VOLUNTEER" || normalizedRole === "VOLUNTEER"
+                        ? "/volunteer/scanner"
+                        : "/dashboard"
+                    }
                     className={`inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-bold tracking-wider text-slate-800 uppercase transition duration-200 hover:bg-slate-100 ${
-                      pathname === "/dashboard"
+                      pathname.startsWith("/admin") || pathname.startsWith("/volunteer") || pathname === "/dashboard"
                         ? "bg-slate-900 text-white border-slate-900 hover:bg-slate-800"
                         : ""
                     }`}
                   >
                     <FiGrid className="h-3.5 w-3.5" />
-                    <span>Dashboard</span>
+                    <span>
+                      {normalizedRole === "ROLE_ADMIN" || normalizedRole === "ADMIN"
+                        ? "Admin Portal"
+                        : normalizedRole === "ROLE_VOLUNTEER" || normalizedRole === "VOLUNTEER"
+                        ? "Gate Scanner"
+                        : "Dashboard"}
+                    </span>
                   </Link>
 
                   <NotificationDropdown />
@@ -253,48 +266,92 @@ function HeaderComponent() {
           <div className="mt-4 px-5 flex flex-col gap-2">
             {isAuthenticated ? (
               <>
-                <Link
-                  href="/dashboard"
-                  onClick={handleCloseMobileMenu}
-                  className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-bold uppercase tracking-wider"
-                >
-                  <FiGrid /> Dashboard
-                </Link>
-                <Link
-                  href="/profile"
-                  onClick={handleCloseMobileMenu}
-                  className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-slate-100 text-slate-800 text-xs font-semibold"
-                >
-                  <FiUser /> My Profile
-                </Link>
-                <Link
-                  href="/attendance"
-                  onClick={handleCloseMobileMenu}
-                  className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-slate-100 text-slate-800 text-xs font-semibold"
-                >
-                  <FiCalendar /> Attendance
-                </Link>
-                <Link
-                  href="/certificate"
-                  onClick={handleCloseMobileMenu}
-                  className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-slate-100 text-slate-800 text-xs font-semibold"
-                >
-                  <FiAward /> Certificates
-                </Link>
-                <Link
-                  href="/payment"
-                  onClick={handleCloseMobileMenu}
-                  className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-slate-100 text-slate-800 text-xs font-semibold"
-                >
-                  <FiCreditCard /> Payments
-                </Link>
-                <Link
-                  href="/notifications"
-                  onClick={handleCloseMobileMenu}
-                  className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-slate-100 text-slate-800 text-xs font-semibold"
-                >
-                  <FiBell /> Notifications
-                </Link>
+                {normalizedRole === "ROLE_ADMIN" || normalizedRole === "ADMIN" ? (
+                  <>
+                    <Link
+                      href="/admin/dashboard"
+                      onClick={handleCloseMobileMenu}
+                      className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-bold uppercase tracking-wider"
+                    >
+                      <FiGrid /> Admin Dashboard
+                    </Link>
+                    <Link
+                      href="/admin/students"
+                      onClick={handleCloseMobileMenu}
+                      className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-slate-100 text-slate-800 text-xs font-semibold"
+                    >
+                      <FiUser /> Students
+                    </Link>
+                    <Link
+                      href="/admin/attendance"
+                      onClick={handleCloseMobileMenu}
+                      className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-slate-100 text-slate-800 text-xs font-semibold"
+                    >
+                      <FiCalendar /> Attendance
+                    </Link>
+                    <Link
+                      href="/admin/volunteers"
+                      onClick={handleCloseMobileMenu}
+                      className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-slate-100 text-slate-800 text-xs font-semibold"
+                    >
+                      <FiUser /> Volunteers
+                    </Link>
+                    <Link
+                      href="/admin/notifications"
+                      onClick={handleCloseMobileMenu}
+                      className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-slate-100 text-slate-800 text-xs font-semibold"
+                    >
+                      <FiBell /> Email Templates
+                    </Link>
+                  </>
+                ) : normalizedRole === "ROLE_VOLUNTEER" || normalizedRole === "VOLUNTEER" ? (
+                  <Link
+                    href="/volunteer/scanner"
+                    onClick={handleCloseMobileMenu}
+                    className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-bold uppercase tracking-wider"
+                  >
+                    <FiCalendar /> Gate QR Scanner
+                  </Link>
+                ) : (
+                  <>
+                    <Link
+                      href="/dashboard"
+                      onClick={handleCloseMobileMenu}
+                      className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-bold uppercase tracking-wider"
+                    >
+                      <FiGrid /> Dashboard
+                    </Link>
+                    <Link
+                      href="/profile"
+                      onClick={handleCloseMobileMenu}
+                      className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-slate-100 text-slate-800 text-xs font-semibold"
+                    >
+                      <FiUser /> My Profile
+                    </Link>
+                    <Link
+                      href="/attendance"
+                      onClick={handleCloseMobileMenu}
+                      className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-slate-100 text-slate-800 text-xs font-semibold"
+                    >
+                      <FiCalendar /> Attendance
+                    </Link>
+                    <Link
+                      href="/certificate"
+                      onClick={handleCloseMobileMenu}
+                      className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-slate-100 text-slate-800 text-xs font-semibold"
+                    >
+                      <FiAward /> Certificates
+                    </Link>
+                    <Link
+                      href="/payment"
+                      onClick={handleCloseMobileMenu}
+                      className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-slate-100 text-slate-800 text-xs font-semibold"
+                    >
+                      <FiCreditCard /> Payments
+                    </Link>
+                  </>
+                )}
+
                 <button
                   onClick={handleLogout}
                   className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 text-xs font-bold uppercase tracking-wider mt-2"

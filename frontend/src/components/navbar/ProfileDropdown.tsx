@@ -48,10 +48,24 @@ export default function ProfileDropdown({
     }
   }, [])
 
-  const menuItems = [
+  const normalizedRole = (role || "").toUpperCase()
+
+  let menuItems = [
     { label: "Profile", href: "/profile", icon: <FiUser /> },
-    { label: "Settings", href: "/profile", icon: <FiSettings /> },
+    { label: "Dashboard", href: "/dashboard", icon: <FiSettings /> },
   ]
+
+  if (normalizedRole === "ROLE_ADMIN" || normalizedRole === "ADMIN") {
+    menuItems = [
+      { label: "Admin Dashboard", href: "/admin/dashboard", icon: <FiSettings /> },
+      { label: "Student Directory", href: "/admin/students", icon: <FiUser /> },
+      { label: "Volunteers", href: "/admin/volunteers", icon: <FiUser /> },
+    ]
+  } else if (normalizedRole === "ROLE_VOLUNTEER" || normalizedRole === "VOLUNTEER") {
+    menuItems = [
+      { label: "Gate QR Scanner", href: "/volunteer/scanner", icon: <FiSettings /> },
+    ]
+  }
 
   return (
     <div className="relative" ref={dropdownRef}>

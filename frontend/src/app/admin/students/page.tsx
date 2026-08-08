@@ -155,31 +155,34 @@ export default function AdminStudentDashboardPage() {
 
       <main className="py-6 px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-6xl space-y-6">
-          {/* Header Banner */}
-          <div className="bg-slate-900 text-white rounded-2xl p-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3.5">
-              <div className="h-12 w-12 rounded-xl bg-cyan-600/30 border border-cyan-500/40 text-cyan-400 flex items-center justify-center text-2xl shrink-0">
-                <FiShield />
-              </div>
-              <div>
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-cyan-400 bg-cyan-950/60 px-2.5 py-0.5 rounded-full border border-cyan-800">
-                  Organizer Control Console
+          {/* Header Banner (Clean White with Soft Blue Accent) */}
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-cyan-50 text-cyan-800 border border-cyan-200">
+                  <FiShield /> Student Records Directory
                 </span>
-                <h1 className="text-xl font-extrabold mt-1 text-white">Student Management System</h1>
+                <span className="text-[10px] font-mono font-bold text-slate-400">MNIT Jaipur</span>
               </div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+                Student Management <span className="gradient-text-cyan">Directory</span>
+              </h1>
+              <p className="mt-1.5 text-xs sm:text-sm text-slate-600 leading-relaxed max-w-2xl">
+                Filter, inspect academic dossiers, view fee payment confirmation, and export registration records.
+              </p>
             </div>
 
-            <div className="flex items-center gap-2 self-start sm:self-auto">
+            <div className="flex items-center gap-2.5 self-start md:self-center shrink-0">
               <button
                 onClick={() => setShowColumnModal(true)}
-                className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition inline-flex items-center gap-1.5 border border-slate-700 shadow-sm"
+                className="px-4 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold transition inline-flex items-center gap-1.5 border border-slate-200 shadow-sm"
               >
                 <FiSliders /> Customize Columns
               </button>
               <button
                 onClick={handleExportCsv}
                 disabled={exporting}
-                className="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-extrabold uppercase tracking-wider shadow-sm transition inline-flex items-center gap-1.5 shrink-0"
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white text-xs font-bold uppercase tracking-wider shadow-sm transition inline-flex items-center gap-1.5 shadow-cyan-600/20 shrink-0 disabled:opacity-50"
               >
                 <FiDownload /> {exporting ? "Exporting..." : "Export CSV"}
               </button>

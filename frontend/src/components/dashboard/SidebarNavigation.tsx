@@ -27,15 +27,19 @@ export const STUDENT_NAV_ITEMS: NavItem[] = [
   { id: "attendance", label: "Attendance & QR", href: "/attendance", icon: <FiCamera />, permission: "ATTENDANCE_VIEW" },
   { id: "payments", label: "Payments", href: "/payment", icon: <FiCreditCard />, permission: "PAYMENTS_VIEW" },
   { id: "certificates", label: "Certificates", href: "/certificate", icon: <FiAward />, permission: "CERTIFICATES_VIEW" },
-  { id: "email-tools", label: "Email Tools", href: "/admin/notifications", icon: <FiMail />, permission: "EMAIL_TOOLS_VIEW" },
 ]
 
 export const ADMIN_NAV_ITEMS: NavItem[] = [
-  { id: "admin-dashboard", label: "Admin Dashboard", href: "/admin/dashboard", icon: <FiGrid /> },
-  { id: "admin-students", label: "Student Directory", href: "/admin/students", icon: <FiUsers /> },
-  { id: "admin-attendance", label: "Attendance & QR", href: "/attendance", icon: <FiCamera /> },
+  { id: "admin-dashboard", label: "Dashboard", href: "/admin/dashboard", icon: <FiGrid /> },
+  { id: "admin-students", label: "Students", href: "/admin/students", icon: <FiUsers /> },
+  { id: "admin-attendance", label: "Attendance", href: "/attendance", icon: <FiCamera /> },
+  { id: "admin-volunteers", label: "Volunteers", href: "/admin/volunteers", icon: <FiUsers /> },
   { id: "admin-notifications", label: "Email Templates", href: "/admin/notifications", icon: <FiMail /> },
   { id: "admin-certificates", label: "Certificates", href: "/certificate", icon: <FiAward /> },
+]
+
+export const VOLUNTEER_NAV_ITEMS: NavItem[] = [
+  { id: "volunteer-scanner", label: "QR Scanner", href: "/volunteer/scanner", icon: <FiCamera /> },
 ]
 
 interface SidebarNavigationProps {
@@ -83,12 +87,15 @@ export default function SidebarNavigation({
   }, [])
 
   const isAdminPath = pathname.startsWith("/admin")
-  const baseItems = isAdminPath ? ADMIN_NAV_ITEMS : STUDENT_NAV_ITEMS
+  const isVolunteerPath = pathname.startsWith("/volunteer")
+
+  const baseItems = isAdminPath
+    ? ADMIN_NAV_ITEMS
+    : isVolunteerPath
+    ? VOLUNTEER_NAV_ITEMS
+    : STUDENT_NAV_ITEMS
 
   const visibleNavItems = baseItems.filter((item) => {
-    if (item.id === "email-tools") {
-      return allowedPermissions ? allowedPermissions.includes("EMAIL_TOOLS_VIEW") || allowedPermissions.includes("ADMIN_VIEW") : false
-    }
     return !allowedPermissions || !item.permission || allowedPermissions.includes(item.permission)
   })
 
@@ -97,9 +104,8 @@ export default function SidebarNavigation({
       className={`hidden xl:flex flex-col bg-white/95 backdrop-blur-xl border border-slate-200 shadow-xl rounded-2xl p-2 fixed left-4 top-1/2 -translate-y-1/2 z-40 w-[64px] transition-all duration-300 ease-in-out ${
         hideDock ? "opacity-0 pointer-events-none -translate-x-full" : "opacity-100 translate-x-0"
       }`}
-      aria-label="Student Floating Navigation Dock"
+      aria-label="Floating Navigation Dock"
     >
-      {/* Navigation Icons Dock */}
       <nav className="space-y-2 py-1">
         {visibleNavItems.map((item) => {
           const isActive = pathname === item.href || (pathname === "/" && item.href === "/dashboard")
@@ -117,7 +123,6 @@ export default function SidebarNavigation({
                 <span className="shrink-0 text-lg">{item.icon}</span>
               </Link>
 
-              {/* Hover Tooltip */}
               <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 bg-slate-900 text-white text-[11px] font-semibold px-3 py-1.5 rounded-xl shadow-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 whitespace-nowrap z-50">
                 {item.label}
               </div>

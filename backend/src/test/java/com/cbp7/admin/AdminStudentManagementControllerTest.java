@@ -7,6 +7,11 @@ import com.cbp7.auth.security.JwtProvider;
 import com.cbp7.cbp.entity.CbpRegistration;
 import com.cbp7.cbp.enums.RegistrationStatus;
 import com.cbp7.cbp.repository.CbpRegistrationRepository;
+import com.cbp7.profile.entity.Branch;
+import com.cbp7.profile.entity.Course;
+import com.cbp7.profile.entity.Gender;
+import com.cbp7.profile.entity.UserProfile;
+import com.cbp7.profile.repository.UserProfileRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +23,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
+
+import java.time.LocalDate;
 
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -40,6 +47,9 @@ class AdminStudentManagementControllerTest {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private UserProfileRepository userProfileRepository;
 
     @Autowired
     private CbpRegistrationRepository registrationRepository;
@@ -68,8 +78,38 @@ class AdminStudentManagementControllerTest {
 
         adminToken = jwtProvider.generateToken(adminUser);
 
+        User student = userRepository.findByStudentId("2024test001")
+                .orElseGet(() -> userRepository.save(User.builder()
+                        .studentId("2024test001")
+                        .email("alice@mnit.ac.in")
+                        .name("Alice Sharma")
+                        .password("password123")
+                        .role(Role.ROLE_STUDENT)
+                        .enabled(true)
+                        .build()));
+
+        UserProfile profile = userProfileRepository.findByUser(student)
+                .orElseGet(() -> userProfileRepository.save(UserProfile.builder()
+                        .user(student)
+                        .firstName("Alice")
+                        .lastName("Sharma")
+                        .phoneNumber("9876543210")
+                        .sameAsWhatsapp(true)
+                        .gender(Gender.FEMALE)
+                        .dateOfBirth(LocalDate.of(2003, 5, 15))
+                        .course(Course.BTECH)
+                        .branch(Branch.COMPUTER_SCIENCE_ENGINEERING)
+                        .year(3)
+                        .hosteller(false)
+                        .institute("MNIT Jaipur")
+                        .build()));
+
+        registrationRepository.deleteAll();
+
         CbpRegistration reg = CbpRegistration.builder()
                 .registrationId("CBP7009999")
+                .user(student)
+                .profile(profile)
                 .studentId("2024test001")
                 .firstName("Alice")
                 .lastName("Sharma")
@@ -79,6 +119,7 @@ class AdminStudentManagementControllerTest {
                 .branch("Computer Engineering")
                 .course("B.Tech")
                 .year(3)
+                .hosteller(false)
                 .registrationStatus(RegistrationStatus.REGISTERED)
                 .build();
         registrationRepository.save(reg);

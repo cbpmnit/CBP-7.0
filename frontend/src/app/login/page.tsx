@@ -71,18 +71,26 @@ export default function LoginPage() {
         })
       )
 
-      // 3. Check profile completion to determine redirect path
-      let redirectPath = "/profile"
-      try {
-        const completion: any = await profileService.getCompletion()
-        if (completion && completion.completed && completion.completionPercentage === 100) {
-          redirectPath = "/dashboard"
-        } else {
+      // 3. Determine redirect path based on authenticated user role
+      let redirectPath = "/dashboard"
+      const userRole = (response.role || "").toUpperCase()
+
+      if (userRole === "ROLE_ADMIN" || userRole === "ADMIN") {
+        redirectPath = "/admin/dashboard"
+      } else if (userRole === "ROLE_VOLUNTEER" || userRole === "VOLUNTEER") {
+        redirectPath = "/volunteer/scanner"
+      } else {
+        // ROLE_STUDENT: check profile completion
+        try {
+          const completion: any = await profileService.getCompletion()
+          if (completion && completion.completed && completion.completionPercentage === 100) {
+            redirectPath = "/dashboard"
+          } else {
+            redirectPath = "/profile"
+          }
+        } catch (err) {
           redirectPath = "/profile"
         }
-      } catch (err) {
-        // Fallback to profile creation if completion check fails/404s
-        redirectPath = "/profile"
       }
 
       setIsSubmitted(true)
@@ -90,7 +98,7 @@ export default function LoginPage() {
       // 4. Redirect after brief delay to show successful transition card
       setTimeout(() => {
         router.push(redirectPath)
-      }, 1500)
+      }, 1200)
     } catch (err) {
       if (err instanceof ApiError) {
         if (err.status === 400 && err.errorData?.errors) {
