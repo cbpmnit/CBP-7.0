@@ -90,10 +90,46 @@ export interface SessionQrCodeResponse {
   active: boolean
 }
 
+export interface BatchQrGenerationResponse {
+  totalStudents: number
+  generated: number
+}
+
+export interface QrGenerationStatusResponse {
+  totalStudents: number
+  generatedQr: number
+  pendingQr: number
+}
+
+export interface StudentSessionQrResponse {
+  sessionId: string
+  dayNumber: number
+  title: string
+  sessionDate: string
+  startTime?: string | null
+  endTime?: string | null
+  venue?: string | null
+  token: string
+  qrImageBase64: string
+  expiresAt?: string | null
+}
+
+export interface ScanAttendanceRequest {
+  qrToken: string
+}
+
+export interface ScanAttendanceResponse {
+  success: boolean
+  studentName: string
+  studentId: string
+  sessionTitle: string
+  markedAt: string
+}
+
 export interface MarkAttendanceRequest {
   qrToken?: string
   sessionId?: string
-  studentId: string
+  studentId?: string
 }
 
 export interface AdminAttendanceSummaryResponse {

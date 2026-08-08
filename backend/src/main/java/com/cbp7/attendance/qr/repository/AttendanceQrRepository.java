@@ -12,8 +12,11 @@ import java.util.UUID;
 public interface AttendanceQrRepository extends JpaRepository<AttendanceQrCode, UUID> {
     Optional<AttendanceQrCode> findBySessionId(UUID sessionId);
     Optional<AttendanceQrCode> findBySessionIdAndActiveTrue(UUID sessionId);
+    Optional<AttendanceQrCode> findBySessionIdAndStudentIdAndActiveTrue(UUID sessionId, String studentId);
+    List<AttendanceQrCode> findBySessionIdAndStudentId(UUID sessionId, String studentId);
     Optional<AttendanceQrCode> findByToken(String token);
     Optional<AttendanceQrCode> findByTokenAndActiveTrue(String token);
     boolean existsByToken(String token);
     List<AttendanceQrCode> findAllBySessionId(UUID sessionId);
+    long countBySessionIdAndActiveTrue(UUID sessionId);
 }

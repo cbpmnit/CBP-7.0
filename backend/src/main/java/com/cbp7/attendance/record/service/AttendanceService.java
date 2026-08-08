@@ -3,6 +3,7 @@ package com.cbp7.attendance.record.service;
 import com.cbp7.attendance.qr.entity.AttendanceQrCode;
 import com.cbp7.attendance.qr.service.AttendanceQrService;
 import com.cbp7.attendance.record.dto.AttendanceRecordResponse;
+import com.cbp7.attendance.record.dto.ScanAttendanceResponse;
 import com.cbp7.attendance.record.entity.AttendanceRecord;
 import com.cbp7.attendance.record.entity.AttendanceStatus;
 import com.cbp7.attendance.record.event.AttendanceMarkedEvent;
@@ -12,6 +13,8 @@ import com.cbp7.attendance.session.entity.SessionStatus;
 import com.cbp7.attendance.session.repository.AttendanceSessionRepository;
 import com.cbp7.auth.entity.User;
 import com.cbp7.auth.repository.UserRepository;
+import com.cbp7.cbp.entity.CbpRegistration;
+import com.cbp7.cbp.repository.CbpRegistrationRepository;
 import com.cbp7.common.exception.DuplicateResourceException;
 import com.cbp7.common.exception.ResourceNotFoundException;
 import com.cbp7.notification.event.NotificationEventPublisher;
@@ -21,7 +24,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -36,6 +38,68 @@ public class AttendanceService {
     private final AttendanceQrService attendanceQrService;
     private final NotificationEventPublisher notificationEventPublisher;
     private final UserRepository userRepository;
+    private final CbpRegistrationRepository cbpRegistrationRepository;
+
+    @Transactional
+    public ScanAttendanceResponse scanAttendanceQr(String qrToken, String volunteerId) {
+        if (qrToken == null || qrToken.isBlank()) {
+            throw new IllegalArgumentException("QR token must not be empty");
+        }
+
+        // 1 & 2. Validate QR token exists & is active
+        AttendanceQrCode qrCode = attendanceQrService.validateQrToken(qrToken);
+
+        String targetStudentId = qrCode.getStudentId();
+        if (targetStudentId == null || targetStudentId.equals("SESSION_DEFAULT")) {
+            throw new IllegalArgumentException("Scanned QR token is not a student-specific QR code.");
+        }
+
+        String cleanStudentId = targetStudentId.trim().toLowerCase();
+
+        // 3. Validate session exists & is ACTIVE
+        AttendanceSession session = sessionRepository.findById(qrCode.getSessionId())
+                .orElseThrow(() -> new ResourceNotFoundException("Session not found with ID: " + qrCode.getSessionId()));
+
+        if (session.getStatus() != SessionStatus.ACTIVE) {
+            throw new IllegalStateException("Attendance session is not ACTIVE. Current status: " + session.getStatus());
+        }
+
+        // 4. Validate student not already marked for this sessionId
+        if (attendanceRecordRepository.existsBySessionIdAndStudentId(session.getId(), cleanStudentId)) {
+            throw new DuplicateResourceException("Attendance already marked for student " + cleanStudentId + " in session Day " + session.getDayNumber());
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+
+        AttendanceRecord record = AttendanceRecord.builder()
+                .sessionId(session.getId())
+                .studentId(cleanStudentId)
+                .qrCodeId(qrCode.getId())
+                .markedBy(volunteerId != null ? volunteerId : "volunteer")
+                .markedAt(now)
+                .status(AttendanceStatus.PRESENT)
+                .build();
+
+        AttendanceRecord saved = attendanceRecordRepository.save(record);
+        log.info("Scanned attendance marked for student {} in session Day {} by {}", cleanStudentId, session.getDayNumber(), volunteerId);
+
+        publishAttendanceMarkedEvent(saved);
+
+        String studentName = cleanStudentId;
+        Optional<CbpRegistration> regOpt = cbpRegistrationRepository.findByUserStudentIdIgnoreCase(cleanStudentId);
+        if (regOpt.isPresent()) {
+            CbpRegistration reg = regOpt.get();
+            studentName = reg.getFirstName() + " " + reg.getLastName();
+        }
+
+        return new ScanAttendanceResponse(
+                true,
+                studentName,
+                cleanStudentId,
+                "Day " + session.getDayNumber() + ": " + session.getTitle(),
+                now
+        );
+    }
 
     @Transactional
     public AttendanceRecordResponse markAttendanceViaQr(String qrToken, String studentId, String volunteerId) {
@@ -45,14 +109,8 @@ public class AttendanceService {
         if (studentId == null || studentId.isBlank()) {
             throw new IllegalArgumentException("Student ID must not be empty");
         }
-        if (volunteerId == null || volunteerId.isBlank()) {
-            throw new IllegalArgumentException("Volunteer ID must not be empty");
-        }
 
-        // 1 & 2. Validate QR token exists, is active, and is not past expiresAt
         AttendanceQrCode qrCode = attendanceQrService.validateQrToken(qrToken);
-
-        // 3. Validate session exists and status is ACTIVE
         AttendanceSession session = sessionRepository.findById(qrCode.getSessionId())
                 .orElseThrow(() -> new ResourceNotFoundException("Session not found with ID: " + qrCode.getSessionId()));
 
@@ -60,35 +118,22 @@ public class AttendanceService {
             throw new IllegalStateException("Attendance session is not ACTIVE. Current status: " + session.getStatus());
         }
 
-        // 4. Validate current time within session duration
-        LocalDateTime now = LocalDateTime.now();
-        if (session.getStartTime() != null) {
-            LocalDateTime startDateTime = LocalDateTime.of(session.getSessionDate(), session.getStartTime());
-            if (now.isBefore(startDateTime)) {
-                throw new IllegalStateException("Attendance session has not started yet.");
-            }
-        }
-        if (qrCode.getExpiresAt() != null && now.isAfter(qrCode.getExpiresAt())) {
-            throw new IllegalStateException("Attendance session duration has ended and QR code has expired.");
-        }
-
-        // 5. Validate student not already marked for this sessionId
         String cleanStudentId = studentId.trim().toLowerCase();
         if (attendanceRecordRepository.existsBySessionIdAndStudentId(session.getId(), cleanStudentId)) {
             throw new DuplicateResourceException("Attendance already marked for student " + cleanStudentId + " in session Day " + session.getDayNumber());
         }
 
+        LocalDateTime now = LocalDateTime.now();
         AttendanceRecord record = AttendanceRecord.builder()
                 .sessionId(session.getId())
                 .studentId(cleanStudentId)
-                .markedBy(volunteerId)
+                .qrCodeId(qrCode.getId())
+                .markedBy(volunteerId != null ? volunteerId : "system")
                 .markedAt(now)
                 .status(AttendanceStatus.PRESENT)
                 .build();
 
         AttendanceRecord saved = attendanceRecordRepository.save(record);
-        log.info("Attendance marked for student {} in session Day {} by {}", cleanStudentId, session.getDayNumber(), volunteerId);
-
         publishAttendanceMarkedEvent(saved);
 
         return AttendanceRecordResponse.fromEntity(saved);
@@ -108,14 +153,12 @@ public class AttendanceService {
         AttendanceRecord record = AttendanceRecord.builder()
                 .sessionId(sessionId)
                 .studentId(cleanStudentId)
-                .markedBy(markedBy)
+                .markedBy(markedBy != null ? markedBy : "admin")
                 .markedAt(LocalDateTime.now())
                 .status(AttendanceStatus.PRESENT)
                 .build();
 
         AttendanceRecord saved = attendanceRecordRepository.save(record);
-        log.info("Direct attendance marked for student {} in session Day {} by {}", cleanStudentId, session.getDayNumber(), markedBy);
-
         publishAttendanceMarkedEvent(saved);
 
         return AttendanceRecordResponse.fromEntity(saved);

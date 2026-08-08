@@ -2,6 +2,8 @@ package com.cbp7.attendance.record.controller;
 
 import com.cbp7.attendance.record.dto.AttendanceRecordResponse;
 import com.cbp7.attendance.record.dto.MarkAttendanceRequest;
+import com.cbp7.attendance.record.dto.ScanAttendanceRequest;
+import com.cbp7.attendance.record.dto.ScanAttendanceResponse;
 import com.cbp7.attendance.record.service.AttendanceService;
 import com.cbp7.auth.entity.User;
 import com.cbp7.common.response.ApiResponse;
@@ -22,6 +24,17 @@ public class VolunteerAttendanceController {
 
     private final AttendanceService attendanceService;
 
+    @PostMapping("/scan")
+    @PreAuthorize("hasAnyRole('VOLUNTEER', 'ADMIN')")
+    public ResponseEntity<ApiResponse<ScanAttendanceResponse>> scanAttendance(
+            @AuthenticationPrincipal User volunteerUser,
+            @Valid @RequestBody ScanAttendanceRequest request
+    ) {
+        String volunteerId = volunteerUser != null ? volunteerUser.getStudentId() : "volunteer";
+        ScanAttendanceResponse response = attendanceService.scanAttendanceQr(request.qrToken(), volunteerId);
+        return ResponseEntity.ok(ApiResponse.success("Attendance marked successfully", response));
+    }
+
     @PostMapping("/mark")
     @PreAuthorize("hasAnyRole('VOLUNTEER', 'ADMIN')")
     public ResponseEntity<ApiResponse<AttendanceRecordResponse>> markAttendance(
@@ -35,8 +48,11 @@ public class VolunteerAttendanceController {
             response = attendanceService.recordStudentAttendance(request.sessionId(), request.studentId(), volunteerId);
         } else if (request.qrToken() != null && request.studentId() != null) {
             response = attendanceService.markAttendanceViaQr(request.qrToken(), request.studentId(), volunteerId);
+        } else if (request.qrToken() != null) {
+            ScanAttendanceResponse scanRes = attendanceService.scanAttendanceQr(request.qrToken(), volunteerId);
+            return ResponseEntity.ok(ApiResponse.success("Attendance marked successfully", null));
         } else {
-            throw new IllegalArgumentException("Must provide either (sessionId and studentId) or (qrToken and studentId)");
+            throw new IllegalArgumentException("Must provide either (sessionId and studentId) or (qrToken)");
         }
 
         return ResponseEntity.ok(ApiResponse.success("Attendance marked successfully", response));

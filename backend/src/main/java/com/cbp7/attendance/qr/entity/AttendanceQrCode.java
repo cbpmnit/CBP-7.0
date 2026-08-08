@@ -26,6 +26,9 @@ public class AttendanceQrCode extends BaseEntity {
     @Column(name = "session_id", nullable = false)
     private UUID sessionId;
 
+    @Column(name = "student_id", nullable = false)
+    private String studentId;
+
     @Column(name = "token", nullable = false, unique = true)
     private String token;
 

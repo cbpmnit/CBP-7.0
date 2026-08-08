@@ -1,5 +1,7 @@
 package com.cbp7.attendance.session.controller;
 
+import com.cbp7.attendance.qr.dto.BatchQrGenerationResponse;
+import com.cbp7.attendance.qr.dto.QrGenerationStatusResponse;
 import com.cbp7.attendance.qr.dto.SessionQrCodeResponse;
 import com.cbp7.attendance.qr.service.AttendanceQrService;
 import com.cbp7.attendance.record.dto.StudentSessionRecordDto;
@@ -109,6 +111,21 @@ public class AdminAttendanceSessionController {
     public ResponseEntity<ApiResponse<Void>> deleteSession(@PathVariable UUID id) {
         sessionService.deleteSession(id);
         return ResponseEntity.ok(ApiResponse.success("Session deleted successfully", null));
+    }
+
+    @PostMapping("/{id}/generate-student-qrs")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<BatchQrGenerationResponse>> generateStudentQrsForSession(@PathVariable UUID id) {
+        BatchQrGenerationResponse response = qrService.generateStudentQrsForSession(id);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Student QR codes generated successfully for session", response));
+    }
+
+    @GetMapping("/{id}/qr-status")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<QrGenerationStatusResponse>> getQrGenerationStatus(@PathVariable UUID id) {
+        QrGenerationStatusResponse response = qrService.getQrGenerationStatus(id);
+        return ResponseEntity.ok(ApiResponse.success("QR generation status retrieved successfully", response));
     }
 
     @PostMapping("/{id}/qr")

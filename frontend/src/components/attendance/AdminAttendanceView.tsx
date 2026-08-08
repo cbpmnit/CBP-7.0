@@ -7,8 +7,8 @@ import {
   AttendanceSessionDto,
   SessionSummaryResponse,
   StudentSessionRecordDto,
-  SessionQrCodeResponse,
   PageResponse,
+  QrGenerationStatusResponse,
 } from "@/types/attendance"
 import {
   FiCalendar,
@@ -27,6 +27,7 @@ import {
   FiPlus,
   FiX,
   FiMapPin,
+  FiZap,
 } from "react-icons/fi"
 
 export default function AdminAttendanceView() {
@@ -51,6 +52,10 @@ export default function AdminAttendanceView() {
   const [summary, setSummary] = useState<SessionSummaryResponse | null>(null)
   const [summaryLoading, setSummaryLoading] = useState(false)
 
+  // Student QR Generation State
+  const [qrStatus, setQrStatus] = useState<QrGenerationStatusResponse | null>(null)
+  const [generatingStudentQrs, setGeneratingStudentQrs] = useState(false)
+
   // Records Table State
   const [recordsPage, setRecordsPage] = useState<PageResponse<StudentSessionRecordDto> | null>(null)
   const [recordsLoading, setRecordsLoading] = useState(false)
@@ -58,10 +63,6 @@ export default function AdminAttendanceView() {
   const [statusFilter, setStatusFilter] = useState("ALL")
   const [page, setPage] = useState(0)
 
-  // QR Code State
-  const [qrCode, setQrCode] = useState<SessionQrCodeResponse | null>(null)
-  const [qrLoading, setQrLoading] = useState(false)
-  const [copiedToken, setCopiedToken] = useState(false)
   const [actionMessage, setActionMessage] = useState<string | null>(null)
 
   useEffect(() => {
@@ -97,11 +98,10 @@ export default function AdminAttendanceView() {
 
   const loadSessionDetails = async (sessionId: string) => {
     setSummaryLoading(true)
-    setQrLoading(true)
     try {
-      const [sumRes, qrRes] = await Promise.allSettled([
+      const [sumRes, qrStatRes] = await Promise.allSettled([
         attendanceService.getSessionSummary(sessionId),
-        attendanceService.getActiveSessionQr(sessionId),
+        attendanceService.getQrGenerationStatus(sessionId),
       ])
 
       if (sumRes.status === "fulfilled") {
@@ -110,14 +110,13 @@ export default function AdminAttendanceView() {
         setSummary(null)
       }
 
-      if (qrRes.status === "fulfilled") {
-        setQrCode(qrRes.value)
+      if (qrStatRes.status === "fulfilled") {
+        setQrStatus(qrStatRes.value)
       } else {
-        setQrCode(null)
+        setQrStatus(null)
       }
     } finally {
       setSummaryLoading(false)
-      setQrLoading(false)
     }
   }
 
@@ -172,6 +171,22 @@ export default function AdminAttendanceView() {
     }
   }
 
+  const handleGenerateStudentQrs = async () => {
+    if (!selectedSessionId) return
+    setGeneratingStudentQrs(true)
+    setActionMessage(null)
+    try {
+      const res = await attendanceService.generateStudentQrsForSession(selectedSessionId)
+      setActionMessage(`Successfully generated ${res.generated} student QR codes for this session!`)
+      await loadSessionDetails(selectedSessionId)
+      setTimeout(() => setActionMessage(null), 4000)
+    } catch (err: any) {
+      setActionMessage(err?.message || "Failed to generate student QR codes.")
+    } finally {
+      setGeneratingStudentQrs(false)
+    }
+  }
+
   const handleActivateSession = async (sessionId: string) => {
     try {
       await adminService.activateSession(sessionId)
@@ -190,29 +205,6 @@ export default function AdminAttendanceView() {
     } catch (err) {
       console.error("Failed to close session", err)
     }
-  }
-
-  const handleGenerateQr = async () => {
-    if (!selectedSessionId) return
-    setQrLoading(true)
-    setActionMessage(null)
-    try {
-      const res = await attendanceService.generateSessionQr(selectedSessionId)
-      setQrCode(res)
-      setActionMessage("Session QR code generated successfully!")
-      setTimeout(() => setActionMessage(null), 3000)
-    } catch (err: any) {
-      setActionMessage(err?.message || "Failed to generate session QR code.")
-    } finally {
-      setQrLoading(false)
-    }
-  }
-
-  const handleCopyToken = () => {
-    if (!qrCode?.token) return
-    navigator.clipboard.writeText(qrCode.token)
-    setCopiedToken(true)
-    setTimeout(() => setCopiedToken(false), 2000)
   }
 
   const selectedSession = sessions.find((s) => s.id === selectedSessionId)
@@ -368,64 +360,50 @@ export default function AdminAttendanceView() {
             )}
           </div>
 
-          {/* SECTION D: Session QR Display */}
+          {/* SECTION D: Student QR Code Generation Control */}
           <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-            <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-                <FiActivity className="text-cyan-700 text-sm" /> Session QR Code Management
-              </h3>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 mb-4 border-b border-slate-100 gap-3">
+              <div>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                  <FiZap className="text-cyan-700 text-sm" /> Student Session QR Code Generation
+                </h3>
+                <p className="text-xs text-slate-600 mt-0.5">
+                  Generate unique student-specific QR passes for all registered students for this session.
+                </p>
+              </div>
+
               <button
-                onClick={handleGenerateQr}
-                disabled={qrLoading}
-                className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold uppercase tracking-wider shadow-sm transition disabled:opacity-50 inline-flex items-center gap-1.5"
+                onClick={handleGenerateStudentQrs}
+                disabled={generatingStudentQrs}
+                className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold uppercase tracking-wider shadow-sm transition disabled:opacity-50 inline-flex items-center gap-2 shrink-0"
               >
-                <FiRefreshCw className={qrLoading ? "animate-spin" : ""} />
-                <span>{qrLoading ? "Generating..." : "Generate Session QR"}</span>
+                {generatingStudentQrs ? <FiRefreshCw className="animate-spin" /> : <FiZap />}
+                <span>{generatingStudentQrs ? "Generating..." : "Generate Student QR Codes"}</span>
               </button>
             </div>
 
             {actionMessage && (
-              <div className="mb-4 p-3 rounded-xl bg-cyan-50 border border-cyan-200 text-cyan-900 text-xs font-semibold">
+              <div className="mb-4 p-3.5 rounded-xl bg-cyan-50 border border-cyan-200 text-cyan-900 text-xs font-semibold">
                 {actionMessage}
               </div>
             )}
 
-            {qrCode ? (
-              <div className="flex flex-col sm:flex-row items-center gap-6 p-4 bg-slate-50 rounded-xl border border-slate-200">
-                <div className="p-2 bg-white rounded-xl border border-slate-200 shrink-0">
-                  <img src={qrCode.qrImageBase64} alt="Session QR" className="w-36 h-36" />
+            {qrStatus && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                  <span className="text-[10px] font-bold uppercase text-slate-500">Total Enrolled Students</span>
+                  <p className="text-xl font-extrabold text-slate-900 mt-1">{qrStatus.totalStudents}</p>
                 </div>
-                <div className="space-y-2 flex-1 text-center sm:text-left text-xs">
-                  <span
-                    className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
-                      qrCode.active
-                        ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                        : "bg-slate-200 text-slate-700 border-slate-300"
-                    }`}
-                  >
-                    <FiCheckCircle /> {qrCode.active ? "Session QR Active" : "QR Inactive"}
-                  </span>
-                  <h4 className="text-sm font-bold text-slate-900">{selectedSession.title}</h4>
-                  <p className="text-slate-600">
-                    Expiry: <span className="font-mono">{qrCode.expiresAt ? qrCode.expiresAt.replace("T", " ") : "End of session"}</span>
-                  </p>
-                  <div className="flex items-center gap-2 pt-1 justify-center sm:justify-start">
-                    <span className="font-mono text-[11px] bg-white px-2.5 py-1 rounded-lg border border-slate-200 truncate max-w-xs">
-                      {qrCode.token}
-                    </span>
-                    <button
-                      onClick={handleCopyToken}
-                      className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 text-xs font-bold hover:bg-slate-100 transition inline-flex items-center gap-1 shrink-0"
-                    >
-                      {copiedToken ? <FiCheck className="text-emerald-600" /> : <FiCopy />}
-                      <span>{copiedToken ? "Copied" : "Copy Token"}</span>
-                    </button>
-                  </div>
+
+                <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
+                  <span className="text-[10px] font-bold uppercase text-emerald-800">Student QRs Generated</span>
+                  <p className="text-xl font-extrabold text-emerald-700 mt-1">{qrStatus.generatedQr}</p>
                 </div>
-              </div>
-            ) : (
-              <div className="p-6 text-center text-xs text-slate-500 bg-slate-50 rounded-xl border border-slate-200">
-                No active QR generated for this session yet. Click &quot;Generate Session QR&quot; above.
+
+                <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                  <span className="text-[10px] font-bold uppercase text-amber-800">Pending QRs</span>
+                  <p className="text-xl font-extrabold text-amber-700 mt-1">{qrStatus.pendingQr}</p>
+                </div>
               </div>
             )}
           </div>

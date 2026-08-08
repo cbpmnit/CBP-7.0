@@ -7,6 +7,10 @@ import {
   StudentSessionRecordDto,
   PageResponse,
   SessionQrCodeResponse,
+  BatchQrGenerationResponse,
+  QrGenerationStatusResponse,
+  StudentSessionQrResponse,
+  ScanAttendanceResponse,
   MarkAttendanceRequest,
   AdminAttendanceSummaryResponse,
   DailyAttendanceReportResponse,
@@ -20,7 +24,13 @@ export const attendanceService = {
   getMyAttendance: () =>
     api.get<StudentAttendanceSummaryResponse>("/api/v1/student/attendance"),
 
-  // Admin Session Management APIs
+  getStudentSessionQr: (sessionId: string) =>
+    api.get<StudentSessionQrResponse>(`/api/v1/student/attendance/sessions/${sessionId}/qr`),
+
+  getMyActiveAttendanceQr: () =>
+    api.get<StudentSessionQrResponse>("/api/v1/student/attendance/qr"),
+
+  // Admin Session & Batch Student QR Management APIs
   getAllSessions: () =>
     api.get<AttendanceSessionDto[]>("/api/v1/admin/attendance/sessions"),
 
@@ -47,6 +57,12 @@ export const attendanceService = {
     )
   },
 
+  generateStudentQrsForSession: (sessionId: string) =>
+    api.post<BatchQrGenerationResponse>(`/api/v1/admin/attendance/sessions/${sessionId}/generate-student-qrs`),
+
+  getQrGenerationStatus: (sessionId: string) =>
+    api.get<QrGenerationStatusResponse>(`/api/v1/admin/attendance/sessions/${sessionId}/qr-status`),
+
   generateSessionQr: (sessionId: string) =>
     api.post<SessionQrCodeResponse>(`/api/v1/admin/attendance/sessions/${sessionId}/qr`),
 
@@ -67,6 +83,9 @@ export const attendanceService = {
     api.get<DailyAttendanceReportResponse>(`/api/v1/admin/attendance/date/${date}`),
 
   // Volunteer Gate Scanning APIs
+  scanAttendanceQr: (qrToken: string) =>
+    api.post<ScanAttendanceResponse>("/api/v1/attendance/scan", { qrToken }),
+
   scanAttendance: (payload: MarkAttendanceRequest) =>
     api.post<AttendanceRecordResponse>("/api/v1/attendance/mark", payload),
 

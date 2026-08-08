@@ -38,6 +38,9 @@ public class AttendanceRecord extends BaseEntity {
     @Column(name = "student_id", nullable = false)
     private String studentId;
 
+    @Column(name = "qr_code_id")
+    private UUID qrCodeId;
+
     @Column(name = "marked_by", nullable = false)
     private String markedBy;
 
