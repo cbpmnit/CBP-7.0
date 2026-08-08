@@ -5,15 +5,22 @@ import com.cbp7.attendance.record.dto.AttendanceRecordResponse;
 import com.cbp7.attendance.record.dto.DailyAttendanceReportResponse;
 import com.cbp7.attendance.record.dto.SessionAttendanceStatusDto;
 import com.cbp7.attendance.record.dto.StudentAttendanceSummaryResponse;
+import com.cbp7.attendance.record.dto.StudentSessionRecordDto;
 import com.cbp7.attendance.record.entity.AttendanceRecord;
 import com.cbp7.attendance.record.entity.AttendanceStatus;
 import com.cbp7.attendance.record.repository.AttendanceRecordRepository;
+import com.cbp7.attendance.session.dto.SessionSummaryResponse;
 import com.cbp7.attendance.session.entity.AttendanceSession;
 import com.cbp7.attendance.session.repository.AttendanceSessionRepository;
 import com.cbp7.auth.entity.Role;
+import com.cbp7.auth.entity.User;
 import com.cbp7.auth.repository.UserRepository;
+import com.cbp7.common.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +30,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -32,6 +40,86 @@ public class AttendanceQueryService {
     private final AttendanceRecordRepository attendanceRecordRepository;
     private final AttendanceSessionRepository sessionRepository;
     private final UserRepository userRepository;
+
+    @Transactional(readOnly = true)
+    public SessionSummaryResponse getSessionSummary(UUID sessionId) {
+        AttendanceSession session = sessionRepository.findById(sessionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Session not found with ID: " + sessionId));
+
+        long totalRegisteredStudents = userRepository.countByRole(Role.ROLE_STUDENT);
+        if (totalRegisteredStudents == 0) {
+            totalRegisteredStudents = userRepository.count();
+        }
+
+        long presentCount = attendanceRecordRepository.countBySessionIdAndStatus(sessionId, AttendanceStatus.PRESENT);
+        long absentCount = Math.max(0, totalRegisteredStudents - presentCount);
+
+        double rawPercentage = totalRegisteredStudents > 0
+                ? ((double) presentCount / totalRegisteredStudents) * 100.0
+                : 0.0;
+        double percentage = roundToTwoDecimals(rawPercentage);
+
+        return new SessionSummaryResponse(
+                session.getId(),
+                session.getDayNumber(),
+                session.getTitle(),
+                session.getSessionDate(),
+                totalRegisteredStudents,
+                presentCount,
+                absentCount,
+                percentage
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public Page<StudentSessionRecordDto> getSessionRecordsPaginated(
+            UUID sessionId,
+            String search,
+            AttendanceStatus status,
+            Pageable pageable
+    ) {
+        // Validate session exists
+        if (!sessionRepository.existsById(sessionId)) {
+            throw new ResourceNotFoundException("Session not found with ID: " + sessionId);
+        }
+
+        Page<AttendanceRecord> recordsPage;
+
+        String cleanSearch = search != null && !search.isBlank() ? search.trim().toLowerCase() : null;
+
+        if (cleanSearch != null && status != null) {
+            recordsPage = attendanceRecordRepository.findBySessionIdAndStudentIdContainingIgnoreCaseAndStatus(sessionId, cleanSearch, status, pageable);
+        } else if (cleanSearch != null) {
+            recordsPage = attendanceRecordRepository.findBySessionIdAndStudentIdContainingIgnoreCase(sessionId, cleanSearch, pageable);
+        } else if (status != null) {
+            recordsPage = attendanceRecordRepository.findBySessionIdAndStatus(sessionId, status, pageable);
+        } else {
+            recordsPage = attendanceRecordRepository.findBySessionId(sessionId, pageable);
+        }
+
+        List<StudentSessionRecordDto> dtos = recordsPage.getContent().stream()
+                .map(r -> {
+                    String name = "";
+                    String email = "";
+                    Optional<User> userOpt = userRepository.findByStudentId(r.getStudentId());
+                    if (userOpt.isPresent()) {
+                        User user = userOpt.get();
+                        name = user.getName() != null ? user.getName() : "";
+                        email = user.getEmail() != null ? user.getEmail() : "";
+                    }
+                    return new StudentSessionRecordDto(
+                            r.getStudentId(),
+                            name,
+                            email,
+                            r.getStatus(),
+                            r.getMarkedAt(),
+                            r.getMarkedBy()
+                    );
+                })
+                .toList();
+
+        return new PageImpl<>(dtos, pageable, recordsPage.getTotalElements());
+    }
 
     @Transactional(readOnly = true)
     public DailyAttendanceReportResponse getAttendanceByDate(LocalDate date) {
@@ -61,12 +149,12 @@ public class AttendanceQueryService {
         }
 
         String cleanStudentId = studentId.trim().toLowerCase();
-        List<AttendanceSession> allSessions = sessionRepository.findAll();
+        List<AttendanceSession> visibleSessions = sessionRepository.findByVisibilityTrueOrderByDayNumberAsc();
         List<SessionAttendanceStatusDto> sessionStatusDtos = new ArrayList<>();
 
         long attendedCount = 0;
 
-        for (AttendanceSession session : allSessions) {
+        for (AttendanceSession session : visibleSessions) {
             Optional<AttendanceRecord> recordOpt = attendanceRecordRepository.findBySessionIdAndStudentId(session.getId(), cleanStudentId);
             AttendanceStatus status = recordOpt.map(AttendanceRecord::getStatus).orElse(AttendanceStatus.ABSENT);
             if (status == AttendanceStatus.PRESENT) {
@@ -83,7 +171,7 @@ public class AttendanceQueryService {
             ));
         }
 
-        long totalSessions = allSessions.size();
+        long totalSessions = visibleSessions.size();
         double rawPercentage = totalSessions > 0 ? ((double) attendedCount / totalSessions) * 100.0 : 0.0;
         double percentage = roundToTwoDecimals(rawPercentage);
 

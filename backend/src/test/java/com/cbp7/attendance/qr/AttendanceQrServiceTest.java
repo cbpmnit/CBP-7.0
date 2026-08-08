@@ -17,8 +17,8 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -52,7 +52,7 @@ class AttendanceQrServiceTest {
                 .title("Day 1 Workshop")
                 .sessionDate(LocalDate.now())
                 .startTime(LocalTime.of(9, 0))
-                .endTime(LocalTime.of(12, 0))
+                .endTime(LocalTime.of(23, 59))
                 .venue("Main Hall")
                 .status(SessionStatus.ACTIVE)
                 .createdBy("admin001")
@@ -60,14 +60,16 @@ class AttendanceQrServiceTest {
     }
 
     @Test
-    @DisplayName("1. Session QR generation creates valid CBP_SESSION_QR_ token")
+    @DisplayName("1. Session QR generation derives expiry strictly from session end time")
     void generateSessionQrCreatesValidToken() {
-        SessionQrCodeResponse response = attendanceQrService.generateSessionQr(session.getId(), 120);
+        SessionQrCodeResponse response = attendanceQrService.generateSessionQr(session.getId());
 
         assertNotNull(response);
         assertNotNull(response.token());
         assertTrue(response.token().startsWith("CBP_SESSION_QR_"));
         assertTrue(response.active());
+        assertNotNull(response.expiresAt());
+        assertEquals(LocalDateTime.of(session.getSessionDate(), session.getEndTime()), response.expiresAt());
         assertNotNull(response.qrImageBase64());
         assertTrue(response.qrImageBase64().startsWith("data:image/png;base64,"));
     }
@@ -75,7 +77,7 @@ class AttendanceQrServiceTest {
     @Test
     @DisplayName("2. Active QR retrieval returns active session QR")
     void getActiveSessionQrReturnsActiveQr() {
-        SessionQrCodeResponse generated = attendanceQrService.generateSessionQr(session.getId(), 120);
+        SessionQrCodeResponse generated = attendanceQrService.generateSessionQr(session.getId());
 
         SessionQrCodeResponse retrieved = attendanceQrService.getActiveSessionQr(session.getId());
 
@@ -86,7 +88,7 @@ class AttendanceQrServiceTest {
     @Test
     @DisplayName("3. Validate QR token succeeds for active token")
     void validateQrTokenSucceeds() {
-        SessionQrCodeResponse generated = attendanceQrService.generateSessionQr(session.getId(), 120);
+        SessionQrCodeResponse generated = attendanceQrService.generateSessionQr(session.getId());
 
         AttendanceQrCode validated = attendanceQrService.validateQrToken(generated.token());
 
@@ -98,7 +100,7 @@ class AttendanceQrServiceTest {
     @Test
     @DisplayName("4. Deactivate session QR marks active token inactive")
     void deactivateSessionQrMarksInactive() {
-        attendanceQrService.generateSessionQr(session.getId(), 120);
+        attendanceQrService.generateSessionQr(session.getId());
         attendanceQrService.deactivateSessionQr(session.getId());
 
         assertThrows(ResourceNotFoundException.class, () -> attendanceQrService.getActiveSessionQr(session.getId()));

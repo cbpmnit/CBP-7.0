@@ -51,6 +51,10 @@ public class AttendanceSession extends BaseEntity {
     @Builder.Default
     private SessionStatus status = SessionStatus.UPCOMING;
 
+    @Builder.Default
+    @Column(name = "visibility", nullable = false)
+    private boolean visibility = true;
+
     @Column(name = "created_by", nullable = false)
     private String createdBy;
 }

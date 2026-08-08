@@ -2,18 +2,21 @@ package com.cbp7.attendance.session.controller;
 
 import com.cbp7.attendance.qr.dto.SessionQrCodeResponse;
 import com.cbp7.attendance.qr.service.AttendanceQrService;
-import com.cbp7.attendance.record.dto.AdminAttendanceSummaryResponse;
-import com.cbp7.attendance.record.dto.AttendanceRecordResponse;
+import com.cbp7.attendance.record.dto.StudentSessionRecordDto;
+import com.cbp7.attendance.record.entity.AttendanceStatus;
 import com.cbp7.attendance.record.service.AttendanceQueryService;
-import com.cbp7.attendance.record.service.AttendanceService;
-import com.cbp7.attendance.session.dto.CreateAttendanceSessionRequest;
 import com.cbp7.attendance.session.dto.AttendanceSessionResponse;
-import com.cbp7.attendance.session.entity.SessionStatus;
+import com.cbp7.attendance.session.dto.CreateAttendanceSessionRequest;
+import com.cbp7.attendance.session.dto.SessionSummaryResponse;
+import com.cbp7.attendance.session.dto.UpdateAttendanceSessionRequest;
 import com.cbp7.attendance.session.service.AttendanceSessionService;
 import com.cbp7.auth.entity.User;
 import com.cbp7.common.response.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -23,6 +26,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -32,16 +36,15 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/admin/attendance")
+@RequestMapping("/api/v1/admin/attendance/sessions")
 @RequiredArgsConstructor
 public class AdminAttendanceSessionController {
 
     private final AttendanceSessionService sessionService;
     private final AttendanceQrService qrService;
-    private final AttendanceService attendanceService;
     private final AttendanceQueryService attendanceQueryService;
 
-    @PostMapping("/sessions")
+    @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<AttendanceSessionResponse>> createSession(
             @AuthenticationPrincipal User currentUser,
@@ -53,66 +56,99 @@ public class AdminAttendanceSessionController {
                 .body(ApiResponse.success("Attendance session created successfully", response));
     }
 
-    @GetMapping("/sessions")
+    @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
     public ResponseEntity<ApiResponse<List<AttendanceSessionResponse>>> getAllSessions() {
         List<AttendanceSessionResponse> response = sessionService.getAllSessions();
         return ResponseEntity.ok(ApiResponse.success("Attendance sessions retrieved successfully", response));
     }
 
-    @GetMapping("/sessions/{id}")
+    @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
     public ResponseEntity<ApiResponse<AttendanceSessionResponse>> getSessionById(@PathVariable UUID id) {
         AttendanceSessionResponse response = sessionService.getSessionById(id);
         return ResponseEntity.ok(ApiResponse.success("Attendance session retrieved successfully", response));
     }
 
-    @PatchMapping("/sessions/{id}/status")
+    @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<AttendanceSessionResponse>> updateSessionStatus(
+    public ResponseEntity<ApiResponse<AttendanceSessionResponse>> updateSession(
             @PathVariable UUID id,
-            @RequestParam SessionStatus status
+            @Valid @RequestBody UpdateAttendanceSessionRequest request
     ) {
-        AttendanceSessionResponse response = sessionService.updateSessionStatus(id, status);
-        return ResponseEntity.ok(ApiResponse.success("Session status updated successfully", response));
+        AttendanceSessionResponse response = sessionService.updateSession(id, request);
+        return ResponseEntity.ok(ApiResponse.success("Attendance session updated successfully", response));
     }
 
-    @DeleteMapping("/sessions/{id}")
+    @PatchMapping("/{id}/visibility")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<AttendanceSessionResponse>> updateSessionVisibility(
+            @PathVariable UUID id,
+            @RequestParam boolean visibility
+    ) {
+        AttendanceSessionResponse response = sessionService.setSessionVisibility(id, visibility);
+        return ResponseEntity.ok(ApiResponse.success("Session visibility updated successfully", response));
+    }
+
+    @PostMapping("/{id}/activate")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<AttendanceSessionResponse>> activateSession(@PathVariable UUID id) {
+        AttendanceSessionResponse response = sessionService.activateSession(id);
+        return ResponseEntity.ok(ApiResponse.success("Session attendance activated successfully", response));
+    }
+
+    @PostMapping("/{id}/close")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<AttendanceSessionResponse>> closeSession(@PathVariable UUID id) {
+        AttendanceSessionResponse response = sessionService.closeSession(id);
+        return ResponseEntity.ok(ApiResponse.success("Session attendance closed successfully", response));
+    }
+
+    @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deleteSession(@PathVariable UUID id) {
         sessionService.deleteSession(id);
         return ResponseEntity.ok(ApiResponse.success("Session deleted successfully", null));
     }
 
-    @PostMapping("/sessions/{id}/qr")
+    @PostMapping("/{id}/qr")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<SessionQrCodeResponse>> generateSessionQr(
-            @PathVariable UUID id,
-            @RequestParam(required = false, defaultValue = "120") Integer validMinutes
-    ) {
-        SessionQrCodeResponse response = qrService.generateSessionQr(id, validMinutes);
+    public ResponseEntity<ApiResponse<SessionQrCodeResponse>> generateSessionQr(@PathVariable UUID id) {
+        SessionQrCodeResponse response = qrService.generateSessionQr(id);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Session QR code generated successfully", response));
     }
 
-    @GetMapping("/sessions/{id}/qr")
+    @GetMapping("/{id}/qr")
     @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
     public ResponseEntity<ApiResponse<SessionQrCodeResponse>> getActiveSessionQr(@PathVariable UUID id) {
         SessionQrCodeResponse response = qrService.getActiveSessionQr(id);
         return ResponseEntity.ok(ApiResponse.success("Active session QR code retrieved successfully", response));
     }
 
-    @DeleteMapping("/sessions/{id}/qr")
+    @DeleteMapping("/{id}/qr")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deactivateSessionQr(@PathVariable UUID id) {
         qrService.deactivateSessionQr(id);
         return ResponseEntity.ok(ApiResponse.success("Session QR code deactivated successfully", null));
     }
 
-    @GetMapping("/sessions/{id}/records")
+    @GetMapping("/{id}/summary")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<SessionSummaryResponse>> getSessionSummary(@PathVariable UUID id) {
+        SessionSummaryResponse response = attendanceQueryService.getSessionSummary(id);
+        return ResponseEntity.ok(ApiResponse.success("Session summary retrieved successfully", response));
+    }
+
+    @GetMapping("/{id}/records")
     @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
-    public ResponseEntity<ApiResponse<List<AttendanceRecordResponse>>> getSessionAttendanceRecords(@PathVariable UUID id) {
-        List<AttendanceRecordResponse> response = attendanceService.getSessionAttendanceRecords(id);
+    public ResponseEntity<ApiResponse<Page<StudentSessionRecordDto>>> getSessionAttendanceRecords(
+            @PathVariable UUID id,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) AttendanceStatus status,
+            @PageableDefault(size = 20) Pageable pageable
+    ) {
+        Page<StudentSessionRecordDto> response = attendanceQueryService.getSessionRecordsPaginated(id, search, status, pageable);
         return ResponseEntity.ok(ApiResponse.success("Session attendance records retrieved successfully", response));
     }
 }

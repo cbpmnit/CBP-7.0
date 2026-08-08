@@ -18,6 +18,7 @@ public record AttendanceSessionResponse(
         LocalTime endTime,
         String venue,
         SessionStatus status,
+        boolean visibility,
         String createdBy,
         LocalDateTime createdAt,
         long attendanceCount
@@ -34,6 +35,7 @@ public record AttendanceSessionResponse(
                 session.getEndTime(),
                 session.getVenue(),
                 session.getStatus(),
+                session.isVisibility(),
                 session.getCreatedBy(),
                 session.getCreatedAt(),
                 attendanceCount

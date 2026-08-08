@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.UUID;
@@ -25,11 +24,8 @@ public class AdminAttendanceQrController {
 
     @PostMapping("/session/{sessionId}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<SessionQrCodeResponse>> generateSessionQr(
-            @PathVariable UUID sessionId,
-            @RequestParam(required = false, defaultValue = "120") Integer validMinutes
-    ) {
-        SessionQrCodeResponse response = attendanceQrService.generateSessionQr(sessionId, validMinutes);
+    public ResponseEntity<ApiResponse<SessionQrCodeResponse>> generateSessionQr(@PathVariable UUID sessionId) {
+        SessionQrCodeResponse response = attendanceQrService.generateSessionQr(sessionId);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Session QR code generated successfully", response));
     }

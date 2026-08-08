@@ -80,7 +80,7 @@ class AttendanceQueryServiceTest {
     @DisplayName("1. Attendance summary and percentage calculation")
     void summaryAndPercentageCalculation() {
         String studentId = "2024student201";
-        SessionQrCodeResponse qrCode = attendanceQrService.generateSessionQr(session.getId(), 120);
+        SessionQrCodeResponse qrCode = attendanceQrService.generateSessionQr(session.getId());
         attendanceService.markAttendanceViaQr(qrCode.token(), studentId, "2024volunteer001");
 
         StudentAttendanceSummaryResponse summary = attendanceQueryService.getStudentAttendanceSummary(studentId);
@@ -110,7 +110,7 @@ class AttendanceQueryServiceTest {
     @DisplayName("3. Admin attendance summary calculation")
     void adminAttendanceSummaryCalculation() {
         String studentId = "2024student204";
-        SessionQrCodeResponse qrCode = attendanceQrService.generateSessionQr(session.getId(), 120);
+        SessionQrCodeResponse qrCode = attendanceQrService.generateSessionQr(session.getId());
         attendanceService.markAttendanceViaQr(qrCode.token(), studentId, "2024volunteer001");
 
         AdminAttendanceSummaryResponse adminSummary = attendanceQueryService.getAdminAttendanceSummary();

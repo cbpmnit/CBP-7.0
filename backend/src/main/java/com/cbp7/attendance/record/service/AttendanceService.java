@@ -8,6 +8,7 @@ import com.cbp7.attendance.record.entity.AttendanceStatus;
 import com.cbp7.attendance.record.event.AttendanceMarkedEvent;
 import com.cbp7.attendance.record.repository.AttendanceRecordRepository;
 import com.cbp7.attendance.session.entity.AttendanceSession;
+import com.cbp7.attendance.session.entity.SessionStatus;
 import com.cbp7.attendance.session.repository.AttendanceSessionRepository;
 import com.cbp7.auth.entity.User;
 import com.cbp7.auth.repository.UserRepository;
@@ -19,8 +20,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -48,8 +49,49 @@ public class AttendanceService {
             throw new IllegalArgumentException("Volunteer ID must not be empty");
         }
 
+        // 1 & 2. Validate QR token exists, is active, and is not past expiresAt
         AttendanceQrCode qrCode = attendanceQrService.validateQrToken(qrToken);
-        return recordStudentAttendance(qrCode.getSessionId(), studentId, volunteerId);
+
+        // 3. Validate session exists and status is ACTIVE
+        AttendanceSession session = sessionRepository.findById(qrCode.getSessionId())
+                .orElseThrow(() -> new ResourceNotFoundException("Session not found with ID: " + qrCode.getSessionId()));
+
+        if (session.getStatus() != SessionStatus.ACTIVE) {
+            throw new IllegalStateException("Attendance session is not ACTIVE. Current status: " + session.getStatus());
+        }
+
+        // 4. Validate current time within session duration
+        LocalDateTime now = LocalDateTime.now();
+        if (session.getStartTime() != null) {
+            LocalDateTime startDateTime = LocalDateTime.of(session.getSessionDate(), session.getStartTime());
+            if (now.isBefore(startDateTime)) {
+                throw new IllegalStateException("Attendance session has not started yet.");
+            }
+        }
+        if (qrCode.getExpiresAt() != null && now.isAfter(qrCode.getExpiresAt())) {
+            throw new IllegalStateException("Attendance session duration has ended and QR code has expired.");
+        }
+
+        // 5. Validate student not already marked for this sessionId
+        String cleanStudentId = studentId.trim().toLowerCase();
+        if (attendanceRecordRepository.existsBySessionIdAndStudentId(session.getId(), cleanStudentId)) {
+            throw new DuplicateResourceException("Attendance already marked for student " + cleanStudentId + " in session Day " + session.getDayNumber());
+        }
+
+        AttendanceRecord record = AttendanceRecord.builder()
+                .sessionId(session.getId())
+                .studentId(cleanStudentId)
+                .markedBy(volunteerId)
+                .markedAt(now)
+                .status(AttendanceStatus.PRESENT)
+                .build();
+
+        AttendanceRecord saved = attendanceRecordRepository.save(record);
+        log.info("Attendance marked for student {} in session Day {} by {}", cleanStudentId, session.getDayNumber(), volunteerId);
+
+        publishAttendanceMarkedEvent(saved);
+
+        return AttendanceRecordResponse.fromEntity(saved);
     }
 
     @Transactional
@@ -72,7 +114,7 @@ public class AttendanceService {
                 .build();
 
         AttendanceRecord saved = attendanceRecordRepository.save(record);
-        log.info("Attendance marked for student {} in session Day {} by {}", cleanStudentId, session.getDayNumber(), markedBy);
+        log.info("Direct attendance marked for student {} in session Day {} by {}", cleanStudentId, session.getDayNumber(), markedBy);
 
         publishAttendanceMarkedEvent(saved);
 

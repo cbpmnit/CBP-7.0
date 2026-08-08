@@ -4,5 +4,6 @@ public enum SessionStatus {
     UPCOMING,
     ACTIVE,
     COMPLETED,
+    CLOSED,
     CANCELLED
 }

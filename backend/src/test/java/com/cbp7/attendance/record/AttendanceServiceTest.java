@@ -79,7 +79,7 @@ class AttendanceServiceTest {
     @DisplayName("1. Valid Session QR creates attendance record successfully")
     void validQrCreatesAttendanceRecord() {
         String studentId = "2024student101";
-        SessionQrCodeResponse qrCode = attendanceQrService.generateSessionQr(session.getId(), 120);
+        SessionQrCodeResponse qrCode = attendanceQrService.generateSessionQr(session.getId());
 
         AttendanceRecordResponse response = attendanceService.markAttendanceViaQr(qrCode.token(), studentId, "2024volunteer001");
 
@@ -102,7 +102,7 @@ class AttendanceServiceTest {
     @DisplayName("3. Duplicate attendance in same session is rejected with DuplicateResourceException")
     void duplicateAttendanceRejected() {
         String studentId = "2024student103";
-        SessionQrCodeResponse qrCode = attendanceQrService.generateSessionQr(session.getId(), 120);
+        SessionQrCodeResponse qrCode = attendanceQrService.generateSessionQr(session.getId());
 
         attendanceService.markAttendanceViaQr(qrCode.token(), studentId, "2024volunteer001");
 
@@ -115,7 +115,7 @@ class AttendanceServiceTest {
     @DisplayName("4. Session and Student attendance history retrieval works")
     void attendanceHistoryRetrievalWorks() {
         String studentId = "2024student105";
-        SessionQrCodeResponse qrCode = attendanceQrService.generateSessionQr(session.getId(), 120);
+        SessionQrCodeResponse qrCode = attendanceQrService.generateSessionQr(session.getId());
         attendanceService.markAttendanceViaQr(qrCode.token(), studentId, "2024volunteer001");
 
         List<AttendanceRecordResponse> sessionRecords = attendanceService.getSessionAttendanceRecords(session.getId());

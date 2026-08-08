@@ -15,4 +15,7 @@ public interface AttendanceSessionRepository extends JpaRepository<AttendanceSes
     List<AttendanceSession> findByStatus(SessionStatus status);
     Optional<AttendanceSession> findByDayNumber(Integer dayNumber);
     List<AttendanceSession> findBySessionDate(LocalDate sessionDate);
+    List<AttendanceSession> findByVisibilityTrue();
+    List<AttendanceSession> findByVisibilityTrueOrderByDayNumberAsc();
+    List<AttendanceSession> findAllByOrderByDayNumberAsc();
 }

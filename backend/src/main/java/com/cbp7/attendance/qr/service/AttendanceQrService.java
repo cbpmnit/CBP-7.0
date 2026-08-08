@@ -27,11 +27,11 @@ public class AttendanceQrService {
     private static final String TOKEN_PREFIX = "CBP_SESSION_QR_";
 
     @Transactional
-    public SessionQrCodeResponse generateSessionQr(UUID sessionId, Integer expirationMinutes) {
+    public SessionQrCodeResponse generateSessionQr(UUID sessionId) {
         AttendanceSession session = sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Session not found with ID: " + sessionId));
 
-        // Deactivate existing active QR codes for this session
+        // Deactivate any existing active QR code for this session
         attendanceQrRepository.findBySessionIdAndActiveTrue(sessionId).ifPresent(qr -> {
             qr.setActive(false);
             attendanceQrRepository.save(qr);
@@ -39,9 +39,11 @@ public class AttendanceQrService {
 
         String token = TOKEN_PREFIX + UUID.randomUUID().toString().replace("-", "");
         LocalDateTime now = LocalDateTime.now();
-        LocalDateTime expiresAt = expirationMinutes != null && expirationMinutes > 0
-                ? now.plusMinutes(expirationMinutes)
-                : null;
+        
+        // Expiry is strictly derived from session.endTime on sessionDate
+        LocalDateTime expiresAt = session.getEndTime() != null
+                ? LocalDateTime.of(session.getSessionDate(), session.getEndTime())
+                : session.getSessionDate().atTime(23, 59, 59);
 
         AttendanceQrCode qrCode = AttendanceQrCode.builder()
                 .sessionId(sessionId)

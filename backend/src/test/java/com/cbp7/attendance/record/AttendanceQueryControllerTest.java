@@ -138,7 +138,7 @@ class AttendanceQueryControllerTest {
     @Test
     @DisplayName("1. Admin views student attendance history -> HTTP 200 OK")
     void adminViewsStudentAttendanceHistory() throws Exception {
-        SessionQrCodeResponse qrCode = attendanceQrService.generateSessionQr(session.getId(), 120);
+        SessionQrCodeResponse qrCode = attendanceQrService.generateSessionQr(session.getId());
         attendanceService.markAttendanceViaQr(qrCode.token(), studentUser.getStudentId(), "2024volunteer001");
 
         mockMvc.perform(get("/api/v1/admin/attendance/student/{studentId}", studentUser.getStudentId())
@@ -162,7 +162,7 @@ class AttendanceQueryControllerTest {
     @Test
     @DisplayName("3. Student views own attendance summary -> HTTP 200 OK")
     void studentViewsOwnAttendanceSummary() throws Exception {
-        SessionQrCodeResponse qrCode = attendanceQrService.generateSessionQr(session.getId(), 120);
+        SessionQrCodeResponse qrCode = attendanceQrService.generateSessionQr(session.getId());
         attendanceService.markAttendanceViaQr(qrCode.token(), studentUser.getStudentId(), "2024volunteer001");
 
         mockMvc.perform(get("/api/v1/student/attendance")

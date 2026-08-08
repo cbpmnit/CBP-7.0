@@ -1,8 +1,10 @@
 package com.cbp7.attendance.session.service;
 
+import com.cbp7.attendance.qr.service.AttendanceQrService;
 import com.cbp7.attendance.record.repository.AttendanceRecordRepository;
 import com.cbp7.attendance.session.dto.CreateAttendanceSessionRequest;
 import com.cbp7.attendance.session.dto.AttendanceSessionResponse;
+import com.cbp7.attendance.session.dto.UpdateAttendanceSessionRequest;
 import com.cbp7.attendance.session.entity.AttendanceSession;
 import com.cbp7.attendance.session.entity.SessionStatus;
 import com.cbp7.attendance.session.repository.AttendanceSessionRepository;
@@ -21,6 +23,7 @@ public class AttendanceSessionService {
 
     private final AttendanceSessionRepository sessionRepository;
     private final AttendanceRecordRepository recordRepository;
+    private final AttendanceQrService qrService;
 
     @Transactional
     public AttendanceSessionResponse createSession(CreateAttendanceSessionRequest request, String createdBy) {
@@ -37,6 +40,7 @@ public class AttendanceSessionService {
                 .endTime(request.endTime())
                 .venue(request.venue() != null ? request.venue().trim() : null)
                 .status(SessionStatus.UPCOMING)
+                .visibility(true)
                 .createdBy(createdBy)
                 .build();
 
@@ -46,7 +50,17 @@ public class AttendanceSessionService {
 
     @Transactional(readOnly = true)
     public List<AttendanceSessionResponse> getAllSessions() {
-        return sessionRepository.findAll().stream()
+        return sessionRepository.findAllByOrderByDayNumberAsc().stream()
+                .map(s -> {
+                    long count = recordRepository.countBySessionId(s.getId());
+                    return AttendanceSessionResponse.fromEntity(s, count);
+                })
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<AttendanceSessionResponse> getVisibleSessions() {
+        return sessionRepository.findByVisibilityTrueOrderByDayNumberAsc().stream()
                 .map(s -> {
                     long count = recordRepository.countBySessionId(s.getId());
                     return AttendanceSessionResponse.fromEntity(s, count);
@@ -63,12 +77,80 @@ public class AttendanceSessionService {
     }
 
     @Transactional
-    public AttendanceSessionResponse updateSessionStatus(UUID id, SessionStatus status) {
+    public AttendanceSessionResponse updateSession(UUID id, UpdateAttendanceSessionRequest request) {
         AttendanceSession session = sessionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Attendance session not found with ID: " + id));
 
-        session.setStatus(status);
+        if (request.dayNumber() != null && !request.dayNumber().equals(session.getDayNumber())) {
+            sessionRepository.findByDayNumber(request.dayNumber()).ifPresent(existing -> {
+                throw new DuplicateResourceException("Session already exists for Day " + request.dayNumber());
+            });
+            session.setDayNumber(request.dayNumber());
+        }
+
+        if (request.title() != null && !request.title().isBlank()) {
+            session.setTitle(request.title().trim());
+        }
+        if (request.description() != null) {
+            session.setDescription(request.description().trim());
+        }
+        if (request.sessionDate() != null) {
+            session.setSessionDate(request.sessionDate());
+        }
+        if (request.startTime() != null) {
+            session.setStartTime(request.startTime());
+        }
+        if (request.endTime() != null) {
+            session.setEndTime(request.endTime());
+        }
+        if (request.venue() != null) {
+            session.setVenue(request.venue().trim());
+        }
+        if (request.status() != null) {
+            session.setStatus(request.status());
+        }
+        if (request.visibility() != null) {
+            session.setVisibility(request.visibility());
+        }
+
         AttendanceSession updated = sessionRepository.save(session);
+        long count = recordRepository.countBySessionId(updated.getId());
+        return AttendanceSessionResponse.fromEntity(updated, count);
+    }
+
+    @Transactional
+    public AttendanceSessionResponse setSessionVisibility(UUID id, boolean visibility) {
+        AttendanceSession session = sessionRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Attendance session not found with ID: " + id));
+
+        session.setVisibility(visibility);
+        AttendanceSession updated = sessionRepository.save(session);
+        long count = recordRepository.countBySessionId(updated.getId());
+        return AttendanceSessionResponse.fromEntity(updated, count);
+    }
+
+    @Transactional
+    public AttendanceSessionResponse activateSession(UUID id) {
+        AttendanceSession session = sessionRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Attendance session not found with ID: " + id));
+
+        session.setStatus(SessionStatus.ACTIVE);
+        AttendanceSession updated = sessionRepository.save(session);
+        long count = recordRepository.countBySessionId(updated.getId());
+        return AttendanceSessionResponse.fromEntity(updated, count);
+    }
+
+    @Transactional
+    public AttendanceSessionResponse closeSession(UUID id) {
+        AttendanceSession session = sessionRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Attendance session not found with ID: " + id));
+
+        session.setStatus(SessionStatus.CLOSED);
+        AttendanceSession updated = sessionRepository.save(session);
+
+        // Deactivate active session QR code when attendance closes
+        qrService.deactivateSessionQr(id);
+
         long count = recordRepository.countBySessionId(updated.getId());
         return AttendanceSessionResponse.fromEntity(updated, count);
     }

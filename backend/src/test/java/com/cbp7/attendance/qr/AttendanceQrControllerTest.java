@@ -135,7 +135,7 @@ class AttendanceQrControllerTest {
     @Test
     @DisplayName("2. Admin gets Session QR successfully -> 200 OK")
     void adminGetsSessionQrSuccessfully() throws Exception {
-        attendanceQrService.generateSessionQr(session.getId(), 120);
+        attendanceQrService.generateSessionQr(session.getId());
 
         mockMvc.perform(get("/api/v1/admin/attendance/qr/session/{sessionId}", session.getId())
                         .header("Authorization", "Bearer " + adminToken))
