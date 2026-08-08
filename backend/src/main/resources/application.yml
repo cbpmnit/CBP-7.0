@@ -1,3 +1,5 @@
+debug: true
+
 server:
   port: ${PORT:9900}
 
@@ -28,7 +30,7 @@ spring:
       ddl-auto: update
     properties:
       hibernate:
-        default_schema: identity
+        default-schema: identity
   devtools:
     restart:
       enabled: true
@@ -73,6 +75,3 @@ phonepe:
 certificate:
   minimum-attendance-percentage: 75.0
 
-logging:
-  level:
-    root: INFO

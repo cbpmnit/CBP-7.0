@@ -13,6 +13,7 @@ import com.cbp7.profile.entity.UserProfile;
 import com.cbp7.profile.repository.ProfileCompletionRepository;
 import com.cbp7.profile.repository.UserProfileRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -22,6 +23,7 @@ import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ProfileService {
 
     private static final Pattern PHONE_PATTERN = Pattern.compile("^\\d{10}$");
@@ -140,21 +142,33 @@ public class ProfileService {
         return mapToProfileResponse(updatedProfile);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public ProfileCompletionResponse getProfileCompletion(User user) {
         validateAuthenticatedUser(user);
+
+        if (user.getStudentId() == null || user.getStudentId().isBlank()) {
+            return new ProfileCompletionResponse(false, 0, "PROFILE_NOT_STARTED");
+        }
 
         ProfileCompletion completion = profileCompletionRepository.findByUserStudentIdIgnoreCase(user.getStudentId())
                 .orElseGet(() -> {
                     UserProfile profile = userProfileRepository.findByUserStudentIdIgnoreCase(user.getStudentId()).orElse(null);
-                    return calculateAndBuildCompletion(user, profile);
+                    ProfileCompletion calculated = calculateAndBuildCompletion(user, profile);
+                    if (profile != null) {
+                        try {
+                            return profileCompletionRepository.save(calculated);
+                        } catch (Exception e) {
+                            log.warn("Could not persist calculated profile completion for user {}: {}", user.getStudentId(), e.getMessage());
+                        }
+                    }
+                    return calculated;
                 });
 
-        return new ProfileCompletionResponse(
-                completion.getProfileCompleted(),
-                completion.getCompletionPercentage(),
-                completion.getLastCompletedStep()
-        );
+        boolean isCompleted = Boolean.TRUE.equals(completion.getProfileCompleted());
+        int percentage = completion.getCompletionPercentage() != null ? completion.getCompletionPercentage() : 0;
+        String lastStep = completion.getLastCompletedStep() != null ? completion.getLastCompletedStep() : "PROFILE_NOT_STARTED";
+
+        return new ProfileCompletionResponse(isCompleted, percentage, lastStep);
     }
 
     private void validateAuthenticatedUser(User user) {

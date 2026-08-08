@@ -7,6 +7,7 @@ import { useAppDispatch } from "@/store/hooks"
 import { loginSuccess } from "@/store/slices/authSlice"
 import { api, ApiError } from "@/utils/api"
 import { profileService } from "@/services/profileService"
+import { LoginRequest, LoginResponse } from "@/types/auth"
 import Reveal from "@/components/animations/RevealOnScroll"
 import PageTransition from "@/components/animations/PageTransition"
 import { FiUser, FiLock, FiArrowRight, FiShield, FiCheckCircle } from "react-icons/fi"
@@ -15,7 +16,7 @@ export default function LoginPage() {
   const router = useRouter()
   const dispatch = useAppDispatch()
   const [formData, setFormData] = useState({
-    identifier: "",
+    studentId: "",
     password: "",
     rememberMe: false,
   })
@@ -39,12 +40,26 @@ export default function LoginPage() {
     setLoading(true)
     setError(null)
 
+    const cleanStudentId = formData.studentId.trim()
+    if (!cleanStudentId) {
+      setError("Student ID is required")
+      setLoading(false)
+      return
+    }
+    if (!formData.password) {
+      setError("Password is required")
+      setLoading(false)
+      return
+    }
+
     try {
-      // 1. Call Backend Login API
-      const response: any = await api.post("/api/v1/auth/login", {
-        identifier: formData.identifier.trim(),
+      // 1. Call Backend Login API with aligned LoginRequest contract
+      const loginPayload: LoginRequest = {
+        studentId: cleanStudentId,
         password: formData.password,
-      })
+      }
+
+      const response = await api.post<LoginResponse>("/api/v1/auth/login", loginPayload)
 
       // 2. Dispatch success state to Redux (saves to localStorage automatically)
       dispatch(
@@ -78,7 +93,16 @@ export default function LoginPage() {
       }, 1500)
     } catch (err) {
       if (err instanceof ApiError) {
-        setError(err.message || "Invalid Student ID or password")
+        if (err.status === 400 && err.errorData?.errors) {
+          const firstErrKey = Object.keys(err.errorData.errors)[0]
+          setError(err.errorData.errors[firstErrKey] || "Student ID and password are required")
+        } else if (err.status === 401) {
+          setError("Invalid Student ID or password. Please check your credentials.")
+        } else if (err.status === 403) {
+          setError("Access denied. Your account is disabled or unauthorized.")
+        } else {
+          setError(err.message || "Invalid Student ID or password")
+        }
       } else {
         setError("An unexpected error occurred. Please try again.")
       }
@@ -115,17 +139,17 @@ export default function LoginPage() {
                   </div>
                   <div>
                     <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Logged in as</p>
-                    <p className="text-sm font-bold text-slate-900">{formData.identifier || "Student"}</p>
+                    <p className="text-sm font-bold text-slate-900">{formData.studentId || "Student"}</p>
                   </div>
                 </div>
               </div>
             </Reveal>
             <Reveal delay={200}>
               <Link
-                href="/"
+                href="/dashboard"
                 className="mt-8 inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white px-8 py-4 text-sm font-bold uppercase tracking-wider shadow-lg shadow-cyan-600/30 transition duration-300 transform hover:-translate-y-0.5"
               >
-                Go to Homepage
+                Go to Dashboard
               </Link>
             </Reveal>
           </div>
@@ -149,7 +173,7 @@ export default function LoginPage() {
             </Reveal>
             <Reveal delay={80}>
               <p className="mt-3.5 max-w-xl mx-auto text-sm sm:text-base text-slate-600 leading-relaxed">
-                Enter your Student ID / MNIT Email and Password to access your student dashboard, attendance records, and certificates.
+                Enter your Student ID and Password to access your student dashboard, attendance records, and certificates.
               </p>
             </Reveal>
           </div>
@@ -182,29 +206,31 @@ export default function LoginPage() {
                   )}
 
                   <div className="space-y-5">
-                    {/* Identifier */}
+                    {/* Student ID */}
                     <div>
                       <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-700">
                         <FiUser className="text-cyan-600" />
-                        Student ID / Email <span className="text-cyan-600">*</span>
+                        Student ID <span className="text-cyan-600">*</span>
                       </label>
                       <input
                         type="text"
-                        name="identifier"
+                        name="studentId"
                         required
-                        value={formData.identifier}
+                        value={formData.studentId}
                         onChange={handleChange}
-                        className="mt-2 block w-full rounded-xl bg-slate-50 border border-slate-200 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 transition duration-200 focus:bg-white focus:border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
-                        placeholder="e.g. 2024XXXXX or student@mnit.ac.in"
+                        className="mt-2 block w-full rounded-xl bg-slate-50 border border-slate-200 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 transition duration-200 focus:bg-white focus:border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 font-mono"
+                        placeholder="e.g. 2024UCH1190"
                       />
                     </div>
 
                     {/* Password */}
                     <div>
-                      <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-700">
-                        <FiLock className="text-cyan-600" />
-                        Password <span className="text-cyan-600">*</span>
-                      </label>
+                      <div className="flex items-center justify-between">
+                        <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-700">
+                          <FiLock className="text-cyan-600" />
+                          Password <span className="text-cyan-600">*</span>
+                        </label>
+                      </div>
                       <input
                         type="password"
                         name="password"
@@ -212,13 +238,13 @@ export default function LoginPage() {
                         value={formData.password}
                         onChange={handleChange}
                         className="mt-2 block w-full rounded-xl bg-slate-50 border border-slate-200 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 transition duration-200 focus:bg-white focus:border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
-                        placeholder="Enter your password"
+                        placeholder="••••••••"
                       />
                     </div>
 
-                    {/* Options */}
-                    <div className="flex items-center justify-between pt-1">
-                      <label className="flex items-center gap-2 cursor-pointer">
+                    {/* Remember me */}
+                    <div className="flex items-center justify-between text-xs pt-1">
+                      <label className="flex items-center gap-2 cursor-pointer text-slate-600">
                         <input
                           type="checkbox"
                           name="rememberMe"
@@ -226,41 +252,38 @@ export default function LoginPage() {
                           onChange={handleChange}
                           className="h-4 w-4 rounded border-slate-300 text-cyan-600 focus:ring-cyan-500"
                         />
-                        <span className="text-xs text-slate-600">Remember me</span>
+                        <span>Remember my Student ID</span>
                       </label>
-
-                      <a
-                        href="#"
-                        onClick={(e) => {
-                          e.preventDefault()
-                          alert("Password reset instructions have been sent to your registered MNIT email.")
-                        }}
-                        className="text-xs font-semibold text-cyan-700 hover:text-cyan-800 transition"
-                      >
-                        Forgot Password?
-                      </a>
                     </div>
+
+                    {/* Submit Button */}
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="w-full rounded-2xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white py-4 text-xs font-bold uppercase tracking-wider shadow-lg shadow-cyan-600/30 transition duration-300 transform hover:-translate-y-0.5 disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                      {loading ? (
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      ) : (
+                        <>
+                          <span>Login to Portal</span>
+                          <FiArrowRight className="h-4 w-4" />
+                        </>
+                      )}
+                    </button>
                   </div>
                 </div>
-
-                {/* Submit Button */}
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="group flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white py-4 text-sm font-bold uppercase tracking-wider shadow-lg shadow-cyan-600/30 transition-all duration-300 transform hover:-translate-y-0.5 disabled:opacity-50"
-                >
-                  <span>{loading ? "Signing In..." : "Sign In"}</span>
-                  <FiArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
-                </button>
-
-                {/* Register Link */}
-                <div className="text-center text-xs text-slate-600 pt-2">
-                  Don&apos;t have an account?{" "}
-                  <Link href="/registration" className="font-bold text-cyan-700 hover:text-cyan-800 underline">
-                    Register for CBP 7.0 Now
-                  </Link>
-                </div>
               </form>
+            </Reveal>
+
+            {/* Registration Hint */}
+            <Reveal delay={120}>
+              <div className="mt-6 text-center text-xs text-slate-600">
+                Don&apos;t have an account yet?{" "}
+                <Link href="/register" className="font-bold text-cyan-700 hover:underline">
+                  Register here
+                </Link>
+              </div>
             </Reveal>
           </div>
         </section>

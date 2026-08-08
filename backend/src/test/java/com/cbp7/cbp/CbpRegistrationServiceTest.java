@@ -20,6 +20,7 @@ import com.cbp7.profile.entity.ProfileCompletion;
 import com.cbp7.profile.entity.UserProfile;
 import com.cbp7.profile.repository.ProfileCompletionRepository;
 import com.cbp7.profile.repository.UserProfileRepository;
+import com.cbp7.profile.service.ProfileService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -42,6 +43,7 @@ class CbpRegistrationServiceTest {
 
     private User studentUser;
     private User adminUser;
+    private ProfileService profileService;
     private UserProfile completedProfile;
     private ProfileCompletion completedStatus;
 
@@ -50,10 +52,12 @@ class CbpRegistrationServiceTest {
         cbpRegistrationRepository = mock(CbpRegistrationRepository.class);
         userProfileRepository = mock(UserProfileRepository.class);
         profileCompletionRepository = mock(ProfileCompletionRepository.class);
+        profileService = mock(ProfileService.class);
         cbpRegistrationService = new CbpRegistrationService(
                 cbpRegistrationRepository,
                 userProfileRepository,
-                profileCompletionRepository
+                profileCompletionRepository,
+                profileService
         );
 
         studentUser = User.builder()

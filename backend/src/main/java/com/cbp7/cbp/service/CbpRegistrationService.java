@@ -17,6 +17,7 @@ import com.cbp7.profile.entity.ProfileCompletion;
 import com.cbp7.profile.entity.UserProfile;
 import com.cbp7.profile.repository.ProfileCompletionRepository;
 import com.cbp7.profile.repository.UserProfileRepository;
+import com.cbp7.profile.service.ProfileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +29,7 @@ public class CbpRegistrationService {
     private final CbpRegistrationRepository cbpRegistrationRepository;
     private final UserProfileRepository userProfileRepository;
     private final ProfileCompletionRepository profileCompletionRepository;
+    private final ProfileService profileService;
 
     @Transactional
     public CbpRegistrationResponse registerStudent(User user) {
@@ -41,7 +43,7 @@ public class CbpRegistrationService {
                 .orElseThrow(() -> new ProfileIncompleteException("Please complete your profile before registering."));
 
         ProfileCompletion completion = profileCompletionRepository.findByUserStudentIdIgnoreCase(user.getStudentId())
-                .orElseThrow(() -> new ProfileIncompleteException("Please complete your profile before registering."));
+                .orElseGet(() -> profileService.calculateAndBuildCompletion(user, profile));
 
         if (!Boolean.TRUE.equals(completion.getProfileCompleted())) {
             throw new ProfileIncompleteException("Please complete your profile before registering.");

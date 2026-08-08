@@ -6,3 +6,9 @@ spring:
       enabled: true
   jpa:
     show-sql: true
+
+logging:
+  level:
+    root: INFO
+    org.springframework.web: DEBUG
+    org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping: TRACE
