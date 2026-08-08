@@ -200,7 +200,7 @@ export default function AdminDashboardPage() {
                     required
                     value={certStudentId}
                     onChange={(e) => setCertStudentId(e.target.value)}
-                    placeholder="Roll Number (e.g. 2024UCP1001)"
+                    placeholder="Student ID (e.g. 2024UCP1001)"
                     className="flex-1 rounded-xl bg-slate-50 border border-slate-200 px-4 py-2 text-xs text-slate-900 focus:border-cyan-600 focus:outline-none font-mono"
                   />
                   <button

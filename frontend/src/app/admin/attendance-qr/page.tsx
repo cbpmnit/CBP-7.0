@@ -81,7 +81,7 @@ export default function AdminAttendanceQrPage() {
             <form onSubmit={handleGenerate} className="space-y-4">
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                  Student Roll Number / Student ID
+                  Student ID
                 </label>
                 <input
                   type="text"

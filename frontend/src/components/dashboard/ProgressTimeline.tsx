@@ -1,86 +1,97 @@
 "use client"
 
-import { FiCheck } from "react-icons/fi"
+import { useState } from "react"
+import { FiCheck, FiInfo, FiExternalLink } from "react-icons/fi"
 
 interface ProgressTimelineProps {
-  isProfileComplete: boolean
+  isProfileComplete?: boolean
   isRegistered: boolean
   isPaymentSuccess: boolean
   attendancePercentage: number
   isCertificateIssued: boolean
+  onStepClick?: (stepId: string) => void
 }
 
 export default function ProgressTimeline({
-  isProfileComplete,
   isRegistered,
   isPaymentSuccess,
   attendancePercentage,
   isCertificateIssued,
+  onStepClick,
 }: ProgressTimelineProps) {
+  const [activeTooltip, setActiveTooltip] = useState<string | null>(null)
+
   const steps = [
     {
+      id: "overview",
       label: "Registration",
-      status: isRegistered ? "Completed ✓" : "Pending",
       completed: isRegistered,
+      detail: isRegistered ? "Completed ✓" : "Action Needed",
+      tooltip: "CBP program student enrollment and student ID allocation.",
     },
     {
+      id: "payments",
       label: "Payment",
-      status: isPaymentSuccess ? "Paid ✓" : "Pending",
       completed: isPaymentSuccess,
+      detail: isPaymentSuccess ? "Paid ✓" : "Pending Fee",
+      tooltip: "₹500 PhonePe online gateway fee verification.",
     },
     {
+      id: "attendance",
       label: "Attendance",
-      status: `${attendancePercentage.toFixed(0)}% Attended`,
       completed: attendancePercentage >= 75,
+      detail: `${attendancePercentage.toFixed(0)}% (Min 75%)`,
+      tooltip: "Requires 75% workshop attendance across 5 daily sessions.",
     },
     {
+      id: "certificates",
       label: "Certificate",
-      status: isCertificateIssued ? "Issued ✓" : "Pending",
       completed: isCertificateIssued,
+      detail: isCertificateIssued ? "Issued ✓" : "Locked",
+      tooltip: "Official PDF credential unlocked upon meeting 75% attendance.",
     },
   ]
 
   return (
-    <section className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 mb-6 shadow-sm">
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">
-          Student Progress Journey
-        </h2>
-        <span className="text-[11px] text-slate-500 font-mono">CBP 7.0 Lifecycle</span>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+    <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 mb-6 shadow-sm">
+      <div className="flex items-center justify-between gap-2 max-w-4xl mx-auto relative">
+        <div className="absolute top-4 left-6 right-6 h-0.5 bg-slate-100 -translate-y-1/2 z-0" />
         {steps.map((step, idx) => (
-          <div
-            key={step.label}
-            className={`p-3 rounded-xl border transition-all duration-200 hover:-translate-y-0.5 ${
-              step.completed
-                ? "bg-emerald-50/60 border-emerald-200 text-slate-900 shadow-sm"
-                : "bg-slate-50/80 border-slate-200 text-slate-600"
-            }`}
-          >
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-xs font-bold text-slate-900">{step.label}</span>
-              <span
-                className={`inline-flex items-center justify-center h-4 w-4 rounded-full text-[10px] font-bold shrink-0 ${
-                  step.completed
-                    ? "bg-emerald-600 text-white"
-                    : "bg-slate-200 text-slate-600"
-                }`}
-              >
-                {step.completed ? <FiCheck /> : idx + 1}
-              </span>
-            </div>
-            <div
-              className={`text-[11px] font-semibold ${
-                step.completed ? "text-emerald-700 font-bold" : "text-slate-500"
+          <div key={step.id} className="relative z-10 flex flex-col items-center text-center bg-white px-2 group">
+            <button
+              onClick={() => onStepClick && onStepClick(step.id)}
+              onMouseEnter={() => setActiveTooltip(step.id)}
+              onMouseLeave={() => setActiveTooltip(null)}
+              className={`h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 mb-1.5 cursor-pointer transform group-hover:scale-110 ${
+                step.completed
+                  ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/20 group-hover:bg-emerald-700"
+                  : "bg-slate-100 border border-slate-200 text-slate-600 group-hover:border-cyan-600 group-hover:text-cyan-800"
               }`}
             >
-              {step.status}
-            </div>
+              {step.completed ? <FiCheck className="text-sm" /> : idx + 1}
+            </button>
+
+            <button
+              onClick={() => onStepClick && onStepClick(step.id)}
+              className="text-xs font-bold text-slate-900 group-hover:text-cyan-700 transition flex items-center gap-1"
+            >
+              <span>{step.label}</span>
+              <FiExternalLink className="text-[10px] opacity-0 group-hover:opacity-100 transition" />
+            </button>
+
+            <span className={`text-[10px] font-semibold mt-0.5 ${step.completed ? "text-emerald-700 font-bold" : "text-slate-500"}`}>
+              {step.detail}
+            </span>
+
+            {/* Interactive Hover Tooltip */}
+            {activeTooltip === step.id && (
+              <div className="absolute bottom-full mb-2 bg-slate-900 text-white text-[11px] font-medium px-3 py-1.5 rounded-xl shadow-xl w-44 z-30 pointer-events-none transition-all duration-200">
+                {step.tooltip}
+              </div>
+            )}
           </div>
         ))}
       </div>
-    </section>
+    </div>
   )
 }

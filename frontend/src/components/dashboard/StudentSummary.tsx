@@ -30,7 +30,7 @@ export default function StudentSummary({ name, studentId, profile }: StudentSumm
             {courseName} in {branchName}
           </p>
           <p className="text-[11px] font-medium text-slate-500 font-mono mt-0.5">
-            {yearText} &middot; Roll No: <span className="font-bold text-cyan-800">{safeText(studentId)}</span>
+            {yearText} &middot; Student ID: <span className="font-bold text-cyan-800">{safeText(studentId)}</span>
           </p>
         </div>
       </div>

@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { api, ApiError } from "@/utils/api"
+import { attendanceService } from "@/services/attendanceService"
+import { AttendanceQrResponse } from "@/types/attendance"
 import ProfileAvatar from "@/components/navbar/ProfileAvatar"
 import PageTransition from "@/components/animations/PageTransition"
 import {
@@ -15,10 +17,11 @@ import {
   FiCheckCircle,
   FiArrowLeft,
   FiSave,
-  FiBriefcase,
   FiHome,
-  FiPhone,
   FiCalendar,
+  FiCode,
+  FiCopy,
+  FiCheck,
 } from "react-icons/fi"
 
 const GENDERS = ["MALE", "FEMALE", "OTHER", "PREFER_NOT_TO_SAY"]
@@ -42,12 +45,15 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true)
   const [saveLoading, setSaveLoading] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
+  const [qrCode, setQrCode] = useState<AttendanceQrResponse | null>(null)
+  const [copied, setCopied] = useState(false)
 
   const [openSections, setOpenSections] = useState({
     identity: true,
     academic: true,
     personal: true,
     hostel: true,
+    qr: true,
   })
 
   const [formData, setFormData] = useState({
@@ -73,13 +79,19 @@ export default function ProfilePage() {
   const [message, setMessage] = useState<string | null>(null)
 
   useEffect(() => {
-    fetchProfile()
+    fetchProfileData()
   }, [])
 
-  const fetchProfile = async () => {
+  const fetchProfileData = async () => {
+    setLoading(true)
     try {
-      const data: any = await api.get("/api/v1/profile/me")
-      if (data) {
+      const [profData, qrData] = await Promise.allSettled([
+        api.get("/api/v1/profile/me"),
+        attendanceService.getMyQr(),
+      ])
+
+      if (profData.status === "fulfilled" && profData.value) {
+        const data: any = profData.value
         setFormData({
           firstName: data.firstName || "",
           middleName: data.middleName || "",
@@ -100,6 +112,9 @@ export default function ProfilePage() {
           state: data.state || "",
         })
       }
+      if (qrData.status === "fulfilled") {
+        setQrCode(qrData.value)
+      }
     } catch (err) {
       if (err instanceof ApiError && err.status === 404) {
         setIsEditing(true)
@@ -111,7 +126,7 @@ export default function ProfilePage() {
     }
   }
 
-  const toggleSection = (sec: "identity" | "academic" | "personal" | "hostel") => {
+  const toggleSection = (sec: "identity" | "academic" | "personal" | "hostel" | "qr") => {
     setOpenSections((prev) => ({ ...prev, [sec]: !prev[sec] }))
   }
 
@@ -134,6 +149,13 @@ export default function ProfilePage() {
         return next
       })
     }
+  }
+
+  const handleCopyToken = () => {
+    if (!qrCode?.token) return
+    navigator.clipboard.writeText(qrCode.token)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -281,7 +303,7 @@ export default function ProfilePage() {
               >
                 <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                   <span className="text-blue-700 text-base"><FiBookOpen /></span>
-                  <span>2. Academic Details</span>
+                  <span>2. Academic Information</span>
                 </h2>
                 {openSections.academic ? <FiChevronUp /> : <FiChevronDown />}
               </button>
@@ -357,7 +379,7 @@ export default function ProfilePage() {
               >
                 <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                   <span className="text-emerald-700 text-base"><FiCalendar /></span>
-                  <span>3. Personal Details</span>
+                  <span>3. Personal Information</span>
                 </h2>
                 {openSections.personal ? <FiChevronUp /> : <FiChevronDown />}
               </button>
@@ -417,76 +439,54 @@ export default function ProfilePage() {
               )}
             </div>
 
-            {/* GROUP 4: Hostel Details */}
+            {/* GROUP 4: Profile QR Section */}
             <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
               <button
                 type="button"
-                onClick={() => toggleSection("hostel")}
+                onClick={() => toggleSection("qr")}
                 className="w-full px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-left"
               >
                 <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                  <span className="text-purple-700 text-base"><FiHome /></span>
-                  <span>4. Hostel Details</span>
+                  <span className="text-purple-700 text-base"><FiCode /></span>
+                  <span>4. Student Verification QR</span>
                 </h2>
-                {openSections.hostel ? <FiChevronUp /> : <FiChevronDown />}
+                {openSections.qr ? <FiChevronUp /> : <FiChevronDown />}
               </button>
 
-              {openSections.hostel && (
-                <div className="p-6 space-y-4">
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      id="hosteller"
-                      name="hosteller"
-                      disabled={!isEditing}
-                      checked={formData.hosteller}
-                      onChange={handleChange}
-                      className="h-4 w-4 rounded border-slate-300 text-cyan-600 focus:ring-cyan-500"
-                    />
-                    <label htmlFor="hosteller" className="text-xs font-bold text-slate-800">
-                      Residing in Campus Hostel Accommodation
-                    </label>
-                  </div>
-
-                  {formData.hosteller && (
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">Hostel Room Number / Name</label>
-                      <input
-                        type="text"
-                        name="roomNumber"
-                        disabled={!isEditing}
-                        value={formData.roomNumber}
-                        onChange={handleChange}
-                        className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:border-cyan-600 focus:outline-none disabled:opacity-80 font-medium"
-                        placeholder="e.g. Room 204, Hostel H-14"
-                      />
-                    </div>
+              {openSections.qr && (
+                <div className="p-6 flex flex-col sm:flex-row items-center justify-between gap-6">
+                  {qrCode ? (
+                    <>
+                      <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200 shrink-0">
+                        <img
+                          src={qrCode.qrImageBase64}
+                          alt="Student Verification QR"
+                          className="w-36 h-36"
+                        />
+                      </div>
+                      <div className="flex-1 text-center sm:text-left">
+                        <h4 className="text-sm font-bold text-slate-900 mb-1">Official Student Identity QR Payload</h4>
+                        <p className="text-xs text-slate-600 mb-3 leading-relaxed">
+                          This QR code is uniquely encrypted for your student registration profile. Volunteers scan this payload at program venues.
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-mono font-semibold bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 truncate max-w-xs">
+                            {qrCode.token}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={handleCopyToken}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-cyan-50 border border-cyan-200 text-cyan-800 text-xs font-bold hover:bg-cyan-100 transition shrink-0"
+                          >
+                            {copied ? <FiCheck className="text-emerald-600" /> : <FiCopy />}
+                            <span>{copied ? "Copied" : "Copy Payload"}</span>
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <p className="text-xs text-slate-500">QR Payload loading...</p>
                   )}
-
-                  <div className="grid gap-4 sm:grid-cols-2 pt-2">
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">Home City</label>
-                      <input
-                        type="text"
-                        name="city"
-                        disabled={!isEditing}
-                        value={formData.city}
-                        onChange={handleChange}
-                        className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:border-cyan-600 focus:outline-none disabled:opacity-80 font-medium"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">Home State</label>
-                      <input
-                        type="text"
-                        name="state"
-                        disabled={!isEditing}
-                        value={formData.state}
-                        onChange={handleChange}
-                        className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:border-cyan-600 focus:outline-none disabled:opacity-80 font-medium"
-                      />
-                    </div>
-                  </div>
                 </div>
               )}
             </div>

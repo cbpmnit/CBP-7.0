@@ -123,7 +123,7 @@ export default function CbpPage() {
                   <h4 className="text-sm font-bold text-slate-900 mb-2">Registered Participant Details</h4>
                   <div className="grid grid-cols-2 gap-3">
                     <div><span className="text-slate-500 font-medium">Name:</span> <span className="text-slate-900 font-bold">{cbpRegistration.firstName} {cbpRegistration.lastName}</span></div>
-                    <div><span className="text-slate-500 font-medium">Roll No:</span> <span className="text-cyan-800 font-mono font-bold">{cbpRegistration.studentId}</span></div>
+                    <div><span className="text-slate-500 font-medium">Student ID:</span> <span className="text-cyan-800 font-mono font-bold">{cbpRegistration.studentId}</span></div>
                     <div><span className="text-slate-500 font-medium">Course & Branch:</span> <span className="text-slate-900 font-bold">{cbpRegistration.course} - {cbpRegistration.branch}</span></div>
                     <div><span className="text-slate-500 font-medium">Institute:</span> <span className="text-slate-900 font-bold">{cbpRegistration.institute}</span></div>
                   </div>

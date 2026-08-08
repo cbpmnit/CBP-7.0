@@ -7,6 +7,7 @@ import { useAppDispatch, useAppSelector } from "@/store/hooks"
 import { toggleMobileMenu, setMobileMenuOpen } from "@/store/slices/uiSlice"
 import { logout } from "@/store/slices/authSlice"
 import ProfileDropdown from "@/components/navbar/ProfileDropdown"
+import NotificationDropdown from "@/components/navbar/NotificationDropdown"
 import {
   FiMenu,
   FiX,
@@ -16,6 +17,7 @@ import {
   FiAward,
   FiCreditCard,
   FiLogOut,
+  FiBell,
 } from "react-icons/fi"
 
 const NAV_LINKS = [
@@ -121,13 +123,13 @@ function HeaderComponent() {
               })}
             </nav>
 
-            {/* Right Action CTA (Desktop) */}
+            {/* Right Action Bar (Desktop) */}
             <div className="hidden items-center gap-3 md:flex">
               {isAuthenticated ? (
                 <>
                   <Link
                     href="/dashboard"
-                    className={`inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-bold tracking-wider text-slate-800 uppercase transition duration-200 hover:bg-slate-100 ${
+                    className={`inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-bold tracking-wider text-slate-800 uppercase transition duration-200 hover:bg-slate-100 ${
                       pathname === "/dashboard"
                         ? "bg-slate-900 text-white border-slate-900 hover:bg-slate-800"
                         : ""
@@ -136,6 +138,8 @@ function HeaderComponent() {
                     <FiGrid className="h-3.5 w-3.5" />
                     <span>Dashboard</span>
                   </Link>
+
+                  <NotificationDropdown />
 
                   <ProfileDropdown
                     name={name}
@@ -171,12 +175,15 @@ function HeaderComponent() {
             {/* Mobile Actions */}
             <div className="flex items-center gap-2 md:hidden">
               {isAuthenticated ? (
-                <ProfileDropdown
-                  name={name}
-                  studentId={studentId}
-                  role={role}
-                  onLogout={handleLogout}
-                />
+                <>
+                  <NotificationDropdown />
+                  <ProfileDropdown
+                    name={name}
+                    studentId={studentId}
+                    role={role}
+                    onLogout={handleLogout}
+                  />
+                </>
               ) : (
                 <Link
                   href="/login"
@@ -280,6 +287,13 @@ function HeaderComponent() {
                   className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-slate-100 text-slate-800 text-xs font-semibold"
                 >
                   <FiCreditCard /> Payments
+                </Link>
+                <Link
+                  href="/notifications"
+                  onClick={handleCloseMobileMenu}
+                  className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-slate-100 text-slate-800 text-xs font-semibold"
+                >
+                  <FiBell /> Notifications
                 </Link>
                 <button
                   onClick={handleLogout}

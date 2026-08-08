@@ -108,7 +108,7 @@ export default function RegistrationPage() {
                     {[
                       ["Full Name", formData.name],
                       ["MNIT Email", formData.studentEmail],
-                      ["Roll Number", formData.studentId],
+                      ["Student ID", formData.studentId],
                       ["Phone Number", formData.phoneNumber || "Not provided"],
                     ].map(([label, value]) => (
                       <div key={label} className="flex justify-between items-center gap-4 border-b border-slate-100 pb-2.5">
@@ -203,7 +203,7 @@ export default function RegistrationPage() {
                       )}
                     </div>
 
-                    {/* Email & Roll Number Grid */}
+                    {/* Email & Student ID Grid */}
                     <div className="grid gap-5 sm:grid-cols-2">
                       <div>
                         <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-700">
@@ -227,7 +227,7 @@ export default function RegistrationPage() {
                       <div>
                         <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-700">
                           <FiHash className="text-cyan-600" />
-                          Roll Number <span className="text-cyan-600">*</span>
+                          Student ID <span className="text-cyan-600">*</span>
                         </label>
                         <input
                           type="text"

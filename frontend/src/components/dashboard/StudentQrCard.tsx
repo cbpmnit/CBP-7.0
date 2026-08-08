@@ -55,7 +55,7 @@ export default function StudentQrCard({ qrCode, registrationId, loading }: Stude
 
       <div className="space-y-1 text-xs border-t border-slate-100 pt-3">
         <div className="flex justify-between items-center">
-          <span className="text-slate-500 font-medium">Student Roll No:</span>
+          <span className="text-slate-500 font-medium">Student ID:</span>
           <span className="font-bold text-slate-900 font-mono">{safeText(qrCode.studentId)}</span>
         </div>
         <div className="flex justify-between items-center">

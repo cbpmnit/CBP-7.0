@@ -61,7 +61,7 @@ export default function DashboardHeader({
             Welcome, <span className="gradient-text-cyan">{displayName}</span>
           </h1>
           <p className="mt-0.5 text-xs sm:text-sm text-slate-600 font-medium">
-            {academicLine} &middot; Roll No: <span className="font-mono text-cyan-800 font-bold">{safeText(studentId)}</span>
+            {academicLine} &middot; Student ID: <span className="font-mono text-cyan-800 font-bold">{safeText(studentId)}</span>
           </p>
         </div>
 
