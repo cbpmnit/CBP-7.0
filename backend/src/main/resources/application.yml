@@ -1,7 +1,6 @@
-debug: true
-
 server:
   port: ${PORT:9900}
+  forward-headers-strategy: framework
 
 spring:
   security:
@@ -11,6 +10,7 @@ spring:
           google:
             client-id: ${GOOGLE_CLIENT_ID:mock-google-client-id}
             client-secret: ${GOOGLE_CLIENT_SECRET:mock-google-client-secret}
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
             scope:
               - email
               - profile

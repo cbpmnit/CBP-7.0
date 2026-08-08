@@ -22,7 +22,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Optional;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -162,12 +162,18 @@ public class AuthService {
             user = userRepository.save(user);
             log.info("Existing CBP user authenticated through Google: {}", cleanEmail);
         } else {
-            String baseStudentId = "g_" + cleanEmail.split("@")[0].replaceAll("[^a-zA-Z0-9]", "");
+            String rawPrefix = cleanEmail.split("@")[0].replaceAll("[^a-zA-Z0-9]", "");
+            if (rawPrefix.isBlank()) {
+                rawPrefix = "student";
+            }
+            String baseStudentId = "g_" + rawPrefix;
             String studentId = baseStudentId;
             int counter = 1;
-            while (userRepository.existsByStudentIdIgnoreCase(studentId)) {
+            while (userRepository.existsByStudentId(studentId) || userRepository.existsByStudentIdIgnoreCase(studentId)) {
                 studentId = baseStudentId + counter++;
             }
+
+            Set<String> defaultPermissions = new java.util.HashSet<>(java.util.List.of("STUDENT_VIEW", "ATTENDANCE_VIEW"));
 
             user = User.builder()
                     .studentId(studentId)
@@ -178,6 +184,7 @@ public class AuthService {
                     .authProvider(AuthProvider.GOOGLE)
                     .providerId(sub)
                     .password(null)
+                    .permissions(defaultPermissions)
                     .build();
 
             user = userRepository.save(user);
