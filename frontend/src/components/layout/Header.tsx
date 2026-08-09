@@ -133,7 +133,7 @@ function HeaderComponent() {
                       normalizedRole === "ROLE_ADMIN" || normalizedRole === "ADMIN"
                         ? "/admin/dashboard"
                         : normalizedRole === "ROLE_VOLUNTEER" || normalizedRole === "VOLUNTEER"
-                        ? "/volunteer/scanner"
+                        ? "/volunteer/dashboard"
                         : "/dashboard"
                     }
                     className={`inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-bold tracking-wider text-slate-800 uppercase transition duration-200 hover:bg-slate-100 ${
@@ -145,10 +145,10 @@ function HeaderComponent() {
                     <FiGrid className="h-3.5 w-3.5" />
                     <span>
                       {normalizedRole === "ROLE_ADMIN" || normalizedRole === "ADMIN"
-                        ? "ADMIN"
+                        ? "ADMIN DASHBOARD"
                         : normalizedRole === "ROLE_VOLUNTEER" || normalizedRole === "VOLUNTEER"
-                        ? "VOLUNTEER"
-                        : "DASHBOARD"}
+                        ? "VOLUNTEER PANEL"
+                        : "STUDENT DASHBOARD"}
                     </span>
                   </Link>
 
