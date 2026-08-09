@@ -41,22 +41,38 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
 
             if (email == null || email.isBlank()) {
                 log.error("Google OAuth2 authentication succeeded but email attribute is missing");
-                String errorUrl = frontendProperties.buildUrl("/login?error=email_missing");
+                String errorUrl = frontendProperties.buildUrl("/login?error=oauth_email_missing");
                 log.info("Frontend redirect URL: {}", errorUrl);
                 response.sendRedirect(errorUrl);
                 return;
             }
 
-            String token = authService.processGoogleUser(email, name, sub);
-            String redirectUrl = frontendProperties.buildUrl("/auth/callback?token=" + token);
+            String token;
+            try {
+                token = authService.processGoogleUser(email, name, sub);
+            } catch (Exception ex) {
+                String msg = ex.getMessage() != null ? ex.getMessage().toLowerCase() : "";
+                String errorCode = "oauth_account_creation_failed";
+                if (msg.contains("database") || msg.contains("sql") || msg.contains("jpa") || msg.contains("data integrity")) {
+                    errorCode = "oauth_database_error";
+                } else if (msg.contains("jwt") || msg.contains("token")) {
+                    errorCode = "oauth_token_generation_failed";
+                }
+                log.error("Failed processing Google user account: email={}, errorCode={}", email, errorCode, ex);
+                String errorUrl = frontendProperties.buildUrl("/login?error=" + errorCode);
+                log.info("Frontend redirect URL: {}", errorUrl);
+                response.sendRedirect(errorUrl);
+                return;
+            }
 
+            String redirectUrl = frontendProperties.buildUrl("/auth/callback?token=" + token);
             log.info("Google authentication successful for email: {}", email);
             log.info("Frontend redirect URL: {}", redirectUrl);
 
             response.sendRedirect(redirectUrl);
         } catch (Exception e) {
-            log.error("Google OAuth redirect failed", e);
-            String errorUrl = frontendProperties.buildUrl("/login?error=oauth_processing_failed");
+            log.error("Google OAuth redirect processing failed unexpectedly", e);
+            String errorUrl = frontendProperties.buildUrl("/login?error=oauth_unknown_error");
             log.info("Frontend redirect URL: {}", errorUrl);
             response.sendRedirect(errorUrl);
         }

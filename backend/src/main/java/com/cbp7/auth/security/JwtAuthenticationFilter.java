@@ -1,5 +1,6 @@
 package com.cbp7.auth.security;
 
+import com.cbp7.auth.entity.User;
 import com.cbp7.auth.repository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -17,6 +18,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
@@ -32,7 +34,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             path = request.getRequestURI();
         }
 
-        if ("/api/v1/auth/me".equals(path)) {
+        if ("/api/v1/auth/me".equals(path) || "/api/v1/auth/profile".equals(path)) {
             return false;
         }
 
@@ -54,29 +56,34 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String token = parseJwt(request);
 
         if (StringUtils.hasText(token) && jwtProvider.validateToken(token)) {
-            String studentId = jwtProvider.extractStudentId(token);
+            String subject = jwtProvider.extractSubject(token);
 
-            userRepository.findByStudentId(studentId).ifPresent(user -> {
-                if (Boolean.TRUE.equals(user.getEnabled())) {
-                    List<SimpleGrantedAuthority> authorities = new ArrayList<>();
-                    authorities.add(new SimpleGrantedAuthority(user.getRole().name()));
-                    if (user.getPermissions() != null) {
-                        for (String perm : user.getPermissions()) {
-                            if (perm != null && !perm.isBlank()) {
-                                authorities.add(new SimpleGrantedAuthority(perm));
+            if (StringUtils.hasText(subject)) {
+                Optional<User> userOpt = userRepository.findByEmailIgnoreCase(subject)
+                        .or(() -> userRepository.findByStudentIdIgnoreCase(subject));
+
+                userOpt.ifPresent(user -> {
+                    if (Boolean.TRUE.equals(user.getEnabled())) {
+                        List<SimpleGrantedAuthority> authorities = new ArrayList<>();
+                        authorities.add(new SimpleGrantedAuthority(user.getRole().name()));
+                        if (user.getPermissions() != null) {
+                            for (String perm : user.getPermissions()) {
+                                if (perm != null && !perm.isBlank()) {
+                                    authorities.add(new SimpleGrantedAuthority(perm));
+                                }
                             }
                         }
-                    }
 
-                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                            user,
-                            null,
-                            authorities
-                    );
-                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    SecurityContextHolder.getContext().setAuthentication(authentication);
-                }
-            });
+                        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                                user,
+                                null,
+                                authorities
+                        );
+                        authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                        SecurityContextHolder.getContext().setAuthentication(authentication);
+                    }
+                });
+            }
         }
 
         filterChain.doFilter(request, response);

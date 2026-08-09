@@ -48,24 +48,36 @@ function LoginFormContent() {
     if (errorParam) {
       switch (errorParam) {
         case "google_cancelled":
-          setError("Google login was cancelled.")
+        case "oauth_cancelled":
+          setError("Google sign-in was cancelled.")
           break
+        case "oauth_provider_error":
         case "google_failed":
         case "oauth_failed":
-          setError("Google login failed. Please try again.")
+          setError("Google authentication is temporarily unavailable.")
           break
+        case "oauth_database_error":
+          setError("Unable to complete sign-in. Please try again.")
+          break
+        case "oauth_account_creation_failed":
         case "account_creation_failed":
-          setError("Unable to create account. Please contact support.")
+          setError("Unable to create your account.")
           break
+        case "oauth_token_generation_failed":
         case "session_failed":
         case "session_error":
-          setError("Failed to initialize user session. Please try again.")
+          setError("Login completed but session creation failed.")
           break
         case "missing_token":
           setError("Authentication response did not contain a valid session token.")
           break
+        case "oauth_email_missing":
         case "email_missing":
           setError("Google account did not provide an email address.")
+          break
+        case "oauth_unknown_error":
+        case "oauth_processing_failed":
+          setError("Something went wrong. Please try again.")
           break
         default:
           setError("Google login failed. Please try again.")

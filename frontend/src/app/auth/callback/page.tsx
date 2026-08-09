@@ -85,22 +85,16 @@ function OAuthCallbackContent() {
 
       let redirectPath = "/student/dashboard"
 
-      if (userRole === "ROLE_ADMIN" || userRole === "ADMIN") {
+      if (!userRes.studentId || userRes.studentId.trim() === "") {
+        console.info("Profile setup required: studentId is missing")
+        redirectPath = "/profile/setup?reason=incomplete_profile"
+      } else if (userRole === "ROLE_ADMIN" || userRole === "ADMIN") {
         redirectPath = "/admin/dashboard"
       } else if (userRole === "ROLE_VOLUNTEER" || userRole === "VOLUNTEER") {
         redirectPath = "/volunteer/scanner"
       } else {
-        // ROLE_STUDENT
-        try {
-          const completion: any = await profileService.getCompletion()
-          if (completion && completion.completed && completion.completionPercentage === 100) {
-            redirectPath = "/student/dashboard"
-          } else {
-            redirectPath = "/student/profile"
-          }
-        } catch (err) {
-          redirectPath = "/student/profile"
-        }
+        // ROLE_STUDENT with existing studentId
+        redirectPath = "/student/dashboard"
       }
 
       console.info("Redirecting user to:", redirectPath)

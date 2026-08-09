@@ -227,7 +227,6 @@ class AuthServiceTest {
         String sub = "google_sub_12345";
 
         when(userRepository.findByEmailIgnoreCase(email)).thenReturn(Optional.empty());
-        when(userRepository.existsByStudentIdIgnoreCase(anyString())).thenReturn(false);
         when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
         when(jwtProvider.generateToken(any(User.class))).thenReturn("mock.oauth.jwt.token");
 
@@ -244,6 +243,7 @@ class AuthServiceTest {
         assertEquals(Role.ROLE_STUDENT, savedUser.getRole());
         assertEquals(com.cbp7.auth.entity.AuthProvider.GOOGLE, savedUser.getAuthProvider());
         assertEquals(sub, savedUser.getProviderId());
+        assertNull(savedUser.getStudentId());
         assertNull(savedUser.getPassword());
         assertTrue(savedUser.getEnabled());
     }

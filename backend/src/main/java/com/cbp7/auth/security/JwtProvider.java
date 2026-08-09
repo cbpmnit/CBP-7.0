@@ -35,7 +35,9 @@ public class JwtProvider {
         Date expiryDate = new Date(now.getTime() + jwtExpiration);
 
         return Jwts.builder()
-                .subject(user.getStudentId())
+                .subject(user.getEmail())
+                .claim("studentId", user.getStudentId() != null ? user.getStudentId() : "")
+                .claim("email", user.getEmail())
                 .claim("role", user.getRole().name())
                 .claim("name", user.getName())
                 .issuedAt(now)
@@ -44,7 +46,7 @@ public class JwtProvider {
                 .compact();
     }
 
-    public String extractStudentId(String token) {
+    public String extractSubject(String token) {
         Claims claims = Jwts.parser()
                 .verifyWith(getSigningKey())
                 .build()
@@ -52,6 +54,10 @@ public class JwtProvider {
                 .getPayload();
 
         return claims.getSubject();
+    }
+
+    public String extractStudentId(String token) {
+        return extractSubject(token);
     }
 
     public boolean validateToken(String token) {

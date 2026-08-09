@@ -54,4 +54,13 @@ public class AuthController {
         UserResponse response = authService.getCurrentUser(user);
         return ResponseEntity.ok(ApiResponse.success("User profile retrieved", response));
     }
+
+    @org.springframework.web.bind.annotation.PutMapping("/profile")
+    public ResponseEntity<ApiResponse<UserResponse>> updateProfile(
+            @AuthenticationPrincipal User user,
+            @Valid @RequestBody com.cbp7.auth.dto.ProfileUpdateRequest request
+    ) {
+        UserResponse response = authService.updateProfile(user, request);
+        return ResponseEntity.ok(ApiResponse.success("Profile updated successfully", response));
+    }
 }

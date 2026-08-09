@@ -24,7 +24,7 @@ public class NotificationEventListener {
     private final EmailNotificationService emailNotificationService;
 
     @Async("notificationAsyncExecutor")
-    @EventListener
+    @org.springframework.transaction.event.TransactionalEventListener(phase = org.springframework.transaction.event.TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     public void handleStudentRegistered(StudentRegisteredEvent event) {
         log.info("Received StudentRegisteredEvent for studentId: {}", event.studentId());
         try {

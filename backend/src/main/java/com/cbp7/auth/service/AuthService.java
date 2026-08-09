@@ -113,6 +113,10 @@ public class AuthService {
         User user = findUserByIdentifier(rawIdentifier)
                 .orElseThrow(() -> new InvalidCredentialsException("Invalid Student ID/email or password"));
 
+        if (user.getAuthProvider() == AuthProvider.GOOGLE || user.getPassword() == null) {
+            throw new InvalidCredentialsException("This account uses Google authentication. Please continue with Google login.");
+        }
+
         if (!passwordEncoder.matches(rawPassword, user.getPassword())) {
             throw new InvalidCredentialsException("Invalid Student ID/email or password");
         }
@@ -162,21 +166,10 @@ public class AuthService {
             user = userRepository.save(user);
             log.info("Existing CBP user authenticated through Google: {}", cleanEmail);
         } else {
-            String rawPrefix = cleanEmail.split("@")[0].replaceAll("[^a-zA-Z0-9]", "");
-            if (rawPrefix.isBlank()) {
-                rawPrefix = "student";
-            }
-            String baseStudentId = "g_" + rawPrefix;
-            String studentId = baseStudentId;
-            int counter = 1;
-            while (userRepository.existsByStudentId(studentId) || userRepository.existsByStudentIdIgnoreCase(studentId)) {
-                studentId = baseStudentId + counter++;
-            }
-
             Set<String> defaultPermissions = new java.util.HashSet<>(java.util.List.of("STUDENT_VIEW", "ATTENDANCE_VIEW"));
 
             user = User.builder()
-                    .studentId(studentId)
+                    .studentId(null)
                     .email(cleanEmail)
                     .name(cleanName)
                     .role(Role.ROLE_STUDENT)
@@ -188,13 +181,13 @@ public class AuthService {
                     .build();
 
             user = userRepository.save(user);
-            log.info("Creating new CBP student account from Google: email={}, studentId={}", cleanEmail, studentId);
+            log.info("Creating new CBP student account from Google: email={}", cleanEmail);
 
             if (notificationEventPublisher != null) {
                 try {
                     String userId = user.getId() != null ? user.getId().toString() : "";
                     notificationEventPublisher.publish(new StudentRegisteredEvent(
-                            studentId,
+                            cleanEmail,
                             cleanEmail,
                             cleanName,
                             userId
@@ -225,5 +218,33 @@ public class AuthService {
                 user.getRole().name(),
                 user.getPermissions() != null ? user.getPermissions() : java.util.Set.of()
         );
+    }
+
+    @Transactional
+    public UserResponse updateProfile(User currentUser, com.cbp7.auth.dto.ProfileUpdateRequest request) {
+        if (currentUser == null) {
+            throw new UnauthorizedException("User is not authenticated");
+        }
+        if (request == null || request.studentId() == null || request.studentId().isBlank()) {
+            throw new IllegalArgumentException("Student ID is required");
+        }
+
+        String cleanStudentId = request.studentId().trim().toLowerCase();
+
+        userRepository.findByStudentIdIgnoreCase(cleanStudentId).ifPresent(otherUser -> {
+            if (!otherUser.getId().equals(currentUser.getId())) {
+                throw new DuplicateResourceException("Student ID is already registered to another account");
+            }
+        });
+
+        currentUser.setStudentId(cleanStudentId);
+        if (request.phoneNumber() != null && !request.phoneNumber().isBlank()) {
+            currentUser.setPhoneNumber(request.phoneNumber().trim());
+        }
+
+        User updatedUser = userRepository.save(currentUser);
+        log.info("Profile updated for user email={}: studentId={}", updatedUser.getEmail(), cleanStudentId);
+
+        return getCurrentUser(updatedUser);
     }
 }

@@ -26,17 +26,21 @@ public class OAuth2AuthenticationFailureHandler implements AuthenticationFailure
             AuthenticationException exception
     ) throws IOException, ServletException {
         String msg = exception.getMessage() != null ? exception.getMessage().toLowerCase() : "";
-        String errorCode = "google_failed";
+        String errorCode = "oauth_unknown_error";
 
         if (msg.contains("access_denied") || msg.contains("cancel")) {
-            errorCode = "google_cancelled";
+            errorCode = "oauth_cancelled";
+        } else if (msg.contains("invalid_token") || msg.contains("provider") || msg.contains("invalid_grant") || msg.contains("authorization")) {
+            errorCode = "oauth_provider_error";
+        } else if (msg.contains("database") || msg.contains("sql") || msg.contains("jpa")) {
+            errorCode = "oauth_database_error";
         } else if (msg.contains("create") || msg.contains("user")) {
-            errorCode = "account_creation_failed";
+            errorCode = "oauth_account_creation_failed";
         } else if (msg.contains("jwt") || msg.contains("token") || msg.contains("session")) {
-            errorCode = "session_failed";
+            errorCode = "oauth_token_generation_failed";
         }
 
-        log.warn("Google authentication failed: {}", exception.getMessage());
+        log.error("Google OAuth authentication failed: errorCode={}, internalMessage={}", errorCode, exception.getMessage(), exception);
         String redirectUrl = frontendProperties.buildUrl("/login?error=" + errorCode);
         log.info("Frontend redirect URL: {}", redirectUrl);
         response.sendRedirect(redirectUrl);

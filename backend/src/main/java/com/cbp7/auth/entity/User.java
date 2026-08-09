@@ -33,7 +33,7 @@ import java.util.Set;
 @SuperBuilder
 public class User extends BaseEntity implements java.security.Principal {
 
-    @Column(name = "student_id", unique = true, nullable = false)
+    @Column(name = "student_id", unique = true, nullable = true)
     private String studentId;
 
     @Column(unique = true, nullable = false)
@@ -76,7 +76,8 @@ public class User extends BaseEntity implements java.security.Principal {
     @PrePersist
     protected void onCreate() {
         if (this.studentId != null) {
-            this.studentId = this.studentId.toLowerCase().trim();
+            String trimmed = this.studentId.trim();
+            this.studentId = trimmed.isEmpty() ? null : trimmed.toLowerCase();
         }
         if (this.email != null) {
             this.email = this.email.toLowerCase().trim();
@@ -95,7 +96,8 @@ public class User extends BaseEntity implements java.security.Principal {
     @PreUpdate
     protected void onUpdate() {
         if (this.studentId != null) {
-            this.studentId = this.studentId.toLowerCase().trim();
+            String trimmed = this.studentId.trim();
+            this.studentId = trimmed.isEmpty() ? null : trimmed.toLowerCase();
         }
         if (this.email != null) {
             this.email = this.email.toLowerCase().trim();
