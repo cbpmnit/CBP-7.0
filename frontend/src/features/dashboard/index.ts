@@ -1,0 +1,8 @@
+export { default as AdminDashboard } from "./components/AdminDashboard"
+export { default as StudentDashboard } from "./components/StudentDashboard"
+export { default as AdminDashboardOverview } from "./components/AdminDashboardOverview"
+export { default as DashboardHeader } from "./components/DashboardHeader"
+export { default as DashboardMetrics } from "./components/DashboardMetrics"
+export { default as ModuleGrid } from "./components/ModuleGrid"
+export { dashboardApi } from "./services/dashboardApi"
+export * from "./types"

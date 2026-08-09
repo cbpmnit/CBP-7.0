@@ -1,0 +1,7 @@
+export { default as StudentManagement } from "./components/StudentManagement"
+export { default as StudentDetailView } from "./components/StudentDetailView"
+export { default as StudentDetailModal } from "./components/StudentDetailModal"
+export { default as StudentFilters } from "./components/StudentFilters"
+export { default as StudentTable } from "./components/StudentTable"
+export { studentApi } from "./services/studentApi"
+export * from "./types"

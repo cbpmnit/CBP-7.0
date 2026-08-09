@@ -4,7 +4,7 @@ import { useEffect } from "react"
 import Link from "next/link"
 import { FiAlertTriangle, FiRefreshCw, FiHome } from "react-icons/fi"
 
-export default function SystemError({
+export default function RootError({
   error,
   reset,
 }: {
