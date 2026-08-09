@@ -75,9 +75,13 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // Allow preflight requests
                         .requestMatchers(
                                 "/api/v1/auth/register",
+                                "/api/auth/register",
                                 "/api/v1/auth/login",
+                                "/api/auth/login",
                                 "/api/v1/auth/logout",
+                                "/api/auth/logout",
                                 "/api/v1/auth/google",
+                                "/api/auth/google",
                                 "/oauth2/**",
                                 "/login/oauth2/**",
                                 "/api/v1/auth/volunteer/**",
@@ -89,8 +93,8 @@ public class SecurityConfig {
                                 "/error",
                                 "/actuator/health"
                         ).permitAll()
-                        .requestMatchers("/api/v1/admin/volunteers/**").hasRole("ADMIN")
-                        .requestMatchers("/api/v1/admin/**").authenticated()
+                        .requestMatchers("/api/v1/admin/volunteers/**", "/api/admin/volunteers/**").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/admin/**", "/api/admin/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2

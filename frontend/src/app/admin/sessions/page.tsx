@@ -6,6 +6,7 @@ import { attendanceService } from "@/services/attendanceService"
 import { AttendanceSessionDto, QrGenerationStatusResponse } from "@/types/attendance"
 import SidebarNavigation from "@/components/dashboard/SidebarNavigation"
 import PageTransition from "@/components/animations/PageTransition"
+import PermissionGuard from "@/components/auth/PermissionGuard"
 import {
   FiCalendar,
   FiClock,
@@ -111,6 +112,7 @@ export default function AdminSessionsPage() {
         <SidebarNavigation />
 
         <main className="py-8 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto space-y-6">
+          <PermissionGuard requiredPermission="SESSION_VIEW">
           {/* Header Banner */}
           <div className="flex items-center justify-between">
             <div>
@@ -288,6 +290,7 @@ export default function AdminSessionsPage() {
               </p>
             </div>
           </div>
+          </PermissionGuard>
         </main>
       </div>
     </PageTransition>

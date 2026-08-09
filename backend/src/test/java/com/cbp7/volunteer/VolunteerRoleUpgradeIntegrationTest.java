@@ -13,8 +13,6 @@ import com.cbp7.volunteer.dto.GrantVolunteerAccessRequest;
 import com.cbp7.volunteer.dto.InviteVolunteerRequest;
 import com.cbp7.volunteer.dto.VolunteerDetailResponse;
 import com.cbp7.volunteer.dto.VolunteerInviteCheckResponse;
-import com.cbp7.volunteer.entity.VolunteerInvitation;
-import com.cbp7.volunteer.entity.VolunteerInvitationStatus;
 import com.cbp7.volunteer.repository.VolunteerInvitationRepository;
 import com.cbp7.volunteer.service.VolunteerInvitationService;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,20 +22,30 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.WebApplicationContext;
 
-import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
 @ActiveProfiles("test")
 @Transactional
 public class VolunteerRoleUpgradeIntegrationTest {
+
+    @Autowired
+    private WebApplicationContext context;
+
+    private MockMvc mockMvc;
 
     @Autowired
     private VolunteerInvitationService volunteerInvitationService;
@@ -58,7 +66,11 @@ public class VolunteerRoleUpgradeIntegrationTest {
     private JwtProvider jwtProvider;
 
     @BeforeEach
-    void cleanDb() {
+    void setup() {
+        mockMvc = MockMvcBuilders
+                .webAppContextSetup(context)
+                .apply(springSecurity())
+                .build();
         invitationRepository.deleteAll();
         userRepository.deleteAll();
     }
@@ -134,6 +146,73 @@ public class VolunteerRoleUpgradeIntegrationTest {
 
         List<String> jwtPerms = jwtProvider.extractPermissions(loginRes.token());
         assertThat(jwtPerms).contains("ATTENDANCE_SCAN", "PAYMENT_VIEW");
+    }
+
+    @Test
+    @DisplayName("Case 3: Verify /api/v1/auth/me debug endpoint returns user role and permissions from DB")
+    void testGetAuthMeEndpoint() throws Exception {
+        User volunteer = User.builder()
+                .studentId("2024vol999")
+                .name("Me Test Volunteer")
+                .email("mevol@mnit.ac.in")
+                .password(passwordEncoder.encode("VolPass123"))
+                .role(Role.ROLE_VOLUNTEER)
+                .roles(new HashSet<>(List.of(Role.ROLE_VOLUNTEER)))
+                .permissions(new HashSet<>(List.of("ATTENDANCE_SCAN", "STUDENT_VIEW")))
+                .enabled(true)
+                .build();
+        userRepository.save(volunteer);
+
+        String token = jwtProvider.generateToken(volunteer);
+
+        mockMvc.perform(get("/api/v1/auth/me")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.email").value("mevol@mnit.ac.in"))
+                .andExpect(jsonPath("$.data.role").value("ROLE_VOLUNTEER"))
+                .andExpect(jsonPath("$.data.permissions").isArray());
+    }
+
+    @Test
+    @DisplayName("Case 4: RBAC Endpoint Check - STUDENT_VIEW scope grants access to /api/v1/admin/students, missing scope returns 403")
+    void testStudentViewPermissionAccess() throws Exception {
+        // User WITH STUDENT_VIEW
+        User volWithPerm = User.builder()
+                .studentId("2024vol_allowed")
+                .name("Allowed Volunteer")
+                .email("allowed@mnit.ac.in")
+                .password(passwordEncoder.encode("Pass123"))
+                .role(Role.ROLE_VOLUNTEER)
+                .roles(new HashSet<>(List.of(Role.ROLE_VOLUNTEER)))
+                .permissions(new HashSet<>(List.of("STUDENT_VIEW")))
+                .enabled(true)
+                .build();
+        userRepository.save(volWithPerm);
+        String allowedToken = jwtProvider.generateToken(volWithPerm);
+
+        // User WITHOUT STUDENT_VIEW
+        User volWithoutPerm = User.builder()
+                .studentId("2024vol_denied")
+                .name("Denied Volunteer")
+                .email("denied@mnit.ac.in")
+                .password(passwordEncoder.encode("Pass123"))
+                .role(Role.ROLE_VOLUNTEER)
+                .roles(new HashSet<>(List.of(Role.ROLE_VOLUNTEER)))
+                .permissions(new HashSet<>(List.of("ATTENDANCE_SCAN")))
+                .enabled(true)
+                .build();
+        userRepository.save(volWithoutPerm);
+        String deniedToken = jwtProvider.generateToken(volWithoutPerm);
+
+        // 1. Allowed volunteer accesses /api/v1/admin/students -> HTTP 200 OK
+        mockMvc.perform(get("/api/v1/admin/students")
+                        .header("Authorization", "Bearer " + allowedToken))
+                .andExpect(status().isOk());
+
+        // 2. Denied volunteer accesses /api/v1/admin/students -> HTTP 403 Forbidden
+        mockMvc.perform(get("/api/v1/admin/students")
+                        .header("Authorization", "Bearer " + deniedToken))
+                .andExpect(status().isForbidden());
     }
 
     @Test

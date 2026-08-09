@@ -23,29 +23,24 @@ export interface NavItem {
   permission?: string
 }
 
-export const STUDENT_NAV_ITEMS: NavItem[] = [
-  { id: "overview", label: "Dashboard", href: "/dashboard", icon: <FiGrid />, permission: "DASHBOARD_VIEW" },
-  { id: "profile", label: "Profile", href: "/profile", icon: <FiUser />, permission: "PROFILE_VIEW" },
-  { id: "attendance", label: "Attendance & QR", href: "/attendance", icon: <FiCamera />, permission: "ATTENDANCE_VIEW" },
-  { id: "payments", label: "Payments", href: "/payment", icon: <FiCreditCard />, permission: "PAYMENTS_VIEW" },
-  { id: "certificates", label: "Certificates", href: "/certificate", icon: <FiAward />, permission: "CERTIFICATES_VIEW" },
-]
-
-export const ADMIN_NAV_ITEMS: NavItem[] = [
+export const ALL_ADMIN_NAV_ITEMS: NavItem[] = [
   { id: "admin-dashboard", label: "Dashboard", href: "/admin/dashboard", icon: <FiGrid /> },
-  { id: "admin-students", label: "Student Management", href: "/admin/students", icon: <FiUsers /> },
-  { id: "admin-volunteers", label: "Volunteer Management", href: "/admin/volunteers", icon: <FiUserCheck /> },
-  { id: "admin-sessions", label: "Session Management", href: "/admin/sessions", icon: <FiCalendar /> },
-  { id: "admin-attendance", label: "Attendance Management", href: "/admin/attendance", icon: <FiCamera /> },
-  { id: "admin-payments", label: "Payment Management", href: "/admin/payments", icon: <FiCreditCard /> },
-  { id: "admin-certificates", label: "Certificate Management", href: "/admin/certificates", icon: <FiAward /> },
-  { id: "admin-emails", label: "Email Management", href: "/admin/emails", icon: <FiMail /> },
+  { id: "admin-students", label: "Student Management", href: "/admin/students", icon: <FiUsers />, permission: "STUDENT_VIEW" },
+  { id: "admin-volunteers", label: "Volunteer Management", href: "/admin/volunteers", icon: <FiUserCheck />, permission: "VOLUNTEER_MANAGE" },
+  { id: "admin-sessions", label: "Session Management", href: "/admin/sessions", icon: <FiCalendar />, permission: "SESSION_VIEW" },
+  { id: "admin-attendance", label: "Attendance Management", href: "/admin/attendance", icon: <FiCamera />, permission: "ATTENDANCE_VIEW" },
+  { id: "volunteer-scanner", label: "Attendance Scanner", href: "/volunteer/scanner", icon: <FiCamera />, permission: "ATTENDANCE_SCAN" },
+  { id: "admin-payments", label: "Payment Management", href: "/admin/payments", icon: <FiCreditCard />, permission: "PAYMENT_VIEW" },
+  { id: "admin-certificates", label: "Certificate Management", href: "/admin/certificates", icon: <FiAward />, permission: "CERTIFICATE_VIEW" },
+  { id: "admin-emails", label: "Email Management", href: "/admin/emails", icon: <FiMail />, permission: "EMAIL_SEND" },
 ]
 
-export const VOLUNTEER_NAV_ITEMS: NavItem[] = [
-  { id: "volunteer-scanner", label: "Attendance Scanner", href: "/volunteer/scanner", icon: <FiCamera />, permission: "ATTENDANCE_SCAN" },
-  { id: "volunteer-students", label: "Student Directory", href: "/admin/students", icon: <FiUsers />, permission: "STUDENT_VIEW" },
-  { id: "volunteer-profile", label: "Volunteer Profile", href: "/volunteer/profile", icon: <FiUser /> },
+export const STUDENT_NAV_ITEMS: NavItem[] = [
+  { id: "overview", label: "Dashboard", href: "/dashboard", icon: <FiGrid /> },
+  { id: "profile", label: "Profile", href: "/profile", icon: <FiUser /> },
+  { id: "attendance", label: "Attendance & QR", href: "/attendance", icon: <FiCamera /> },
+  { id: "payments", label: "Payments", href: "/payment", icon: <FiCreditCard /> },
+  { id: "certificates", label: "Certificates", href: "/certificate", icon: <FiAward /> },
 ]
 
 interface SidebarNavigationProps {
@@ -55,6 +50,22 @@ interface SidebarNavigationProps {
 function SidebarNavContent({ allowedPermissions }: SidebarNavigationProps) {
   const pathname = usePathname()
   const [hideDock, setHideDock] = useState(false)
+  const [userRole, setUserRole] = useState<string>("")
+  const [userPermissions, setUserPermissions] = useState<string[]>([])
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const r = (localStorage.getItem("cbp-role") || "").toUpperCase()
+      setUserRole(r)
+      try {
+        const raw = localStorage.getItem("cbp-permissions")
+        const perms = raw ? JSON.parse(raw) : []
+        setUserPermissions(allowedPermissions || perms)
+      } catch {
+        setUserPermissions(allowedPermissions || [])
+      }
+    }
+  }, [allowedPermissions])
 
   useEffect(() => {
     let lastScrollY = window.scrollY
@@ -90,18 +101,25 @@ function SidebarNavContent({ allowedPermissions }: SidebarNavigationProps) {
     }
   }, [])
 
-  const isAdminPath = pathname.startsWith("/admin")
-  const isVolunteerPath = pathname.startsWith("/volunteer")
+  const isAdmin = userRole === "ROLE_ADMIN" || userRole === "ADMIN"
+  const isVolunteer = userRole === "ROLE_VOLUNTEER" || userRole === "VOLUNTEER"
 
-  const baseItems = isAdminPath
-    ? ADMIN_NAV_ITEMS
-    : isVolunteerPath
-    ? VOLUNTEER_NAV_ITEMS
-    : STUDENT_NAV_ITEMS
+  const visibleNavItems: NavItem[] = (() => {
+    if (isAdmin) {
+      return ALL_ADMIN_NAV_ITEMS
+    }
 
-  const visibleNavItems = baseItems.filter((item) => {
-    return !allowedPermissions || !item.permission || allowedPermissions.includes(item.permission)
-  })
+    if (isVolunteer) {
+      return ALL_ADMIN_NAV_ITEMS.filter((item) => {
+        // Dashboard is always visible
+        if (!item.permission) return true
+        return userPermissions.includes(item.permission)
+      })
+    }
+
+    // Default to student navigation
+    return STUDENT_NAV_ITEMS
+  })()
 
   return (
     <aside

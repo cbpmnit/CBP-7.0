@@ -104,6 +104,18 @@ public class JwtProvider {
         return Collections.emptyList();
     }
 
+    @SuppressWarnings("unchecked")
+    public List<String> extractAuthorities(String token) {
+        Claims claims = extractAllClaims(token);
+        Object authObj = claims.get("authorities");
+        if (authObj instanceof List<?>) {
+            return (List<String>) authObj;
+        }
+        List<String> combined = new ArrayList<>(extractRoles(token));
+        combined.addAll(extractPermissions(token));
+        return combined;
+    }
+
     public boolean validateToken(String token) {
         try {
             Jwts.parser()

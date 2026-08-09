@@ -164,9 +164,10 @@ export const adminStudentService = {
     api.put<AdminFullStudentDetail>(`/api/v1/admin/students/${studentId}/profile`, payload),
 
   downloadStudentPdf: async (studentId: string) => {
+    const token = typeof window !== "undefined" ? (localStorage.getItem("cbp-token") || localStorage.getItem("token") || "") : ""
     const response = await fetch(`/api/v1/admin/students/${studentId}/profile/pdf`, {
       headers: {
-        Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+        Authorization: `Bearer ${token}`,
       },
     })
     if (!response.ok) throw new Error("Failed to download PDF dossier")
@@ -204,9 +205,10 @@ export const adminStudentService = {
     if (reg && reg !== "ALL") params.append("registrationStatus", reg)
     if (s && s.trim()) params.append("search", s.trim())
 
+    const token = typeof window !== "undefined" ? (localStorage.getItem("cbp-token") || localStorage.getItem("token") || "") : ""
     const response = await fetch(`/api/v1/admin/students/export?${params.toString()}`, {
       headers: {
-        Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+        Authorization: `Bearer ${token}`,
       },
     })
     if (!response.ok) throw new Error("Failed to export CSV dataset")

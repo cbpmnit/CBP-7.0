@@ -1,5 +1,6 @@
 package com.cbp7.auth.security;
 
+import com.cbp7.auth.entity.Role;
 import com.cbp7.auth.entity.User;
 import com.cbp7.auth.repository.UserRepository;
 import jakarta.servlet.FilterChain;
@@ -7,6 +8,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -16,36 +18,18 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtProvider jwtProvider;
     private final UserRepository userRepository;
-
-    @Override
-    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
-        String path = request.getServletPath();
-        if (path == null || path.isEmpty()) {
-            path = request.getRequestURI();
-        }
-
-        if ("/api/v1/auth/me".equals(path) || "/api/v1/auth/profile".equals(path)) {
-            return false;
-        }
-
-        return path.startsWith("/api/v1/auth/") ||
-               path.startsWith("/api/auth/") ||
-               path.startsWith("/swagger-ui") ||
-               path.startsWith("/v3/api-docs") ||
-               path.equals("/swagger-ui.html") ||
-               path.equals("/error") ||
-               path.equals("/actuator/health");
-    }
 
     @Override
     protected void doFilterInternal(
@@ -65,29 +49,36 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 userOpt.ifPresent(user -> {
                     if (Boolean.TRUE.equals(user.getEnabled())) {
-                        List<SimpleGrantedAuthority> authorities = new ArrayList<>();
-                        if (user.getRoles() != null && !user.getRoles().isEmpty()) {
-                            for (com.cbp7.auth.entity.Role r : user.getRoles()) {
-                                authorities.add(new SimpleGrantedAuthority(r.name()));
+                        Set<String> authStrings = new LinkedHashSet<>();
+                        if (user.getRole() != null) {
+                            authStrings.add(user.getRole().name());
+                        }
+                        if (user.getRoles() != null) {
+                            for (Role r : user.getRoles()) {
+                                authStrings.add(r.name());
                             }
-                        } else if (user.getRole() != null) {
-                            authorities.add(new SimpleGrantedAuthority(user.getRole().name()));
                         }
                         if (user.getPermissions() != null) {
                             for (String perm : user.getPermissions()) {
                                 if (perm != null && !perm.isBlank()) {
-                                    authorities.add(new SimpleGrantedAuthority(perm));
+                                    authStrings.add(perm.trim());
                                 }
                             }
                         }
 
+                        List<SimpleGrantedAuthority> grantedAuthorities = authStrings.stream()
+                                .map(SimpleGrantedAuthority::new)
+                                .toList();
+
                         UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                                 user,
                                 null,
-                                authorities
+                                grantedAuthorities
                         );
                         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                         SecurityContextHolder.getContext().setAuthentication(authentication);
+
+                        log.debug("Authenticated user: email={}, role={}, authorities={}", user.getEmail(), user.getRole(), authStrings);
                     }
                 });
             }

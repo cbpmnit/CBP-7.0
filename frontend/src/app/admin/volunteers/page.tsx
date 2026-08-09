@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import SidebarNavigation from "@/components/dashboard/SidebarNavigation"
 import PageTransition from "@/components/animations/PageTransition"
+import PermissionGuard from "@/components/auth/PermissionGuard"
 import {
   adminVolunteerService,
   VolunteerListItem,
@@ -268,7 +269,8 @@ export default function AdminVolunteersPage() {
         <SidebarNavigation />
 
         <main className="py-8 px-4 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-6xl space-y-6">
+          <PermissionGuard requiredPermission="VOLUNTEER_MANAGE">
+            <div className="mx-auto max-w-6xl space-y-6">
             {/* Header Banner */}
             <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div>
@@ -936,6 +938,7 @@ export default function AdminVolunteersPage() {
               </div>
             </div>
           )}
+          </PermissionGuard>
         </main>
       </div>
     </PageTransition>

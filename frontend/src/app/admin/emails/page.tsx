@@ -9,6 +9,7 @@ import {
 } from "@/types/notification"
 import PageTransition from "@/components/animations/PageTransition"
 import SidebarNavigation from "@/components/dashboard/SidebarNavigation"
+import PermissionGuard from "@/components/auth/PermissionGuard"
 import {
   FiBell,
   FiPlus,
@@ -236,6 +237,7 @@ export default function AdminEmailsPage() {
         <SidebarNavigation />
 
         <main className="py-8 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto space-y-6">
+          <PermissionGuard requiredPermission="EMAIL_SEND">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between pb-4 gap-4">
             <div>
               <div className="flex items-center gap-2 mb-2">
@@ -518,6 +520,7 @@ export default function AdminEmailsPage() {
               </div>
             </div>
           )}
+          </PermissionGuard>
         </main>
       </div>
     </PageTransition>

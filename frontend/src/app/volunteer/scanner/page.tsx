@@ -7,6 +7,7 @@ import { AttendanceSessionDto, ScanAttendanceResponse } from "@/types/attendance
 import { Html5Qrcode } from "html5-qrcode"
 import PageTransition from "@/components/animations/PageTransition"
 import SidebarNavigation from "@/components/dashboard/SidebarNavigation"
+import PermissionGuard from "@/components/auth/PermissionGuard"
 import {
   FiCamera,
   FiCheckCircle,
@@ -181,7 +182,8 @@ export default function VolunteerScannerPage() {
         <SidebarNavigation />
 
         <main className="py-8 px-4 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-6xl space-y-6">
+          <PermissionGuard requiredPermission="ATTENDANCE_SCAN">
+            <div className="mx-auto max-w-6xl space-y-6">
             {/* Top Navigation Bar */}
             <div className="flex items-center justify-between">
               <Link
@@ -511,6 +513,7 @@ export default function VolunteerScannerPage() {
               </div>
             )}
           </div>
+          </PermissionGuard>
         </main>
       </div>
     </PageTransition>
