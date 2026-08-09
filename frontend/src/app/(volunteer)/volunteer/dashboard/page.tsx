@@ -84,10 +84,10 @@ export default function VolunteerDashboardPage() {
           <div>
             <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900 flex items-center gap-2">
               <span className="text-cyan-700"><FiShield /></span>
-              <span>Volunteer Control Panel</span>
+              <span>Volunteer Dashboard</span>
             </h1>
             <p className="text-[11px] sm:text-xs text-slate-500 mt-1 leading-snug">
-              Manage your assigned operations and permissions.
+              Your Tasks
             </p>
           </div>
           <span className="self-start sm:self-center inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-cyan-50 border border-cyan-200 text-cyan-800">
@@ -101,7 +101,7 @@ export default function VolunteerDashboardPage() {
             <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
               <span className="text-slate-400 text-sm"><FiUser /></span>
               <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                Volunteer Access
+                Your Assignment
               </h2>
             </div>
 
@@ -117,14 +117,22 @@ export default function VolunteerDashboardPage() {
             </div>
 
             <div className="pt-3 border-t border-slate-100 space-y-2">
-              <span className="text-slate-400 font-medium block uppercase tracking-wider text-[10px]">Permissions</span>
+              <span className="text-slate-400 font-medium block uppercase tracking-wider text-[10px]">Access</span>
               {permissions.length > 0 ? (
                 <div className="flex flex-wrap gap-1.5 pt-0.5">
-                  {permissions.map((perm) => (
-                    <span key={perm} className="permission-chip">
-                      {perm}
-                    </span>
-                  ))}
+                  {permissions.map((perm) => {
+                    let label = perm;
+                    if (perm === "ATTENDANCE_SCAN") label = "Attendance Scanner";
+                    else if (perm === "ATTENDANCE_VIEW") label = "Attendance Records";
+                    else if (perm === "STUDENT_VIEW") label = "Student Directory";
+                    else if (perm === "SESSION_VIEW" || perm === "SESSION_MANAGE") label = "Session Settings";
+                    else if (perm === "EMAIL_SEND") label = "Notification Templates";
+                    return (
+                      <span key={perm} className="permission-chip">
+                        {label}
+                      </span>
+                    )
+                  })}
                 </div>
               ) : (
                 <span className="text-xs text-slate-500 font-medium flex items-center gap-1">

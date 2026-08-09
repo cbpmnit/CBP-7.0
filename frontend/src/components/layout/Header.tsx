@@ -145,10 +145,10 @@ function HeaderComponent() {
                     <FiGrid className="h-3.5 w-3.5" />
                     <span>
                       {normalizedRole === "ROLE_ADMIN" || normalizedRole === "ADMIN"
-                        ? "ADMIN DASHBOARD"
-                        : normalizedRole === "ROLE_VOLUNTEER" || normalizedRole === "VOLUNTEER"
-                        ? "VOLUNTEER PANEL"
-                        : "STUDENT DASHBOARD"}
+                      ? "ADMIN PORTAL"
+                      : normalizedRole === "ROLE_VOLUNTEER" || normalizedRole === "VOLUNTEER"
+                      ? "VOLUNTEER DASHBOARD"
+                      : "STUDENT DASHBOARD"}
                     </span>
                   </Link>
 
@@ -303,9 +303,6 @@ function HeaderComponent() {
                 <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3 shadow-2xs">
                   <div>
                     <h4 className="text-xs font-bold text-slate-900">Admin Portal</h4>
-                    <p className="text-[11px] text-slate-500 mt-1 leading-snug">
-                      Manage registrations, attendance, payments and certificates
-                    </p>
                   </div>
                   <Link
                     href="/admin/dashboard"
@@ -318,13 +315,10 @@ function HeaderComponent() {
               ) : normalizedRole === "ROLE_VOLUNTEER" || normalizedRole === "VOLUNTEER" ? (
                 <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3 shadow-2xs">
                   <div>
-                    <h4 className="text-xs font-bold text-slate-900">Volunteer Portal</h4>
-                    <p className="text-[11px] text-slate-500 mt-1 leading-snug">
-                      Scan attendance and manage sessions
-                    </p>
+                    <h4 className="text-xs font-bold text-slate-900">Volunteer Dashboard</h4>
                   </div>
                   <Link
-                    href="/volunteer/scanner"
+                    href="/volunteer/dashboard"
                     onClick={handleCloseMobileMenu}
                     className="block w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold text-center uppercase tracking-wider transition shadow-sm active-press"
                   >
@@ -334,10 +328,7 @@ function HeaderComponent() {
               ) : (
                 <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3 shadow-2xs">
                   <div>
-                    <h4 className="text-xs font-bold text-slate-900">Student Portal</h4>
-                    <p className="text-[11px] text-slate-500 mt-1 leading-snug">
-                      View profile, payment, attendance and certificates
-                    </p>
+                    <h4 className="text-xs font-bold text-slate-900">Student Dashboard</h4>
                   </div>
                   <Link
                     href="/dashboard"

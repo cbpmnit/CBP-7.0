@@ -26,15 +26,15 @@ export interface NavItem {
 
 export const ALL_ADMIN_NAV_ITEMS: NavItem[] = [
   { id: "admin-dashboard", label: "Dashboard", href: "/admin/dashboard", icon: <FiGrid /> },
-  { id: "admin-operations", label: "Operations Control", href: "/admin/operations", icon: <FiSliders />, permission: "ADMIN_ONLY" },
-  { id: "admin-students", label: "Student Management", href: "/admin/students", icon: <FiUsers />, permission: "STUDENT_VIEW" },
-  { id: "admin-volunteers", label: "Volunteer Management", href: "/admin/volunteers", icon: <FiUserCheck />, permission: "VOLUNTEER_MANAGE" },
-  { id: "admin-sessions", label: "Session Management", href: "/admin/sessions", icon: <FiCalendar />, permission: "SESSION_VIEW" },
-  { id: "admin-attendance", label: "Attendance Management", href: "/admin/attendance", icon: <FiCamera />, permission: "ATTENDANCE_VIEW" },
-  { id: "volunteer-scanner", label: "Attendance Scanner", href: "/volunteer/scanner", icon: <FiCamera />, permission: "ATTENDANCE_SCAN" },
-  { id: "admin-payments", label: "Payment Management", href: "/admin/payments", icon: <FiCreditCard />, permission: "PAYMENT_VIEW" },
-  { id: "admin-certificates", label: "Certificate Management", href: "/admin/certificates", icon: <FiAward />, permission: "CERTIFICATE_VIEW" },
-  { id: "admin-emails", label: "Email Management", href: "/admin/emails", icon: <FiMail />, permission: "EMAIL_SEND" },
+  { id: "admin-operations", label: "Operations", href: "/admin/operations", icon: <FiSliders />, permission: "ADMIN_ONLY" },
+  { id: "admin-students", label: "Students", href: "/admin/students", icon: <FiUsers />, permission: "STUDENT_VIEW" },
+  { id: "admin-volunteers", label: "Volunteers", href: "/admin/volunteers", icon: <FiUserCheck />, permission: "VOLUNTEER_MANAGE" },
+  { id: "admin-sessions", label: "Sessions", href: "/admin/sessions", icon: <FiCalendar />, permission: "SESSION_VIEW" },
+  { id: "admin-attendance", label: "Attendance", href: "/admin/attendance", icon: <FiCamera />, permission: "ATTENDANCE_VIEW" },
+  { id: "volunteer-scanner", label: "Scanner", href: "/volunteer/scanner", icon: <FiCamera />, permission: "ATTENDANCE_SCAN" },
+  { id: "admin-payments", label: "Payments", href: "/admin/payments", icon: <FiCreditCard />, permission: "PAYMENT_VIEW" },
+  { id: "admin-certificates", label: "Certificates", href: "/admin/certificates", icon: <FiAward />, permission: "CERTIFICATE_VIEW" },
+  { id: "admin-emails", label: "Notification Templates", href: "/admin/emails", icon: <FiMail />, permission: "EMAIL_SEND" },
 ]
 
 export const STUDENT_NAV_ITEMS: NavItem[] = [
@@ -43,6 +43,11 @@ export const STUDENT_NAV_ITEMS: NavItem[] = [
   { id: "attendance", label: "Attendance & QR", href: "/attendance", icon: <FiCamera /> },
   { id: "payments", label: "Payments", href: "/payment", icon: <FiCreditCard /> },
   { id: "certificates", label: "Certificates", href: "/certificate", icon: <FiAward /> },
+]
+
+export const VOLUNTEER_NAV_ITEMS: NavItem[] = [
+  { id: "volunteer-dashboard", label: "Dashboard", href: "/volunteer/dashboard", icon: <FiGrid /> },
+  { id: "volunteer-scanner", label: "Scanner", href: "/volunteer/scanner", icon: <FiCamera />, permission: "ATTENDANCE_SCAN" },
 ]
 
 interface SidebarNavigationProps {
@@ -105,24 +110,20 @@ function SidebarNavContent({ allowedPermissions }: SidebarNavigationProps) {
 
   const isStudent = userRole === "ROLE_STUDENT" || userRole === "STUDENT"
   const isAdmin = userRole === "ROLE_ADMIN" || userRole === "ADMIN"
+  const isVolunteer = userRole === "ROLE_VOLUNTEER" || userRole === "VOLUNTEER"
 
   let navItems: NavItem[] = []
   if (isStudent) {
     navItems = STUDENT_NAV_ITEMS
   } else if (isAdmin) {
     navItems = ALL_ADMIN_NAV_ITEMS
-  } else {
-    // Volunteer role or scope-restricted user
-    navItems = ALL_ADMIN_NAV_ITEMS.map((item) => {
-      if (item.id === "admin-dashboard") {
-        return { ...item, label: "Volunteer Dashboard", href: "/volunteer/dashboard" }
-      }
-      return item
-    }).filter((item) => {
-      if (item.permission === "ADMIN_ONLY") return false
-      if (!item.permission) return true // Dashboard always visible
+  } else if (isVolunteer) {
+    navItems = VOLUNTEER_NAV_ITEMS.filter((item) => {
+      if (!item.permission) return true
       return userPermissions.includes(item.permission)
     })
+  } else {
+    navItems = []
   }
 
   return (

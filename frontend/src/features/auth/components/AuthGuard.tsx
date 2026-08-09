@@ -22,6 +22,19 @@ const PUBLIC_EXACT_ROUTES = [
   "/auth/callback",
 ]
 
+const ROLE_HOME_ROUTES: Record<string, string> = {
+  ADMIN: "/admin/dashboard",
+  VOLUNTEER: "/volunteer/dashboard",
+  STUDENT: "/dashboard",
+}
+
+const getHomeRoute = (role: string): string => {
+  const norm = (role || "").toUpperCase().replace("ROLE_", "");
+  if (norm === "ADMIN") return ROLE_HOME_ROUTES.ADMIN;
+  if (norm === "VOLUNTEER") return ROLE_HOME_ROUTES.VOLUNTEER;
+  return ROLE_HOME_ROUTES.STUDENT;
+}
+
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
@@ -91,7 +104,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
           if (currentRole === "ROLE_ADMIN" || currentRole === "ADMIN") {
             router.replace("/admin/dashboard")
           } else if (currentRole === "ROLE_VOLUNTEER" || currentRole === "VOLUNTEER") {
-            router.replace("/volunteer/scanner")
+            router.replace("/volunteer/dashboard")
           } else {
             router.replace("/dashboard")
           }
@@ -107,30 +120,51 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         return
       }
 
-      // 6. Admin Routes: /admin/* (Permit ADMIN and VOLUNTEER with assigned scopes)
-      if (pathname.startsWith("/admin")) {
-        const isPrivileged =
-          currentRole === "ROLE_ADMIN" ||
-          currentRole === "ADMIN" ||
-          currentRole === "ROLE_VOLUNTEER" ||
-          currentRole === "VOLUNTEER"
+      const homeRoute = getHomeRoute(currentRole)
 
-        if (!isPrivileged) {
-          router.replace("/unauthorized")
+      // 6. Admin Routes: /admin/* (Permit ADMIN only)
+      if (pathname.startsWith("/admin")) {
+        const isAdmin =
+          currentRole === "ROLE_ADMIN" ||
+          currentRole === "ADMIN"
+
+        if (!isAdmin) {
+          router.replace(homeRoute)
           return
         }
       }
 
-      // 7. Volunteer Routes: /volunteer/* (Permit VOLUNTEER and ADMIN)
+      // 7. Volunteer Routes: /volunteer/* (Permit VOLUNTEER only)
       if (pathname.startsWith("/volunteer") && !pathname.startsWith("/volunteer/setup-password")) {
-        const isVolunteerOrAdmin =
+        const isVolunteer =
           currentRole === "ROLE_VOLUNTEER" ||
-          currentRole === "VOLUNTEER" ||
-          currentRole === "ROLE_ADMIN" ||
-          currentRole === "ADMIN"
+          currentRole === "VOLUNTEER"
 
-        if (!isVolunteerOrAdmin) {
-          router.replace("/unauthorized")
+        if (!isVolunteer) {
+          router.replace(homeRoute)
+          return
+        }
+      }
+
+      // 8. Student Routes (Permit STUDENT only)
+      const isStudentRoute =
+        pathname === "/dashboard" ||
+        pathname.startsWith("/profile") ||
+        pathname.startsWith("/attendance") ||
+        pathname.startsWith("/payment") ||
+        pathname.startsWith("/certificate") ||
+        pathname.startsWith("/cbp") ||
+        pathname.startsWith("/registration")
+
+      if (isStudentRoute) {
+        const isStudent =
+          currentRole !== "ROLE_ADMIN" &&
+          currentRole !== "ADMIN" &&
+          currentRole !== "ROLE_VOLUNTEER" &&
+          currentRole !== "VOLUNTEER"
+
+        if (!isStudent) {
+          router.replace(homeRoute)
           return
         }
       }

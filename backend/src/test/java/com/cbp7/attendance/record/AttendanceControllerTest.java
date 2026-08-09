@@ -119,6 +119,7 @@ class AttendanceControllerTest {
                         .name("Volunteer User")
                         .password("password123")
                         .role(Role.ROLE_VOLUNTEER)
+                        .permissions(new java.util.HashSet<>(java.util.List.of("ATTENDANCE_SCAN")))
                         .enabled(true)
                         .build()));
 

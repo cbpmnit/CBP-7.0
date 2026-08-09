@@ -214,10 +214,10 @@ public class VolunteerRoleUpgradeIntegrationTest {
         userRepository.save(volunteer);
         String token = jwtProvider.generateToken(volunteer);
 
-        // 1. Attendance summary -> 200 OK (has ATTENDANCE_VIEW)
+        // 1. Attendance summary -> 403 Forbidden (Blocked for volunteers)
         mockMvc.perform(get("/api/v1/admin/attendance/summary")
                         .header("Authorization", "Bearer " + token))
-                .andExpect(status().isOk());
+                .andExpect(status().isForbidden());
 
         // 2. Payments overview -> 403 Forbidden (missing PAYMENT_VIEW)
         mockMvc.perform(get("/api/v1/admin/payments")
@@ -246,15 +246,15 @@ public class VolunteerRoleUpgradeIntegrationTest {
         userRepository.save(volunteer);
         String token = jwtProvider.generateToken(volunteer);
 
-        // 1. Students directory -> 200 OK
+        // 1. Students directory -> 403 Forbidden (Blocked for volunteers)
         mockMvc.perform(get("/api/v1/admin/students")
                         .header("Authorization", "Bearer " + token))
-                .andExpect(status().isOk());
+                .andExpect(status().isForbidden());
 
-        // 2. Payments overview -> 200 OK
+        // 2. Payments overview -> 403 Forbidden (Blocked for volunteers)
         mockMvc.perform(get("/api/v1/admin/payments")
                         .header("Authorization", "Bearer " + token))
-                .andExpect(status().isOk());
+                .andExpect(status().isForbidden());
 
         // 3. Attendance summary -> 403 Forbidden (missing ATTENDANCE_VIEW)
         mockMvc.perform(get("/api/v1/admin/attendance/summary")

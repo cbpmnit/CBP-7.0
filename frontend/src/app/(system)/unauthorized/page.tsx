@@ -45,7 +45,7 @@ export default function UnauthorizedPage() {
 
           <Reveal delay={140}>
             <p className="mt-3 text-xs sm:text-sm text-slate-600 leading-relaxed max-w-sm mx-auto">
-              You do not have permission to view this route. Your current role does not have authorization for this module.
+              You don't have access to this page.
             </p>
           </Reveal>
 

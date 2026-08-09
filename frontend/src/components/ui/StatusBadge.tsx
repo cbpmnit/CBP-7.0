@@ -54,11 +54,34 @@ export function StatusBadge({
     dotColor = "bg-purple-500"
   }
 
-  const displayLabel = label || status
+  let displayLabel = label || status
+  if (!label && typeof status === "string") {
+    const rawVal = status.toUpperCase();
+    if (rawVal === "ACTIVE") displayLabel = "Active";
+    else if (rawVal === "SUCCESS") displayLabel = "Success";
+    else if (rawVal === "PENDING") displayLabel = "Pending";
+    else if (rawVal === "PRESENT") displayLabel = "Present";
+    else if (rawVal === "ABSENT") displayLabel = "Absent";
+    else if (rawVal === "PAID") displayLabel = "Paid";
+    else if (rawVal === "VERIFIED") displayLabel = "Verified";
+    else if (rawVal === "GENERATED") displayLabel = "Generated";
+    else if (rawVal === "UNVERIFIED") displayLabel = "Unverified";
+    else if (rawVal === "UPCOMING") displayLabel = "Upcoming";
+    else if (rawVal === "FAILED") displayLabel = "Failed";
+    else if (rawVal === "DISABLED") displayLabel = "Disabled";
+    else if (rawVal === "REVOKED") displayLabel = "Revoked";
+    else if (rawVal === "REGISTERED") displayLabel = "Registered";
+    else if (rawVal === "CLOSED") displayLabel = "Closed";
+    else if (rawVal === "SENT") displayLabel = "Sent";
+    else if (rawVal === "SCHEDULED") displayLabel = "Scheduled";
+    else if (rawVal === "COMPLETED") displayLabel = "Completed";
+    else if (rawVal === "REJECTED") displayLabel = "Rejected";
+    else if (rawVal === "ACTION_REQUIRED") displayLabel = "Action Required";
+  }
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-bold font-mono uppercase tracking-wider border ${style} ${className}`}
+      className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-bold font-mono tracking-wider border ${style} ${className}`}
     >
       {dot && <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${dotColor}`} />}
       <span className="truncate">{displayLabel}</span>

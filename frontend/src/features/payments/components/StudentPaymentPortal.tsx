@@ -3,6 +3,7 @@
 import React from "react"
 import Link from "next/link"
 import { usePayment } from "../hooks/usePayment"
+import { useAppSelector } from "@/store/hooks"
 import { formatCurrency, formatTxnId, formatDate } from "@/utils/formatters"
 import PageTransition from "@/components/animations/PageTransition"
 import {
@@ -24,6 +25,8 @@ export default function StudentPaymentPortal() {
     message,
     handleInitiatePhonePe,
   } = usePayment()
+
+  const { name: authName, studentId: authStudentId, email: authEmail } = useAppSelector((state) => state.auth)
 
   const isSuccess = payment?.paymentStatus === "SUCCESS"
   const isPending = payment?.paymentStatus === "PENDING" || payment?.paymentStatus === "UNDER_VERIFICATION"
@@ -142,7 +145,7 @@ export default function StudentPaymentPortal() {
                     onClick={() => window.print()}
                     className="w-full rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white py-3 text-xs font-bold uppercase tracking-wider shadow-sm transition flex items-center justify-center gap-2"
                   >
-                    <FiDownload /> Download Official Fee Receipt
+                    <FiDownload /> Download Receipt
                   </button>
                 ) : (
                   <button
@@ -174,6 +177,132 @@ export default function StudentPaymentPortal() {
             )}
           </div>
         </div>
+
+        {/* Printable Receipt Isolated Block (Only visible on @media print) */}
+        {payment && isSuccess && (
+          <div className="printable-receipt hidden print:block bg-white text-slate-900 p-8 sm:p-9 border border-slate-400 rounded-[10px] max-w-3xl mx-auto space-y-6 font-sans">
+            {/* University Header */}
+            <div className="text-center space-y-1 border-b border-slate-900 pb-4">
+              <h1 className="text-base sm:text-lg font-black uppercase tracking-wider text-slate-900 leading-tight">
+                Malaviya National Institute of Technology Jaipur
+              </h1>
+              <h2 className="text-xs sm:text-sm font-bold text-slate-800">
+                CBP 7.0 &mdash; Capacity Building Program
+              </h2>
+              <p className="text-[10px] text-slate-600">
+                Department of Humanities &amp; Social Sciences &amp; Training &amp; Placement Cell
+              </p>
+              <div className="pt-2">
+                <span className="border border-slate-900 text-slate-900 px-3.5 py-0.5 text-[11px] font-extrabold uppercase tracking-widest rounded-[4px] inline-block">
+                  Official Registration Fee Receipt
+                </span>
+              </div>
+            </div>
+
+            {/* Details Section: 2 Equal Columns with Perfect Central Divider */}
+            <div className="grid grid-cols-2 text-xs pt-1">
+              {/* Student Details (Left Column) */}
+              <div className="pr-6 space-y-2.5 border-r border-slate-300">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 border-b border-slate-200 pb-1">
+                  Student Details
+                </h3>
+                <table className="w-full">
+                  <tbody className="divide-y divide-slate-100">
+                    <tr>
+                      <td className="text-slate-500 font-medium py-1.5 w-28 shrink-0">Student Name:</td>
+                      <td className="font-bold text-slate-900 py-1.5">{authName || (typeof window !== "undefined" && localStorage.getItem("cbp-name")) || "N/A"}</td>
+                    </tr>
+                    <tr>
+                      <td className="text-slate-500 font-medium py-1.5">Student ID:</td>
+                      <td className="font-mono font-bold text-slate-900 py-1.5">{authStudentId || (typeof window !== "undefined" && localStorage.getItem("cbp-studentId")) || "N/A"}</td>
+                    </tr>
+                    <tr>
+                      <td className="text-slate-500 font-medium py-1.5">Email:</td>
+                      <td className="font-bold text-slate-900 py-1.5 break-all">{authEmail || (typeof window !== "undefined" && localStorage.getItem("cbp-email")) || "N/A"}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Payment Details (Right Column) */}
+              <div className="pl-6 space-y-2.5">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 border-b border-slate-200 pb-1">
+                  Payment Details
+                </h3>
+                <table className="w-full">
+                  <tbody className="divide-y divide-slate-100">
+                    <tr>
+                      <td className="text-slate-500 font-medium py-1.5 w-32 shrink-0">Registration ID:</td>
+                      <td className="font-mono font-bold text-slate-900 py-1.5">{payment.registrationId}</td>
+                    </tr>
+                    <tr>
+                      <td className="text-slate-500 font-medium py-1.5">Transaction ID:</td>
+                      <td className="font-mono font-bold text-slate-900 py-1.5 break-all">{formatTxnId(payment.transactionId)}</td>
+                    </tr>
+                    <tr>
+                      <td className="text-slate-500 font-medium py-1.5">Payment Mode:</td>
+                      <td className="font-bold text-slate-900 py-1.5 uppercase">{payment.paymentMode || "ONLINE_GATEWAY"}</td>
+                    </tr>
+                    <tr>
+                      <td className="text-slate-500 font-medium py-1.5">Payment Date:</td>
+                      <td className="font-mono font-bold text-slate-900 py-1.5">{formatDate(payment.createdAt)}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Financial Summary */}
+            <div className="border border-slate-300 rounded-[6px] overflow-hidden mt-4">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-slate-300 bg-slate-50 font-bold uppercase tracking-wider text-slate-700 text-left">
+                    <th className="px-3.5 py-2 w-3/4">Description</th>
+                    <th className="px-3.5 py-2 text-right">Amount (INR)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200">
+                  <tr>
+                    <td className="px-3.5 py-2.5 font-medium text-slate-800">
+                      CBP 7.0 Student Registration &amp; Program Fee
+                    </td>
+                    <td className="px-3.5 py-2.5 text-right font-bold text-slate-900 font-mono">
+                      {formatCurrency(payment.amount)}
+                    </td>
+                  </tr>
+                  <tr className="bg-slate-50 font-bold">
+                    <td className="px-3.5 py-2 text-slate-900 uppercase tracking-wider text-[11px]">Total Amount Paid</td>
+                    <td className="px-3.5 py-2 text-right text-xs text-slate-950 font-mono">
+                      {formatCurrency(payment.amount)}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            {/* Status Verification Bar */}
+            <div className="flex items-center justify-between text-xs border border-slate-300 px-3.5 py-2 rounded-[6px] bg-slate-50">
+              <span className="text-slate-600 font-bold uppercase tracking-wider text-[11px]">Payment Status:</span>
+              <span className="text-emerald-700 font-extrabold uppercase tracking-widest font-mono">
+                {payment.paymentStatus} &mdash; VERIFIED
+              </span>
+            </div>
+
+            {/* Signature Area */}
+            <div className="pt-8 flex justify-between items-end text-xs">
+              <div className="space-y-0.5">
+                <p className="text-[10px] text-slate-400">Generated: {new Date().toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}</p>
+                <p className="text-[10px] text-slate-400">Computer Generated Receipt &mdash; No Physical Signature Required</p>
+              </div>
+              <div className="text-center space-y-3 w-48">
+                <div className="border-b border-slate-900 w-full"></div>
+                <p className="font-bold text-slate-800 uppercase tracking-wider text-[10px]">
+                  Authorized Coordinator
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </PageTransition>
   )

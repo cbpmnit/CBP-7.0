@@ -666,3 +666,55 @@ a.active-press:active {
   color: #475569;
 }
 
+/* 6. Isolated Media Print CSS Rules */
+@media print {
+  /* Hide all generic elements by default in print mode */
+  body * {
+    visibility: hidden !important;
+  }
+
+  /* Target the printable receipt block and its children to remain visible */
+  .printable-receipt,
+  .printable-receipt * {
+    visibility: visible !important;
+  }
+
+  .printable-receipt {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 24px 28px !important;
+    box-shadow: none !important;
+    border: 1.5px solid #0f172a !important;
+    border-radius: 10px !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Reset layout constraints and strip grid/gradient backgrounds during print */
+  body, html, main, .bg-cbp-grid, .flex, .flex-1, div {
+    background: #ffffff !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Standard A4 Portrait Margins */
+  @page {
+    size: A4 portrait;
+    margin: 12mm 15mm;
+  }
+
+  /* Force background graphic rendering in print previews */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+
