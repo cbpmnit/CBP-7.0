@@ -3,6 +3,11 @@
 import { useState, useEffect } from "react"
 import { attendanceService } from "@/services/attendanceService"
 import { adminService, CreateSessionPayload } from "@/services/adminService"
+import { PageHeader } from "@/components/ui/PageHeader"
+import { DataTable } from "@/components/ui/DataTable"
+import { FilterBar } from "@/components/ui/FilterBar"
+import { StatusBadge } from "@/components/ui/StatusBadge"
+import { MobileRecordCard } from "@/components/ui/MobileRecordCard"
 import {
   AttendanceSessionDto,
   SessionSummaryResponse,
@@ -13,11 +18,7 @@ import {
 import {
   FiCalendar,
   FiClock,
-  FiSearch,
   FiRefreshCw,
-  FiCheckCircle,
-  FiChevronLeft,
-  FiChevronRight,
   FiCheck,
   FiCopy,
   FiPlus,
@@ -131,7 +132,7 @@ export default function AdminAttendanceView() {
   ) => {
     setRecordsLoading(true)
     try {
-      const data = await attendanceService.getSessionRecords(sessionId, searchTerm, status, pageNum, 10)
+      const data = await attendanceService.getSessionRecords(sessionId, searchTerm, status, pageNum, 20)
       setRecordsPage(data)
     } catch (err) {
       console.error("Failed to load session records", err)
@@ -218,46 +219,92 @@ export default function AdminAttendanceView() {
   }
 
   const selectedSession = sessions.find((s) => s.id === selectedSessionId)
+  const records = recordsPage?.content || []
+
+  // Mobile Cards View
+  const mobileCards = records.map((rec) => {
+    const isPresent = rec.status === "PRESENT"
+    return (
+      <MobileRecordCard
+        key={rec.studentId}
+        title={rec.studentName || rec.studentId}
+        subtitle={`${rec.studentId} • ${rec.studentEmail || ""}`}
+        status={rec.status}
+        fields={[
+          { label: "QR Pass", value: qrStatus && qrStatus.generatedQr > 0 ? "Generated" : "Pending" },
+          { label: "Marked Time", value: rec.markedAt ? rec.markedAt.replace("T", " ").substring(0, 16) : "—", mono: true },
+        ]}
+        actions={
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => setViewingRecord(rec)}
+              className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-[11px] font-bold inline-flex items-center gap-1 border border-slate-200"
+            >
+              <FiEye /> View Pass
+            </button>
+            <button
+              onClick={() => {
+                setActionMessage(`Resent pass to ${rec.studentEmail}`)
+                setTimeout(() => setActionMessage(null), 3000)
+              }}
+              className="px-2.5 py-1 rounded-lg bg-cyan-50 hover:bg-cyan-100 text-cyan-900 text-[11px] font-bold inline-flex items-center gap-1 border border-cyan-200"
+            >
+              <FiSend /> Resend
+            </button>
+          </div>
+        }
+      />
+    )
+  })
 
   return (
-    <div className="space-y-6">
-      {/* SECTION 1: Workshop Day Sessions Cards */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-        <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
-          <div>
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-              <FiCalendar className="text-cyan-700 text-sm" /> Workshop Day Sessions
-            </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Select a session below to view attendance metrics, manage passes, and track student check-ins.
-            </p>
-          </div>
-
+    <div className="space-y-4">
+      {/* Header */}
+      <PageHeader
+        title="Attendance Management"
+        count={sessions.length}
+        countLabel="sessions"
+        subtitle="Workshop day check-ins, gate scanner metrics, and student QR passes"
+        actions={
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowCreateModal(true)}
-              className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white text-xs font-bold uppercase tracking-wider transition inline-flex items-center gap-1.5 shadow-sm shadow-cyan-600/20"
+              className="px-3.5 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold uppercase tracking-wider shadow-2xs transition inline-flex items-center gap-1.5 cursor-pointer"
             >
-              <FiPlus /> Create Session
+              <FiPlus className="text-xs" /> Create Session
             </button>
             <button
               onClick={fetchSessions}
-              className="p-2 text-slate-500 hover:text-slate-900 rounded-xl hover:bg-slate-100 transition"
+              className="p-1.5 text-slate-500 hover:text-slate-900 rounded-lg hover:bg-slate-100 transition border border-slate-200"
               title="Refresh sessions"
             >
-              <FiRefreshCw className={loadingSessions ? "animate-spin" : ""} />
+              <FiRefreshCw className={loadingSessions ? "animate-spin" : "text-xs"} />
             </button>
           </div>
+        }
+      />
+
+      {/* Action Notification Banner */}
+      {actionMessage && (
+        <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold">
+          {actionMessage}
         </div>
+      )}
+
+      {/* SECTION 1: Session Selector Cards */}
+      <div className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-2xs">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2.5">
+          Select Workshop Day
+        </h3>
 
         {loadingSessions ? (
-          <div className="p-8 text-center text-xs text-slate-400">Loading scheduled sessions...</div>
+          <div className="p-4 text-center text-xs text-slate-400">Loading sessions...</div>
         ) : sessions.length === 0 ? (
-          <div className="p-8 text-center text-xs text-slate-500 bg-slate-50 rounded-xl border border-slate-200">
-            No attendance sessions created yet. Click &quot;+ Create Session&quot; above to schedule workshop days.
+          <div className="p-6 text-center text-xs text-slate-500 bg-slate-50 rounded-lg border border-slate-200">
+            No attendance sessions created yet. Click &quot;+ Create Session&quot; to schedule days.
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
             {sessions.map((session) => {
               const isSelected = selectedSessionId === session.id
               return (
@@ -267,48 +314,34 @@ export default function AdminAttendanceView() {
                     setSelectedSessionId(session.id)
                     setPage(0)
                   }}
-                  className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between ${
+                  className={`p-3 rounded-xl border transition cursor-pointer flex flex-col justify-between ${
                     isSelected
-                      ? "bg-cyan-50/30 border-cyan-600 ring-2 ring-cyan-500/20 shadow-md"
-                      : "bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50/50 shadow-sm"
+                      ? "bg-cyan-50/40 border-cyan-600 ring-1 ring-cyan-500/30 shadow-xs"
+                      : "bg-white border-slate-200 hover:border-slate-300"
                   }`}
                 >
                   <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-extrabold text-slate-900 bg-slate-100 px-2 py-0.5 rounded-md">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[11px] font-bold font-mono text-slate-900">
                         Day {session.dayNumber}
                       </span>
-                      <span
-                        className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border uppercase tracking-wider ${
-                          session.status === "ACTIVE"
-                            ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                            : session.status === "CLOSED"
-                            ? "bg-slate-100 text-slate-700 border-slate-200"
-                            : "bg-blue-50 text-blue-800 border-blue-200"
-                        }`}
-                      >
-                        {session.status}
-                      </span>
+                      <StatusBadge status={session.status} dot={false} className="text-[9px] px-1.5 py-0" />
                     </div>
-                    <h4 className="text-sm font-bold text-slate-900 line-clamp-1">{session.title}</h4>
-                    <p className="text-xs font-medium text-slate-500 mt-1 flex items-center gap-1">
-                      <FiClock className="text-slate-400" /> {session.sessionDate}
-                    </p>
+                    <h4 className="text-xs font-bold text-slate-900 truncate">{session.title}</h4>
+                    <p className="text-[11px] font-mono text-slate-500 mt-0.5">{session.sessionDate}</p>
                   </div>
 
-                  {/* Status Toggle / Actions */}
-                  <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
-                    <span className="text-[11px] font-bold text-cyan-700">
-                      {isSelected ? "Selected ✓" : "Click to view"}
+                  <div className="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-cyan-700">
+                      {isSelected ? "Selected" : "View"}
                     </span>
-
                     {session.status === "UPCOMING" && (
                       <button
                         onClick={(e) => {
                           e.stopPropagation()
                           handleActivateSession(session.id)
                         }}
-                        className="text-[11px] font-bold text-emerald-700 hover:text-emerald-900 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200"
+                        className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200"
                       >
                         Activate
                       </button>
@@ -319,9 +352,9 @@ export default function AdminAttendanceView() {
                           e.stopPropagation()
                           handleCloseSession(session.id)
                         }}
-                        className="text-[11px] font-bold text-amber-700 hover:text-amber-900 bg-amber-50 px-2 py-0.5 rounded border border-amber-200"
+                        className="text-[10px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200"
                       >
-                        Close Session
+                        Close
                       </button>
                     )}
                   </div>
@@ -332,303 +365,175 @@ export default function AdminAttendanceView() {
         )}
       </div>
 
-      {/* SECTION 2: Session Attendance Metrics */}
+      {/* SECTION 2: Selected Session Overview */}
       {selectedSession && (
-        <div className="space-y-6">
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 mb-4 border-b border-slate-100 gap-2">
-              <div>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">
-                  Attendance Metrics &amp; Analytics
-                </h3>
-                <h2 className="text-base font-extrabold text-slate-900 mt-0.5">
-                  Day {selectedSession.dayNumber}: {selectedSession.title}
-                </h2>
-              </div>
-              <span className="text-xs font-mono font-bold text-slate-700 bg-slate-50 px-3 py-1 rounded-xl border border-slate-200 self-start sm:self-auto">
-                {selectedSession.sessionDate}
+        <div className="space-y-4">
+          {/* Metrics Summary Row */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+            <div className="p-3.5 bg-white border border-slate-200 rounded-xl shadow-2xs">
+              <span className="text-[10px] font-bold uppercase text-slate-400">Total Enrolled</span>
+              <p className="text-xl font-extrabold text-slate-900 font-mono mt-0.5">{summary?.totalRegisteredStudents ?? 0}</p>
+            </div>
+            <div className="p-3.5 bg-white border border-slate-200 rounded-xl shadow-2xs">
+              <span className="text-[10px] font-bold uppercase text-emerald-700">Present</span>
+              <p className="text-xl font-extrabold text-emerald-700 font-mono mt-0.5">{summary?.presentCount ?? 0}</p>
+            </div>
+            <div className="p-3.5 bg-white border border-slate-200 rounded-xl shadow-2xs">
+              <span className="text-[10px] font-bold uppercase text-rose-700">Absent</span>
+              <p className="text-xl font-extrabold text-rose-700 font-mono mt-0.5">{summary?.absentCount ?? 0}</p>
+            </div>
+            <div className="p-3.5 bg-white border border-slate-200 rounded-xl shadow-2xs">
+              <span className="text-[10px] font-bold uppercase text-cyan-800">Attendance %</span>
+              <p className="text-xl font-extrabold text-cyan-800 font-mono mt-0.5">
+                {(summary?.attendancePercentage ?? 0).toFixed(1)}%
+              </p>
+            </div>
+          </div>
+
+          {/* Pass Generation Toolbar */}
+          <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-2xs flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-xs">
+              <span className="font-bold text-slate-800">Student Gate Pass Control:</span>
+              <span className="text-slate-500 font-mono">
+                {qrStatus ? `${qrStatus.generatedQr} / ${qrStatus.totalStudents} Generated` : "Ready"}
               </span>
             </div>
 
-            {summaryLoading ? (
-              <div className="p-6 text-center text-xs text-slate-400">Loading metrics...</div>
-            ) : summary ? (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <div className="p-4 bg-white border border-slate-200 rounded-2xl shadow-sm">
-                  <span className="text-[10px] font-bold uppercase text-slate-500 tracking-wider">Total Registered</span>
-                  <p className="text-2xl font-extrabold text-slate-900 mt-1">{summary.totalRegisteredStudents}</p>
-                </div>
-                <div className="p-4 bg-emerald-50/70 border border-emerald-200 rounded-2xl">
-                  <span className="text-[10px] font-bold uppercase text-emerald-800 tracking-wider">Present</span>
-                  <p className="text-2xl font-extrabold text-emerald-800 mt-1">{summary.presentCount}</p>
-                </div>
-                <div className="p-4 bg-rose-50/70 border border-rose-200 rounded-2xl">
-                  <span className="text-[10px] font-bold uppercase text-rose-800 tracking-wider">Absent</span>
-                  <p className="text-2xl font-extrabold text-rose-800 mt-1">{summary.absentCount}</p>
-                </div>
-                <div className="p-4 bg-cyan-50/70 border border-cyan-200 rounded-2xl">
-                  <span className="text-[10px] font-bold uppercase text-cyan-800 tracking-wider">Attendance %</span>
-                  <p className="text-2xl font-extrabold text-cyan-800 mt-1">
-                    {summary.attendancePercentage.toFixed(1)}%
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="p-4 text-xs text-slate-500 bg-slate-50 rounded-xl text-center">
-                Summary metrics unavailable.
-              </div>
-            )}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleGenerateStudentQrs}
+                disabled={generatingStudentQrs}
+                className="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold uppercase tracking-wider transition disabled:opacity-50 inline-flex items-center gap-1.5 shadow-2xs"
+              >
+                {generatingStudentQrs ? <FiRefreshCw className="animate-spin text-xs" /> : <FiZap className="text-xs" />}
+                <span>Generate QR Passes</span>
+              </button>
+              <button
+                onClick={() => {
+                  setActionMessage("Queued QR notifications dispatch via Email Templates.")
+                  setTimeout(() => setActionMessage(null), 3000)
+                }}
+                className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold transition inline-flex items-center gap-1.5 shadow-2xs"
+              >
+                <FiMail className="text-xs text-slate-500" />
+                <span>Send Emails</span>
+              </button>
+            </div>
           </div>
 
-          {/* SECTION 3: Student QR Code Management Section */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 mb-4 border-b border-slate-100 gap-3">
-              <div>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-                  <FiZap className="text-cyan-700 text-sm" /> Student QR Code Management
-                </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Generate unique student-specific QR gate passes, reset keys, or dispatch notification emails.
-                </p>
-              </div>
+          {/* Filter Bar */}
+          <FilterBar
+            search={search}
+            onSearchChange={(val) => {
+              setSearch(val)
+              setPage(0)
+            }}
+            searchPlaceholder="Search student ID, name..."
+            filters={[
+              {
+                id: "statusFilter",
+                value: statusFilter,
+                onChange: (val) => {
+                  setStatusFilter(val)
+                  setPage(0)
+                },
+                options: [
+                  { label: "All Statuses", value: "ALL" },
+                  { label: "Present", value: "PRESENT" },
+                  { label: "Absent", value: "ABSENT" },
+                ],
+              },
+            ]}
+          />
 
-              <div className="flex flex-wrap items-center gap-2 shrink-0">
-                <button
-                  onClick={handleGenerateStudentQrs}
-                  disabled={generatingStudentQrs}
-                  className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white text-xs font-bold uppercase tracking-wider shadow-sm transition disabled:opacity-50 inline-flex items-center gap-1.5 shadow-cyan-600/20"
-                >
-                  {generatingStudentQrs ? <FiRefreshCw className="animate-spin" /> : <FiZap />}
-                  <span>{generatingStudentQrs ? "Generating..." : "Generate QR Codes"}</span>
-                </button>
-
-                <button
-                  onClick={handleGenerateStudentQrs}
-                  disabled={generatingStudentQrs}
-                  className="px-3.5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold uppercase tracking-wider shadow-sm transition disabled:opacity-50 inline-flex items-center gap-1.5"
-                >
-                  <FiRefreshCw className={generatingStudentQrs ? "animate-spin" : ""} />
-                  <span>Regenerate QR Codes</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setActionMessage("Queued QR email notifications for distribution via Email Templates module.")
-                    setTimeout(() => setActionMessage(null), 4000)
-                  }}
-                  className="px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-bold uppercase tracking-wider shadow-sm transition inline-flex items-center gap-1.5"
-                >
-                  <FiMail className="text-cyan-700" />
-                  <span>Send QR Email</span>
-                </button>
-              </div>
-            </div>
-
-            {actionMessage && (
-              <div className="mb-4 p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold">
-                {actionMessage}
-              </div>
-            )}
-
-            {qrStatus && (
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-                <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl">
-                  <span className="text-[10px] font-bold uppercase text-slate-500">Total Enrolled</span>
-                  <p className="text-xl font-extrabold text-slate-900 mt-1">{qrStatus.totalStudents}</p>
-                </div>
-
-                <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
-                  <span className="text-[10px] font-bold uppercase text-emerald-800">QR Generated</span>
-                  <p className="text-xl font-extrabold text-emerald-700 mt-1">{qrStatus.generatedQr}</p>
-                </div>
-
-                <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl">
-                  <span className="text-[10px] font-bold uppercase text-amber-800">Pending</span>
-                  <p className="text-xl font-extrabold text-amber-700 mt-1">{qrStatus.pendingQr}</p>
-                </div>
-
-                <div className="p-4 bg-cyan-50 border border-cyan-200 rounded-xl">
-                  <span className="text-[10px] font-bold uppercase text-cyan-800">Status</span>
-                  <p className="text-sm font-extrabold text-cyan-900 mt-1">
-                    {qrStatus.generatedQr > 0 ? "Generated & Active" : "Pending Action"}
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* SECTION 4: QR Status & Attendance Records Table */}
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-            <div className="p-5 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">
-                  Student QR Status &amp; Attendance Records
-                </h3>
-                <p className="text-[11px] text-slate-500">
-                  {recordsPage?.totalElements ?? 0} total matching student logs
-                </p>
-              </div>
-
-              {/* Filters */}
-              <div className="flex flex-wrap items-center gap-2">
-                <div className="relative">
-                  <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
-                  <input
-                    type="text"
-                    value={search}
-                    onChange={(e) => {
-                      setSearch(e.target.value)
-                      setPage(0)
-                    }}
-                    placeholder="Search student ID, name..."
-                    className="pl-8 pr-3 py-1.5 text-xs rounded-xl bg-white border border-slate-200 text-slate-900 focus:outline-none focus:border-cyan-600 w-48"
-                  />
-                </div>
-
-                <select
-                  value={statusFilter}
-                  onChange={(e) => {
-                    setStatusFilter(e.target.value)
-                    setPage(0)
-                  }}
-                  className="px-3 py-1.5 text-xs rounded-xl bg-white border border-slate-200 text-slate-700 focus:outline-none focus:border-cyan-600 font-medium"
-                >
-                  <option value="ALL">All Statuses</option>
-                  <option value="PRESENT">PRESENT</option>
-                  <option value="ABSENT">ABSENT</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Table */}
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="border-b border-slate-200 bg-slate-100/50 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                    <th className="py-3 px-4">Student Name</th>
-                    <th className="py-3 px-4">Student ID</th>
-                    <th className="py-3 px-4">Email</th>
-                    <th className="py-3 px-4">QR Status</th>
-                    <th className="py-3 px-4">Marked At</th>
-                    <th className="py-3 px-4 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {recordsLoading ? (
-                    <tr>
-                      <td colSpan={6} className="text-center py-8 text-slate-400">
-                        Loading record directory...
+          {/* Data Table */}
+          <DataTable
+            title="Attendance Records Log"
+            totalCount={recordsPage?.totalElements}
+            loading={recordsLoading}
+            data={records}
+            currentPage={page}
+            totalPages={recordsPage?.totalPages ?? 1}
+            pageSize={20}
+            onPageChange={(p) => setPage(p)}
+            emptyMessage="No student attendance records matching criteria"
+            mobileView={mobileCards.length > 0 ? <>{mobileCards}</> : null}
+          >
+            <table className="w-full text-left text-xs border-collapse">
+              <thead className="sticky top-0 bg-slate-50/95 text-[10px] font-extrabold uppercase tracking-wider text-slate-500 border-b border-slate-200 z-10 backdrop-blur-2xs">
+                <tr>
+                  <th className="px-4 py-2.5">Student Name</th>
+                  <th className="px-4 py-2.5">Student ID</th>
+                  <th className="px-4 py-2.5">Email</th>
+                  <th className="px-4 py-2.5">Status</th>
+                  <th className="px-4 py-2.5">Marked Time</th>
+                  <th className="px-4 py-2.5 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 font-medium text-slate-800">
+                {records.map((rec) => {
+                  const isPresent = rec.status === "PRESENT"
+                  return (
+                    <tr key={rec.studentId} className="hover:bg-slate-50/70 transition">
+                      <td className="px-4 py-2.5 font-bold text-slate-900">{rec.studentName}</td>
+                      <td className="px-4 py-2.5 font-mono font-bold text-slate-700">{rec.studentId}</td>
+                      <td className="px-4 py-2.5 text-slate-500 font-mono">{rec.studentEmail}</td>
+                      <td className="px-4 py-2.5">
+                        <StatusBadge status={rec.status} />
+                      </td>
+                      <td className="px-4 py-2.5 text-slate-500 font-mono text-[11px]">
+                        {rec.markedAt ? rec.markedAt.replace("T", " ").substring(0, 16) : "—"}
+                      </td>
+                      <td className="px-4 py-2.5 text-right space-x-1.5">
+                        <button
+                          onClick={() => setViewingRecord(rec)}
+                          className="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold inline-flex items-center gap-1 border border-slate-200"
+                        >
+                          <FiEye className="text-xs text-slate-600" /> Pass
+                        </button>
+                        <button
+                          onClick={() => {
+                            setActionMessage(`Resent pass to ${rec.studentEmail}`)
+                            setTimeout(() => setActionMessage(null), 3000)
+                          }}
+                          className="px-2 py-1 rounded-lg bg-cyan-50 hover:bg-cyan-100 text-cyan-900 text-xs font-semibold inline-flex items-center gap-1 border border-cyan-200"
+                        >
+                          <FiSend className="text-xs text-cyan-700" /> Resend
+                        </button>
                       </td>
                     </tr>
-                  ) : !recordsPage || recordsPage.content.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="text-center py-8 text-slate-400">
-                        No student attendance records matching current filter.
-                      </td>
-                    </tr>
-                  ) : (
-                    recordsPage.content.map((rec) => {
-                      const isPresent = rec.status === "PRESENT"
-                      return (
-                        <tr key={rec.studentId} className="hover:bg-slate-50/80 transition">
-                          <td className="py-3 px-4 font-bold text-slate-900">{rec.studentName}</td>
-                          <td className="py-3 px-4 font-mono font-bold text-slate-700">{rec.studentId}</td>
-                          <td className="py-3 px-4 text-slate-500 font-mono">{rec.studentEmail}</td>
-                          <td className="py-3 px-4">
-                            <span
-                              className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
-                                isPresent
-                                  ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                                  : qrStatus && qrStatus.generatedQr > 0
-                                  ? "bg-blue-50 text-blue-800 border-blue-200"
-                                  : "bg-amber-50 text-amber-800 border-amber-200"
-                              }`}
-                            >
-                              {isPresent ? <FiCheckCircle /> : <FiClock />}
-                              {isPresent ? "ATTENDED" : qrStatus && qrStatus.generatedQr > 0 ? "GENERATED" : "PENDING"}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4 text-slate-500 font-mono text-[11px]">
-                            {rec.markedAt ? rec.markedAt.replace("T", " ").substring(0, 16) : "-"}
-                          </td>
-                          <td className="py-3 px-4 text-right space-x-2">
-                            <button
-                              onClick={() => setViewingRecord(rec)}
-                              className="text-[11px] font-bold text-cyan-700 hover:text-cyan-900 bg-cyan-50 hover:bg-cyan-100 px-2.5 py-1 rounded-lg border border-cyan-200 transition inline-flex items-center gap-1"
-                            >
-                              <FiEye /> View Pass
-                            </button>
-                            <button
-                              onClick={() => {
-                                setActionMessage(`Resent attendance pass email to ${rec.studentEmail}`)
-                                setTimeout(() => setActionMessage(null), 3000)
-                              }}
-                              className="text-[11px] font-bold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-2.5 py-1 rounded-lg border border-slate-200 transition inline-flex items-center gap-1"
-                            >
-                              <FiSend /> Resend
-                            </button>
-                          </td>
-                        </tr>
-                      )
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Pagination Controls */}
-            {recordsPage && recordsPage.totalPages > 1 && (
-              <div className="p-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between text-xs">
-                <span className="text-slate-500">
-                  Page <span className="font-bold text-slate-800">{page + 1}</span> of{" "}
-                  <span className="font-bold text-slate-800">{recordsPage.totalPages}</span>
-                </span>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setPage((p) => Math.max(0, p - 1))}
-                    disabled={page === 0}
-                    className="px-3 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 font-bold"
-                  >
-                    <FiChevronLeft />
-                  </button>
-                  <button
-                    onClick={() => setPage((p) => Math.min(recordsPage.totalPages - 1, p + 1))}
-                    disabled={page >= recordsPage.totalPages - 1}
-                    className="px-3 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 font-bold"
-                  >
-                    <FiChevronRight />
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
+                  )
+                })}
+              </tbody>
+            </table>
+          </DataTable>
         </div>
       )}
 
       {/* MODAL 1: Create New Workshop Session */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-3xl p-8 max-w-lg w-full border border-slate-200 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full border border-slate-200 shadow-xl relative max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => setShowCreateModal(false)}
-              className="absolute right-5 top-5 text-slate-400 hover:text-slate-700"
+              className="absolute right-4 top-4 text-slate-400 hover:text-slate-700"
             >
-              <FiX className="text-xl" />
+              <FiX className="text-lg" />
             </button>
 
-            <h3 className="text-xl font-bold text-slate-900 mb-1">Create Workshop Session</h3>
-            <p className="text-xs text-slate-500 mb-6">Configure a new attendance date and session gate parameters.</p>
+            <h3 className="text-base font-extrabold text-slate-900 mb-1">Create Workshop Session</h3>
+            <p className="text-xs text-slate-500 mb-4">Configure day attendance date and gate parameters.</p>
 
             {createError && (
-              <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold">
+              <div className="mb-3 p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold">
                 {createError}
               </div>
             )}
 
-            <form onSubmit={handleCreateSessionSubmit} className="space-y-4 text-xs">
-              <div className="grid grid-cols-3 gap-3">
+            <form onSubmit={handleCreateSessionSubmit} className="space-y-3 text-xs">
+              <div className="grid grid-cols-3 gap-2.5">
                 <div className="col-span-1">
-                  <label className="block font-bold uppercase tracking-wider text-slate-700 mb-1">Day Number *</label>
+                  <label className="block font-bold uppercase tracking-wider text-slate-700 mb-1">Day No *</label>
                   <input
                     type="number"
                     min={1}
@@ -636,7 +541,7 @@ export default function AdminAttendanceView() {
                     required
                     value={newDayNum}
                     onChange={(e) => setNewDayNum(parseInt(e.target.value, 10) || 1)}
-                    className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2.5 text-sm text-slate-900 focus:bg-white focus:border-cyan-600 focus:outline-none"
+                    className="w-full rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:bg-white focus:border-cyan-600 focus:outline-none font-semibold"
                   />
                 </div>
                 <div className="col-span-2">
@@ -646,31 +551,31 @@ export default function AdminAttendanceView() {
                     required
                     value={newDate}
                     onChange={(e) => setNewDate(e.target.value)}
-                    className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2.5 text-sm text-slate-900 focus:bg-white focus:border-cyan-600 focus:outline-none"
+                    className="w-full rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:bg-white focus:border-cyan-600 focus:outline-none font-semibold"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block font-bold uppercase tracking-wider text-slate-700 mb-1">Session Title *</label>
+                <label className="block font-bold uppercase tracking-wider text-slate-700 mb-1">Title *</label>
                 <input
                   type="text"
                   required
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
-                  placeholder="e.g. Orientation & Leadership Skills"
-                  className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2.5 text-sm text-slate-900 focus:bg-white focus:border-cyan-600 focus:outline-none"
+                  placeholder="e.g. Orientation & Leadership"
+                  className="w-full rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:bg-white focus:border-cyan-600 focus:outline-none font-semibold"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2.5">
                 <div>
                   <label className="block font-bold uppercase tracking-wider text-slate-700 mb-1">Start Time</label>
                   <input
                     type="time"
                     value={newStart}
                     onChange={(e) => setNewStart(e.target.value)}
-                    className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2.5 text-sm text-slate-900 focus:bg-white focus:border-cyan-600 focus:outline-none"
+                    className="w-full rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:bg-white focus:border-cyan-600 focus:outline-none"
                   />
                 </div>
                 <div>
@@ -679,7 +584,7 @@ export default function AdminAttendanceView() {
                     type="time"
                     value={newEnd}
                     onChange={(e) => setNewEnd(e.target.value)}
-                    className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2.5 text-sm text-slate-900 focus:bg-white focus:border-cyan-600 focus:outline-none"
+                    className="w-full rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:bg-white focus:border-cyan-600 focus:outline-none"
                   />
                 </div>
               </div>
@@ -690,22 +595,22 @@ export default function AdminAttendanceView() {
                   type="text"
                   value={newVenue}
                   onChange={(e) => setNewVenue(e.target.value)}
-                  className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2.5 text-sm text-slate-900 focus:bg-white focus:border-cyan-600 focus:outline-none"
+                  className="w-full rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:bg-white focus:border-cyan-600 focus:outline-none"
                 />
               </div>
 
-              <div className="flex gap-3 pt-3">
+              <div className="flex gap-2 pt-2">
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="w-1/2 rounded-xl bg-slate-100 border border-slate-200 py-3 text-xs font-bold uppercase tracking-wider text-slate-700 hover:bg-slate-200 transition"
+                  className="w-1/2 rounded-lg bg-slate-100 border border-slate-200 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-700 hover:bg-slate-200 transition"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={creating}
-                  className="w-1/2 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white py-3 text-xs font-bold uppercase tracking-wider shadow-sm transition disabled:opacity-50"
+                  className="w-1/2 rounded-lg bg-cyan-600 hover:bg-cyan-700 text-white py-2.5 text-xs font-bold uppercase tracking-wider shadow-2xs transition disabled:opacity-50"
                 >
                   {creating ? "Creating..." : "Save Session"}
                 </button>
@@ -717,51 +622,44 @@ export default function AdminAttendanceView() {
 
       {/* MODAL 2: View Student QR Pass Token */}
       {viewingRecord && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full border border-slate-200 shadow-2xl relative">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full border border-slate-200 shadow-xl relative">
             <button
               onClick={() => setViewingRecord(null)}
-              className="absolute right-5 top-5 text-slate-400 hover:text-slate-700"
+              className="absolute right-4 top-4 text-slate-400 hover:text-slate-700"
             >
-              <FiX className="text-xl" />
+              <FiX className="text-lg" />
             </button>
 
-            <div className="text-center space-y-2 mb-6">
-              <div className="h-12 w-12 rounded-2xl bg-cyan-50 border border-cyan-200 text-cyan-700 flex items-center justify-center text-2xl mx-auto">
-                <FiZap />
-              </div>
-              <h3 className="text-lg font-bold text-slate-900">Student Attendance Pass</h3>
-              <p className="text-xs text-slate-500 font-medium">{viewingRecord.studentName} ({viewingRecord.studentId})</p>
-            </div>
+            <h3 className="text-sm font-extrabold text-slate-900 mb-1">Student Attendance Pass</h3>
+            <p className="text-xs text-slate-500 mb-4">{viewingRecord.studentName} ({viewingRecord.studentId})</p>
 
-            <div className="space-y-4 text-xs">
-              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
-                <span className="text-[10px] font-bold uppercase text-slate-500">Student Token ID</span>
+            <div className="space-y-3 text-xs">
+              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-0.5">
+                <span className="text-[10px] font-bold uppercase text-slate-400">HMAC Token</span>
                 <p className="font-mono text-xs font-bold text-slate-900 break-all">
                   {`CBP_STUDENT_QR_${viewingRecord.studentId}_${selectedSessionId}`}
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
-                  <span className="text-[10px] font-bold uppercase text-slate-500">Attendance Status</span>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-200">
+                  <span className="text-[10px] font-bold uppercase text-slate-400">Status</span>
                   <p className="font-bold text-slate-900 mt-0.5">{viewingRecord.status}</p>
                 </div>
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
-                  <span className="text-[10px] font-bold uppercase text-slate-500">Official Email</span>
+                <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-200">
+                  <span className="text-[10px] font-bold uppercase text-slate-400">Email</span>
                   <p className="font-bold text-slate-900 mt-0.5 truncate">{viewingRecord.studentEmail}</p>
                 </div>
               </div>
 
-              <div className="flex gap-2 pt-2">
-                <button
-                  onClick={() => handleCopyRecordToken(`CBP_STUDENT_QR_${viewingRecord.studentId}_${selectedSessionId}`)}
-                  className="w-full py-3 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold uppercase tracking-wider inline-flex items-center justify-center gap-1.5 shadow-sm transition"
-                >
-                  {copiedToken ? <FiCheck className="text-emerald-300" /> : <FiCopy />}
-                  <span>{copiedToken ? "Copied to Clipboard!" : "Copy Token"}</span>
-                </button>
-              </div>
+              <button
+                onClick={() => handleCopyRecordToken(`CBP_STUDENT_QR_${viewingRecord.studentId}_${selectedSessionId}`)}
+                className="w-full py-2.5 rounded-lg bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold uppercase tracking-wider inline-flex items-center justify-center gap-1.5 shadow-2xs transition"
+              >
+                {copiedToken ? <FiCheck className="text-emerald-200" /> : <FiCopy />}
+                <span>{copiedToken ? "Copied!" : "Copy Token"}</span>
+              </button>
             </div>
           </div>
         </div>

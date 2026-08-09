@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import { FiSearch } from "react-icons/fi"
+import { FilterBar } from "@/components/ui/FilterBar"
 
 interface StudentFiltersProps {
   search: string
@@ -26,72 +26,69 @@ export default function StudentFilters({
   setAttFilter,
   setPage,
 }: StudentFiltersProps) {
+  const filters = [
+    {
+      id: "payFilter",
+      value: payFilter,
+      onChange: (val: string) => {
+        setPayFilter(val)
+        setPage(0)
+      },
+      options: [
+        { label: "Payment: All", value: "ALL" },
+        { label: "Fee Paid", value: "SUCCESS" },
+        { label: "Fee Pending", value: "PENDING" },
+      ],
+    },
+    {
+      id: "regFilter",
+      value: regFilter,
+      onChange: (val: string) => {
+        setRegFilter(val)
+        setPage(0)
+      },
+      options: [
+        { label: "Registration: All", value: "ALL" },
+        { label: "Registered", value: "REGISTERED" },
+        { label: "Incomplete", value: "PENDING" },
+      ],
+    },
+    {
+      id: "attFilter",
+      value: attFilter,
+      onChange: (val: string) => {
+        setAttFilter(val)
+        setPage(0)
+      },
+      options: [
+        { label: "Attendance: All", value: "ALL" },
+        { label: "Eligible (≥75%)", value: "ELIGIBLE" },
+        { label: "Below ( <75%)", value: "NOT_ELIGIBLE" },
+      ],
+    },
+  ]
+
+  const hasActiveFilters =
+    search.trim() !== "" || regFilter !== "ALL" || payFilter !== "ALL" || attFilter !== "ALL"
+
+  const handleReset = () => {
+    setSearch("")
+    setRegFilter("ALL")
+    setPayFilter("ALL")
+    setAttFilter("ALL")
+    setPage(0)
+  }
+
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        {/* Search Bar */}
-        <div className="relative">
-          <FiSearch className="absolute left-3.5 top-3 text-slate-400 text-xs" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value)
-              setPage(0)
-            }}
-            placeholder="Search students by ID, name, email or phone..."
-            className="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 focus:outline-none focus:border-cyan-600 focus:bg-white"
-          />
-        </div>
-
-        {/* Payment Status Filter */}
-        <div>
-          <select
-            value={payFilter}
-            onChange={(e) => {
-              setPayFilter(e.target.value)
-              setPage(0)
-            }}
-            className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-800 font-semibold focus:outline-none focus:border-cyan-600"
-          >
-            <option value="ALL">Payment: All</option>
-            <option value="SUCCESS">Paid (Success)</option>
-            <option value="PENDING">Pending Payment</option>
-          </select>
-        </div>
-
-        {/* Registration Status Filter */}
-        <div>
-          <select
-            value={regFilter}
-            onChange={(e) => {
-              setRegFilter(e.target.value)
-              setPage(0)
-            }}
-            className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-800 font-semibold focus:outline-none focus:border-cyan-600"
-          >
-            <option value="ALL">Registration: All</option>
-            <option value="REGISTERED">Registered</option>
-            <option value="PENDING">Incomplete</option>
-          </select>
-        </div>
-
-        {/* Attendance Eligibility Filter */}
-        <div>
-          <select
-            value={attFilter}
-            onChange={(e) => {
-              setAttFilter(e.target.value)
-              setPage(0)
-            }}
-            className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-800 font-semibold focus:outline-none focus:border-cyan-600"
-          >
-            <option value="ALL">Attendance: All</option>
-            <option value="ELIGIBLE">Eligible for Certificate (≥75%)</option>
-            <option value="NOT_ELIGIBLE">Below Requirement (&lt;75%)</option>
-          </select>
-        </div>
-      </div>
-    </div>
+    <FilterBar
+      search={search}
+      onSearchChange={(val) => {
+        setSearch(val)
+        setPage(0)
+      }}
+      searchPlaceholder="Search by ID, name, email or phone..."
+      filters={filters}
+      onResetFilters={hasActiveFilters ? handleReset : undefined}
+    />
   )
 }

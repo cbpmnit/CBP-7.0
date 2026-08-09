@@ -119,7 +119,7 @@ function SidebarNavContent({ allowedPermissions }: SidebarNavigationProps) {
 
   return (
     <aside
-      className={`fixed left-4 top-1/2 -translate-y-1/2 z-40 transition-all duration-300 ${
+      className={`hidden md:flex fixed left-4 top-1/2 -translate-y-1/2 z-40 transition-all duration-300 ${
         hideDock ? "opacity-0 pointer-events-none translate-x-[-16px]" : "opacity-100 translate-x-0"
       }`}
       aria-label="Floating Vertical Sidebar Dock"

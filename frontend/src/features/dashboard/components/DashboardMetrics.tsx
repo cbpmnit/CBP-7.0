@@ -19,11 +19,11 @@ export interface DashboardMetricsProps {
 export function DashboardMetrics({ summary, loading = false }: DashboardMetricsProps) {
   if (loading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
         {[...Array(5)].map((_, i) => (
           <div
             key={i}
-            className="h-28 bg-slate-100/70 animate-pulse rounded-2xl border border-slate-200"
+            className="h-24 bg-slate-100/70 animate-pulse rounded-2xl border border-slate-200"
           />
         ))}
       </div>
@@ -38,23 +38,23 @@ export function DashboardMetrics({ summary, loading = false }: DashboardMetricsP
     {
       title: "Total Students",
       value: registeredCount,
-      description: "Verified Student Registrations",
+      description: "Registered Accounts",
       icon: <FiUsers className="text-sm" />,
       iconColor: "blue" as const,
       href: "/admin/students",
     },
     {
-      title: "Payment Completed",
+      title: "Paid Students",
       value: paidCount,
-      description: "Fee Verified Accounts",
+      description: "Fee Verified",
       icon: <FiCreditCard className="text-sm" />,
       iconColor: "emerald" as const,
       href: "/admin/payments",
     },
     {
-      title: "Payment Pending",
+      title: "Pending Payments",
       value: pendingPaymentCount,
-      description: "Action Required Accounts",
+      description: "Action Required",
       icon: <FiClock className="text-sm" />,
       iconColor: "amber" as const,
       href: "/admin/payments",
@@ -62,7 +62,7 @@ export function DashboardMetrics({ summary, loading = false }: DashboardMetricsP
     {
       title: "Attendance",
       value: summary?.todayAttendance ?? 0,
-      description: "Auditorium Gate Check-ins",
+      description: "Gate Check-ins",
       icon: <FiCheckSquare className="text-sm" />,
       iconColor: "cyan" as const,
       href: "/admin/attendance",
@@ -70,7 +70,7 @@ export function DashboardMetrics({ summary, loading = false }: DashboardMetricsP
     {
       title: "Certificates",
       value: summary?.certificatesIssued ?? 0,
-      description: "75%+ Attendance Issued",
+      description: "75%+ Eligible",
       icon: <FiAward className="text-sm" />,
       iconColor: "purple" as const,
       href: "/admin/certificates",
@@ -78,7 +78,7 @@ export function DashboardMetrics({ summary, loading = false }: DashboardMetricsP
   ]
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
       {metrics.map((metric) => (
         <MetricCard
           key={metric.title}

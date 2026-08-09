@@ -229,166 +229,173 @@ function HeaderComponent() {
 
       {/* Mobile Drawer */}
       <aside
-        className={`fixed right-0 top-0 z-[60] h-screen w-[85vw] max-w-xs sm:w-80 bg-white border-l border-slate-200 shadow-2xl transition-transform duration-300 md:hidden ${
-          isMenuOpen ? "translate-x-0" : "translate-x-full"
+        className={`fixed right-0 top-0 z-[60] h-screen w-[85vw] max-w-sm bg-white border-l border-slate-200 shadow-2xl transition-transform duration-300 ease-out md:hidden flex flex-col justify-between ${
+          isMenuOpen ? "translate-x-0 menu-open" : "translate-x-full"
         }`}
       >
-        <div className="flex h-16 sm:h-20 items-center justify-between border-b border-slate-100 px-5 sm:px-6 bg-slate-50">
-          <span className="text-base sm:text-lg font-bold gradient-text-cyan tracking-wider">CBP PORTAL</span>
+        {/* Header */}
+        <div className="flex h-16 sm:h-20 items-center justify-between border-b border-slate-100 px-5 bg-slate-50 shrink-0">
+          <Link href="/" onClick={handleCloseMobileMenu} className="flex items-center gap-2">
+            <div className="relative h-8 w-28 shrink-0">
+              <div
+                className="h-full w-full"
+                style={{
+                  WebkitMaskImage: "url(/favicon/logo-landscape.webp)",
+                  maskImage: "url(/favicon/logo-landscape.webp)",
+                  WebkitMaskSize: "contain",
+                  maskSize: "contain",
+                  WebkitMaskRepeat: "no-repeat",
+                  maskRepeat: "no-repeat",
+                  WebkitMaskPosition: "center",
+                  maskPosition: "center",
+                  background: "linear-gradient(180deg, #00d4ff 0%, #0284c7 50%, #1e40af 100%)",
+                }}
+                aria-label="CBP 7.0 Logo"
+              />
+            </div>
+          </Link>
           <button
             onClick={handleCloseMobileMenu}
-            className="flex h-8 w-8 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 text-xl transition hover:bg-slate-100"
+            className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 text-xl transition hover:bg-slate-100 cursor-pointer"
             aria-label="Close menu"
           >
             <FiX />
           </button>
         </div>
 
-        <nav className="flex flex-col py-3">
-          {navLinks.map((link) => {
-            const isActive = pathname === link.path
-            return (
-              <Link
-                key={link.name}
-                href={link.path}
-                onClick={handleCloseMobileMenu}
-                className={`flex items-center justify-between border-b border-slate-100 px-5 py-3 text-sm transition duration-200 ${
-                  isActive
-                    ? "bg-cyan-50 text-cyan-800 font-bold border-l-4 border-l-cyan-600 pl-7"
-                    : "text-slate-700 hover:bg-slate-50 hover:text-cyan-700"
-                }`}
-              >
-                <span>{link.name}</span>
-              </Link>
-            )
-          })}
-
-          <div className="mt-4 px-5 flex flex-col gap-2">
-            {isAuthenticated ? (
-              <>
-                {normalizedRole === "ROLE_ADMIN" || normalizedRole === "ADMIN" ? (
-                  <>
-                    <Link
-                      href="/admin/dashboard"
-                      onClick={handleCloseMobileMenu}
-                      className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-bold uppercase tracking-wider"
-                    >
-                      <FiGrid /> Admin Dashboard
-                    </Link>
-                    <Link
-                      href="/admin/students"
-                      onClick={handleCloseMobileMenu}
-                      className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-slate-100 text-slate-800 text-xs font-semibold"
-                    >
-                      <FiUser /> Students
-                    </Link>
-                    <Link
-                      href="/admin/attendance"
-                      onClick={handleCloseMobileMenu}
-                      className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-slate-100 text-slate-800 text-xs font-semibold"
-                    >
-                      <FiCalendar /> Attendance
-                    </Link>
-                    <Link
-                      href="/admin/volunteers"
-                      onClick={handleCloseMobileMenu}
-                      className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-slate-100 text-slate-800 text-xs font-semibold"
-                    >
-                      <FiUser /> Volunteers
-                    </Link>
-                    <Link
-                      href="/admin/notifications"
-                      onClick={handleCloseMobileMenu}
-                      className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-slate-100 text-slate-800 text-xs font-semibold"
-                    >
-                      <FiBell /> Email Templates
-                    </Link>
-                  </>
-                ) : normalizedRole === "ROLE_VOLUNTEER" || normalizedRole === "VOLUNTEER" ? (
-                  <>
-                    <Link
-                      href="/volunteer/profile"
-                      onClick={handleCloseMobileMenu}
-                      className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-bold uppercase tracking-wider"
-                    >
-                      <FiUser /> My Profile
-                    </Link>
-                    <Link
-                      href="/volunteer/scanner"
-                      onClick={handleCloseMobileMenu}
-                      className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-slate-100 text-slate-800 text-xs font-semibold"
-                    >
-                      <FiCalendar /> Attendance Scanner
-                    </Link>
-                  </>
-                ) : (
-                  <>
-                    <Link
-                      href="/dashboard"
-                      onClick={handleCloseMobileMenu}
-                      className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-bold uppercase tracking-wider"
-                    >
-                      <FiGrid /> Dashboard
-                    </Link>
-                    <Link
-                      href="/profile"
-                      onClick={handleCloseMobileMenu}
-                      className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-slate-100 text-slate-800 text-xs font-semibold"
-                    >
-                      <FiUser /> My Profile
-                    </Link>
-                    <Link
-                      href="/attendance"
-                      onClick={handleCloseMobileMenu}
-                      className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-slate-100 text-slate-800 text-xs font-semibold"
-                    >
-                      <FiCalendar /> Attendance
-                    </Link>
-                    <Link
-                      href="/certificate"
-                      onClick={handleCloseMobileMenu}
-                      className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-slate-100 text-slate-800 text-xs font-semibold"
-                    >
-                      <FiAward /> Certificates
-                    </Link>
-                    <Link
-                      href="/payment"
-                      onClick={handleCloseMobileMenu}
-                      className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-slate-100 text-slate-800 text-xs font-semibold"
-                    >
-                      <FiCreditCard /> Payments
-                    </Link>
-                  </>
-                )}
-
-                <button
-                  onClick={handleLogout}
-                  className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 text-xs font-bold uppercase tracking-wider mt-2"
-                >
-                  <FiLogOut /> Logout
-                </button>
-              </>
-            ) : (
-              <>
-                <Link
-                  href="/login"
-                  onClick={handleCloseMobileMenu}
-                  className="inline-flex items-center justify-center gap-2 w-full rounded-xl border border-cyan-600/30 bg-cyan-50 text-cyan-800 text-center px-4 py-3 text-xs font-bold uppercase tracking-wider"
-                >
-                  <FiUser className="h-4 w-4" />
-                  <span>LOGIN</span>
-                </Link>
-                <Link
-                  href="/registration"
-                  onClick={handleCloseMobileMenu}
-                  className="block w-full rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 text-white text-center px-4 py-3 text-xs font-bold uppercase tracking-wider shadow-sm"
-                >
-                  REGISTER NOW
-                </Link>
-              </>
-            )}
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto py-3">
+          {/* SECTION 1: PUBLIC NAVIGATION */}
+          <div className="px-5 pb-2">
+            <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">
+              Explore CBP
+            </span>
           </div>
-        </nav>
+          <nav className="flex flex-col">
+            {navLinks.map((link, index) => {
+              const isActive = pathname === link.path
+              return (
+                <Link
+                  key={link.name}
+                  href={link.path}
+                  onClick={handleCloseMobileMenu}
+                  className={`stagger-item flex items-center justify-between border-b border-slate-100 px-5 py-3.5 text-xs font-bold uppercase tracking-wider transition duration-200 ${
+                    isActive
+                      ? "bg-cyan-50/60 text-cyan-800 border-l-4 border-l-cyan-600 pl-7"
+                      : "text-slate-700 hover:bg-slate-50 hover:text-cyan-700"
+                  }`}
+                  style={{ animationDelay: `${index * 40}ms` }}
+                >
+                  <span>{link.name}</span>
+                </Link>
+              )
+            })}
+          </nav>
+
+          {/* SECTION 2: AUTHENTICATED AREA */}
+          {isAuthenticated && (
+            <div className="mt-6 px-5 border-t border-slate-100 pt-6 stagger-item" style={{ animationDelay: `${navLinks.length * 40}ms` }}>
+              <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-3">
+                Account & Workspace
+              </span>
+
+              {normalizedRole === "ROLE_ADMIN" || normalizedRole === "ADMIN" ? (
+                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3 shadow-2xs">
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-900">Admin Portal</h4>
+                    <p className="text-[11px] text-slate-500 mt-1 leading-snug">
+                      Manage registrations, attendance, payments and certificates
+                    </p>
+                  </div>
+                  <Link
+                    href="/admin/dashboard"
+                    onClick={handleCloseMobileMenu}
+                    className="block w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold text-center uppercase tracking-wider transition shadow-sm active-press"
+                  >
+                    Open Dashboard
+                  </Link>
+                </div>
+              ) : normalizedRole === "ROLE_VOLUNTEER" || normalizedRole === "VOLUNTEER" ? (
+                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3 shadow-2xs">
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-900">Volunteer Portal</h4>
+                    <p className="text-[11px] text-slate-500 mt-1 leading-snug">
+                      Scan attendance and manage sessions
+                    </p>
+                  </div>
+                  <Link
+                    href="/volunteer/scanner"
+                    onClick={handleCloseMobileMenu}
+                    className="block w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold text-center uppercase tracking-wider transition shadow-sm active-press"
+                  >
+                    Open Dashboard
+                  </Link>
+                </div>
+              ) : (
+                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3 shadow-2xs">
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-900">Student Portal</h4>
+                    <p className="text-[11px] text-slate-500 mt-1 leading-snug">
+                      View profile, payment, attendance and certificates
+                    </p>
+                  </div>
+                  <Link
+                    href="/dashboard"
+                    onClick={handleCloseMobileMenu}
+                    className="block w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold text-center uppercase tracking-wider transition shadow-sm active-press"
+                  >
+                    Open Dashboard
+                  </Link>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        {isAuthenticated ? (
+          <div className="border-t border-slate-100 p-5 bg-slate-50 flex items-center justify-between gap-3 shrink-0">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="h-9 w-9 rounded-full bg-cyan-50 border border-cyan-200 flex items-center justify-center text-cyan-800 text-xs font-bold uppercase shrink-0">
+                {name ? name.substring(0, 2) : "US"}
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-slate-900 truncate">{name || "User"}</p>
+                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">
+                  {role ? role.replace("ROLE_", "") : "Member"}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                handleCloseMobileMenu()
+                handleLogout()
+              }}
+              className="h-9 w-9 rounded-xl border border-rose-200 bg-rose-50 text-rose-600 flex items-center justify-center text-base hover:bg-rose-100 transition shrink-0 cursor-pointer active-press"
+              aria-label="Logout"
+            >
+              <FiLogOut />
+            </button>
+          </div>
+        ) : (
+          <div className="border-t border-slate-100 p-5 bg-slate-50 flex flex-col gap-2 shrink-0">
+            <Link
+              href="/login"
+              onClick={handleCloseMobileMenu}
+              className="inline-flex items-center justify-center gap-2 w-full rounded-xl border border-cyan-600/30 bg-cyan-50 text-cyan-800 text-center py-2.5 text-xs font-bold uppercase tracking-wider active-press"
+            >
+              <FiUser className="h-4 w-4" />
+              <span>Login</span>
+            </Link>
+            <Link
+              href="/registration"
+              onClick={handleCloseMobileMenu}
+              className="block w-full rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 text-white text-center py-2.5 text-xs font-bold uppercase tracking-wider shadow-sm text-center active-press"
+            >
+              Register Now
+            </Link>
+          </div>
+        )}
       </aside>
     </>
   )

@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import { ModuleCard } from "@/components/ui/ModuleCard"
+import Link from "next/link"
 import {
   FiUsers,
   FiUserPlus,
@@ -10,90 +10,88 @@ import {
   FiCreditCard,
   FiAward,
   FiMail,
+  FiArrowRight,
 } from "react-icons/fi"
 
 export function ModuleGrid() {
-  const modules = [
+  const quickActions = [
     {
-      title: "Student Management",
-      description: "Search, filter, view academic profiles, and manage student registration dossiers.",
-      icon: <FiUsers className="text-base" />,
-      iconColor: "blue" as const,
+      title: "Students",
+      desc: "Directory & dossiers",
+      icon: <FiUsers />,
       href: "/admin/students",
-      ctaText: "Manage Students",
+      color: "text-blue-700 bg-blue-50 border-blue-200",
     },
     {
-      title: "Volunteer Management",
-      description: "Invite student volunteers, assign permission scopes, and manage active scanner passes.",
-      icon: <FiUserPlus className="text-base" />,
-      iconColor: "cyan" as const,
+      title: "Volunteers",
+      desc: "Roster & scopes",
+      icon: <FiUserPlus />,
       href: "/admin/volunteers",
-      ctaText: "Manage Volunteers",
+      color: "text-cyan-700 bg-cyan-50 border-cyan-200",
     },
     {
-      title: "Session Management",
-      description: "Schedule workshop days, configure session venues, and manage day attendance windows.",
-      icon: <FiCalendar className="text-base" />,
-      iconColor: "cyan" as const,
+      title: "Sessions",
+      desc: "Schedules & QRs",
+      icon: <FiCalendar />,
       href: "/admin/sessions",
-      ctaText: "Manage Sessions",
+      color: "text-cyan-700 bg-cyan-50 border-cyan-200",
     },
     {
-      title: "Attendance Management",
-      description: "Monitor live auditorium gate check-in logs, generate student passes, and track stats.",
-      icon: <FiCamera className="text-base" />,
-      iconColor: "blue" as const,
+      title: "Attendance",
+      desc: "Live gate logs",
+      icon: <FiCamera />,
       href: "/admin/attendance",
-      ctaText: "Manage Attendance",
+      color: "text-blue-700 bg-blue-50 border-blue-200",
     },
     {
-      title: "Payment Management",
-      description: "Inspect PhonePe transaction IDs, fee reconciliation status, and payment logs.",
-      icon: <FiCreditCard className="text-base" />,
-      iconColor: "emerald" as const,
+      title: "Payments",
+      desc: "Reconciliation",
+      icon: <FiCreditCard />,
       href: "/admin/payments",
-      ctaText: "Manage Payments",
+      color: "text-emerald-700 bg-emerald-50 border-emerald-200",
     },
     {
-      title: "Certificate Management",
-      description: "Issue tamper-proof certificates for students satisfying the 75%+ attendance threshold.",
-      icon: <FiAward className="text-base" />,
-      iconColor: "purple" as const,
+      title: "Certificates",
+      desc: "Batch issuance",
+      icon: <FiAward />,
       href: "/admin/certificates",
-      ctaText: "Manage Certificates",
+      color: "text-purple-700 bg-purple-50 border-purple-200",
     },
     {
-      title: "Email Management",
-      description: "Configure automated email templates for QR passes, payment receipts, and certificates.",
-      icon: <FiMail className="text-base" />,
-      iconColor: "cyan" as const,
+      title: "Email Templates",
+      desc: "System notifications",
+      icon: <FiMail />,
       href: "/admin/emails",
-      ctaText: "Manage Emails",
+      color: "text-cyan-700 bg-cyan-50 border-cyan-200",
     },
   ]
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h2 className="text-sm font-extrabold uppercase tracking-wider text-slate-800">
-          Administrative Operations &amp; Modules
-        </h2>
-        <p className="text-xs text-slate-500 mt-0.5">
-          Access all administrative capabilities and platform operations
-        </p>
-      </div>
+    <div className="space-y-3">
+      <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+        Quick Management
+      </h2>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {modules.map((mod) => (
-          <ModuleCard
-            key={mod.title}
-            title={mod.title}
-            description={mod.description}
-            icon={mod.icon}
-            iconColor={mod.iconColor}
-            href={mod.href}
-            ctaText={mod.ctaText}
-          />
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+        {quickActions.map((item) => (
+          <Link
+            key={item.title}
+            href={item.href}
+            className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm hover:border-slate-300 hover:shadow-md transition flex items-center justify-between gap-3 group"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <div
+                className={`h-9 w-9 rounded-xl border flex items-center justify-center text-lg shrink-0 ${item.color}`}
+              >
+                {item.icon}
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-xs font-bold text-slate-900 truncate">{item.title}</h3>
+                <p className="text-[11px] text-slate-500 truncate">{item.desc}</p>
+              </div>
+            </div>
+            <FiArrowRight className="text-slate-300 group-hover:text-cyan-600 group-hover:translate-x-0.5 transition shrink-0" />
+          </Link>
         ))}
       </div>
     </div>

@@ -56,7 +56,7 @@ export default function StudentDetailModal({
                 </span>
               </div>
               <p className="text-xs text-slate-500 font-mono mt-0.5">
-                {studentDetail?.student.email || "Loading dossier..."}
+                {studentDetail?.student.email || "Loading profile..."}
               </p>
             </div>
           </div>

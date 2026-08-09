@@ -5,8 +5,9 @@ import Link from "next/link"
 import PageTransition from "@/components/animations/PageTransition"
 import PermissionGuard from "@/components/auth/PermissionGuard"
 import { useSessions } from "../hooks/useSessions"
+import { PageHeader } from "@/components/ui/PageHeader"
+import { StatusBadge } from "@/components/ui/StatusBadge"
 import {
-  FiCalendar,
   FiClock,
   FiMapPin,
   FiCamera,
@@ -14,7 +15,6 @@ import {
   FiCheckCircle,
   FiAlertCircle,
   FiUsers,
-  FiShield,
   FiZap,
 } from "react-icons/fi"
 
@@ -36,203 +36,139 @@ export default function SessionManagement() {
 
   return (
     <PageTransition>
-      <main className="py-8 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto space-y-6">
-        <PermissionGuard requiredPermission="SESSION_VIEW">
-          {/* Header Banner */}
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-cyan-50 text-cyan-800 border border-cyan-200">
-                  <FiCalendar /> Workshop Schedules
-                </span>
-                <span className="text-[10px] font-mono font-bold text-slate-400">MNIT Jaipur</span>
-              </div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
-                Session <span className="gradient-text-cyan">Management</span>
-              </h1>
-              <p className="mt-1.5 text-xs sm:text-sm text-slate-600 leading-relaxed">
-                Configure workshop schedules and manage individual student attendance QR passes.
-              </p>
-            </div>
-
-            <Link
-              href="/admin/attendance"
-              className="inline-flex items-center gap-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 px-4 py-2.5 text-xs font-bold uppercase tracking-wider transition shadow-sm"
-            >
-              <FiCamera /> Live Gate Logs
-            </Link>
-          </div>
+      <PermissionGuard requiredPermission="SESSION_VIEW">
+        <div className="space-y-4">
+          {/* Header */}
+          <PageHeader
+            title="Session Management"
+            count={sessions.length}
+            countLabel="sessions"
+            subtitle="Workshop day schedules and student QR gate pass generation"
+            actions={
+              <Link
+                href="/admin/attendance"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition shadow-2xs cursor-pointer"
+              >
+                <FiCamera className="text-xs text-slate-500" /> Live Gate Logs
+              </Link>
+            }
+          />
 
           {/* Sessions List Cards */}
           {loadingSessions ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-pulse">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 animate-pulse">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-28 bg-slate-100 rounded-2xl border border-slate-200" />
+                <div key={i} className="h-20 bg-slate-100 rounded-xl border border-slate-200" />
               ))}
             </div>
           ) : sessions.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
               {sessions.map((s) => (
                 <div
                   key={s.id}
                   onClick={() => setSelectedSessionId(s.id)}
-                  className={`bg-white border rounded-2xl p-5 shadow-sm transition cursor-pointer ${
+                  className={`bg-white border rounded-xl p-3.5 shadow-2xs transition cursor-pointer flex flex-col justify-between ${
                     selectedSessionId === s.id
-                      ? "border-cyan-500 ring-2 ring-cyan-500/20"
+                      ? "border-cyan-600 ring-1 ring-cyan-500/30 bg-cyan-50/20"
                       : "border-slate-200 hover:border-slate-300"
                   }`}
                 >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-cyan-50 text-cyan-800 border border-cyan-200">
-                      Day {s.dayNumber}
-                    </span>
-                    <span
-                      className={`text-[10px] font-bold uppercase ${
-                        s.status === "ACTIVE" ? "text-emerald-600 font-extrabold" : "text-slate-400"
-                      }`}
-                    >
-                      {s.status}
-                    </span>
-                  </div>
-                  <h3 className="text-xs font-extrabold text-slate-900 line-clamp-1">{s.title}</h3>
-                  <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-medium">
-                    <span className="flex items-center gap-1">
-                      <FiClock className="text-cyan-600" /> {s.startTime || "09:30"} - {s.endTime || "16:30"}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <FiMapPin className="text-cyan-600" /> {s.venue || "VLTC"}
-                    </span>
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[11px] font-bold font-mono text-slate-900">
+                        Day {s.dayNumber}
+                      </span>
+                      <StatusBadge status={s.status} dot={false} className="text-[9px] px-1.5 py-0" />
+                    </div>
+                    <h2 className="text-xs font-bold text-slate-900 truncate">
+                      {s.title || (s as any).sessionName}
+                    </h2>
+                    <div className="mt-1.5 space-y-0.5 text-[11px] text-slate-500 font-mono">
+                      <div className="flex items-center gap-1">
+                        <FiClock className="text-slate-400 shrink-0 text-[10px]" />
+                        <span>{s.startTime || "09:00 AM"} &ndash; {s.endTime || "05:00 PM"}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <FiMapPin className="text-slate-400 shrink-0 text-[10px]" />
+                        <span className="truncate">{s.venue || "MNIT Auditorium"}</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
-          ) : null}
+          ) : (
+            <div className="p-6 text-center bg-white border border-slate-200 rounded-xl text-slate-500 text-xs font-semibold">
+              No workshop sessions configured.
+            </div>
+          )}
 
-          {/* Student QR Pass Management Card */}
-          <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-4">
-              <div className="flex items-center gap-3">
-                <div className="h-12 w-12 rounded-2xl bg-cyan-50 text-cyan-700 border border-cyan-200 flex items-center justify-center text-2xl shrink-0">
-                  <FiShield />
-                </div>
+          {/* Selected Session QR Pass Operations */}
+          {selectedSession && (
+            <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 shadow-2xs space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-2.5 border-b border-slate-100 gap-2">
                 <div>
-                  <h3 className="text-base font-extrabold text-slate-900">Student QR Pass Management</h3>
-                  <p className="text-xs text-slate-500">
-                    Generate and manage individual student attendance QR passes for this session.
+                  <h2 className="text-xs font-extrabold uppercase tracking-wider text-slate-900">
+                    Student Gate QR Passes &mdash; {selectedSession.title || (selectedSession as any).sessionName}
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Generate and refresh HMAC QR passes for registered students
                   </p>
                 </div>
+
+                {qrStatus && (
+                  <span className="text-xs font-bold font-mono px-2.5 py-0.5 bg-slate-100 rounded-md border border-slate-200 text-slate-700 self-start sm:self-auto">
+                    {qrStatus.generatedQr} / {qrStatus.totalStudents} Generated
+                  </span>
+                )}
               </div>
 
-              {selectedSession && (
-                <div className="text-right">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-                    Selected Session
-                  </span>
-                  <span className="text-xs font-extrabold text-slate-800">
-                    Day {selectedSession.dayNumber}: {selectedSession.title}
-                  </span>
+              {/* Feedback Alerts */}
+              {message && (
+                <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-bold flex items-center gap-2">
+                  <FiCheckCircle className="text-emerald-600 shrink-0" />
+                  <span>{message}</span>
                 </div>
               )}
-            </div>
 
-            {/* QR Generation Status Metrics */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                      Total Registered Students
-                    </span>
-                    <h4 className="text-2xl font-extrabold text-slate-900 mt-1">
-                      {loadingStatus ? "-" : qrStatus?.totalRegisteredStudents ?? qrStatus?.totalStudents ?? 0}
-                    </h4>
-                  </div>
-                  <div className="h-9 w-9 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 flex items-center justify-center text-lg">
-                    <FiUsers />
-                  </div>
+              {error && (
+                <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-900 text-xs font-semibold flex items-center gap-2">
+                  <FiAlertCircle className="text-rose-600 shrink-0" />
+                  <span>{error}</span>
                 </div>
-              </div>
+              )}
 
-              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                      QR Generated
-                    </span>
-                    <h4 className="text-2xl font-extrabold text-emerald-700 mt-1">
-                      {loadingStatus ? "-" : qrStatus?.generatedQr ?? qrStatus?.qrGenerated ?? 0}
-                    </h4>
-                  </div>
-                  <div className="h-9 w-9 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center text-lg">
-                    <FiCheckCircle />
-                  </div>
+              {/* Status Summary & Action Buttons */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+                <div className="flex items-center gap-3 text-xs text-slate-600">
+                  <FiUsers className="text-cyan-700 text-sm" />
+                  <span>Eligible Students: <strong className="text-slate-900 font-mono">{qrStatus?.totalStudents ?? 0}</strong></span>
                 </div>
-              </div>
 
-              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                      Pending Generation
-                    </span>
-                    <h4 className="text-2xl font-extrabold text-amber-700 mt-1">
-                      {loadingStatus ? "-" : qrStatus?.pendingGeneration ?? qrStatus?.pendingQr ?? 0}
-                    </h4>
-                  </div>
-                  <div className="h-9 w-9 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 flex items-center justify-center text-lg">
-                    <FiAlertCircle />
-                  </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleGenerateStudentQrs}
+                    disabled={generating || loadingStatus}
+                    className="px-3.5 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold uppercase tracking-wider transition shadow-2xs disabled:opacity-50 inline-flex items-center gap-1.5 cursor-pointer"
+                  >
+                    {generating ? <FiRefreshCw className="animate-spin text-xs" /> : <FiZap className="text-xs" />}
+                    <span>Generate Passes</span>
+                  </button>
+
+                  <button
+                    onClick={handleRegenerateStudentQrs}
+                    disabled={generating || loadingStatus}
+                    className="px-3.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold uppercase tracking-wider transition border border-slate-200 disabled:opacity-50 inline-flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <FiRefreshCw className={generating ? "animate-spin text-xs" : "text-xs"} />
+                    <span>Regenerate All</span>
+                  </button>
                 </div>
               </div>
             </div>
-
-            {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-3 pt-2">
-              <button
-                type="button"
-                onClick={handleGenerateStudentQrs}
-                disabled={generating || !selectedSessionId}
-                className="flex-1 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white py-3.5 px-6 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm transition disabled:opacity-50 shadow-cyan-600/20"
-              >
-                {generating ? <FiRefreshCw className="animate-spin text-base" /> : <FiZap className="text-base" />}
-                <span>{generating ? "Generating..." : "GENERATE STUDENT QR PASSES"}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleRegenerateStudentQrs}
-                disabled={generating || !selectedSessionId}
-                className="rounded-xl bg-slate-100 border border-slate-200 hover:bg-slate-200 px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-700 transition flex items-center justify-center gap-2 disabled:opacity-50"
-              >
-                <FiRefreshCw className={generating ? "animate-spin" : ""} />
-                <span>REGENERATE QR PASSES</span>
-              </button>
-            </div>
-
-            {message && (
-              <div className="p-4 rounded-2xl border bg-emerald-50 border-emerald-200 text-emerald-950 text-xs font-bold flex items-center gap-2">
-                <FiCheckCircle className="text-emerald-600 text-base shrink-0" />
-                <span>{message}</span>
-              </div>
-            )}
-
-            {error && (
-              <div className="p-4 rounded-2xl border bg-rose-50 border-rose-200 text-rose-800 text-xs font-semibold flex items-center gap-2">
-                <FiAlertCircle className="text-rose-600 text-base shrink-0" />
-                <span>{error}</span>
-              </div>
-            )}
-
-            {/* Architecture Operational Notice */}
-            <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-1.5 text-xs">
-              <h5 className="font-bold text-slate-900">Personal Student QR Architecture</h5>
-              <p className="text-slate-600 text-[11px] leading-relaxed">
-                When passes are generated, each registered student receives a cryptographically unique token accessible on their Student Dashboard under <strong>Attendance &gt; Today&apos;s Session &gt; Personal QR Pass</strong>. Volunteers use the Attendance Scanner to authenticate passes at the auditorium gate.
-              </p>
-            </div>
-          </div>
-        </PermissionGuard>
-      </main>
+          )}
+        </div>
+      </PermissionGuard>
     </PageTransition>
   )
 }

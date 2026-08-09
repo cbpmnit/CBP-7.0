@@ -29,7 +29,6 @@ export default function StudentDashboard() {
   const quickNavPortals = [
     {
       title: "Student Profile",
-      desc: "Personal, academic, and hostel verification details.",
       href: "/profile",
       icon: <FiUser />,
       badge: isProfileComplete ? "Verified ✓" : "Pending",
@@ -39,7 +38,6 @@ export default function StudentDashboard() {
     },
     {
       title: "Attendance & QR",
-      desc: "Daily session attendance tracking and gate scanner.",
       href: "/attendance",
       icon: <FiCamera />,
       badge: `${attendancePct.toFixed(0)}% Logged`,
@@ -47,21 +45,19 @@ export default function StudentDashboard() {
     },
     {
       title: "Fee Payments",
-      desc: "PhonePe transaction status and fee receipts.",
       href: "/payment",
       icon: <FiCreditCard />,
-      badge: isPaymentSuccess ? "Paid ✓" : isCbpRegistered ? "Pending Fee" : "Registration First",
+      badge: isPaymentSuccess ? "Paid ✓" : isCbpRegistered ? "Pending Fee" : "Required",
       badgeColor: isPaymentSuccess
         ? "bg-emerald-50 text-emerald-800 border-emerald-200"
         : "bg-amber-50 text-amber-800 border-amber-200",
     },
     {
       title: "Certificates",
-      desc: "Eligibility checklist and official PDF credential download.",
       href: "/certificate",
       icon: <FiAward />,
-      badge: isCertificateIssued ? "Issued ✓" : "Module Portal",
-      badgeColor: isCertificateIssued
+      badge: isCertificateIssued ? "Issued ✓" : attendancePct >= 75 && isPaymentSuccess ? "Eligible ✓" : "Locked",
+      badgeColor: isCertificateIssued || (attendancePct >= 75 && isPaymentSuccess)
         ? "bg-emerald-50 text-emerald-800 border-emerald-200"
         : "bg-slate-100 text-slate-600 border-slate-200",
     },
@@ -76,54 +72,49 @@ export default function StudentDashboard() {
   }
 
   return (
-    <main className="py-6 px-4 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-4xl space-y-6">
-        {/* 1. Student Identity Header Card */}
-        <StudentSummary name={name} studentId={studentId} profile={profile} />
+    <div className="space-y-4">
+      {/* 1. Student Identity Header */}
+      <StudentSummary name={name} studentId={studentId} profile={profile} />
 
-        {/* 2. 4-Step Progress Roadmap & Next Action Card */}
-        <ProgressTimeline
-          isProfileComplete={isProfileComplete}
-          isRegistered={isCbpRegistered}
-          isPaymentSuccess={isPaymentSuccess}
-          attendancePercentage={attendancePct}
-          isCertificateIssued={isCertificateIssued}
-        />
+      {/* 2. 4-Step Progress Roadmap & Next Action Card */}
+      <ProgressTimeline
+        isProfileComplete={isProfileComplete}
+        isRegistered={isCbpRegistered}
+        isPaymentSuccess={isPaymentSuccess}
+        attendancePercentage={attendancePct}
+        isCertificateIssued={isCertificateIssued}
+      />
 
-        {/* 3. 4 Student Portal Modules Cards */}
-        <div>
-          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">
-            CBP Student Portal Modules
-          </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {quickNavPortals.map((portal) => (
-              <Link
-                key={portal.title}
-                href={portal.href}
-                className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm cbp-card-interactive flex items-start justify-between gap-4 group"
-              >
-                <div className="flex items-start gap-3.5 min-w-0">
-                  <div className="h-10 w-10 rounded-xl bg-slate-50 border border-slate-200 text-cyan-700 flex items-center justify-center text-xl shrink-0 group-hover:bg-cyan-600 group-hover:text-white group-hover:border-transparent transition-all">
-                    {portal.icon}
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h4 className="text-sm font-bold text-slate-900 truncate">{portal.title}</h4>
-                      <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${portal.badgeColor} shrink-0`}
-                      >
-                        {portal.badge}
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-600 leading-snug">{portal.desc}</p>
-                  </div>
+      {/* 3. Quick Portal Links */}
+      <div>
+        <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
+          Quick Navigation
+        </h2>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {quickNavPortals.map((portal) => (
+            <Link
+              key={portal.title}
+              href={portal.href}
+              className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm hover:border-slate-300 hover:shadow-md transition flex flex-col justify-between gap-3 group"
+            >
+              <div className="flex items-center justify-between">
+                <div className="h-9 w-9 rounded-xl bg-slate-50 border border-slate-200 text-cyan-700 flex items-center justify-center text-lg shrink-0 group-hover:bg-cyan-600 group-hover:text-white group-hover:border-transparent transition">
+                  {portal.icon}
                 </div>
-                <FiArrowRight className="text-slate-400 group-hover:text-cyan-600 group-hover:translate-x-0.5 transition shrink-0 mt-1" />
-              </Link>
-            ))}
-          </div>
+                <FiArrowRight className="text-slate-300 group-hover:text-cyan-600 group-hover:translate-x-0.5 transition" />
+              </div>
+              <div>
+                <h3 className="text-xs font-bold text-slate-900 truncate">{portal.title}</h3>
+                <span
+                  className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full border mt-1.5 ${portal.badgeColor}`}
+                >
+                  {portal.badge}
+                </span>
+              </div>
+            </Link>
+          ))}
         </div>
       </div>
-    </main>
+    </div>
   )
 }

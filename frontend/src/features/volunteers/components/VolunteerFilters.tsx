@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import { FiUsers, FiClock, FiSearch } from "react-icons/fi"
+import { FiUsers, FiClock, FiSearch, FiX } from "react-icons/fi"
 import { VolunteerTab } from "../hooks/useVolunteers"
 
 interface VolunteerFiltersProps {
@@ -22,21 +22,22 @@ export default function VolunteerFilters({
   setSearch,
 }: VolunteerFiltersProps) {
   return (
-    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-      <div className="bg-white border border-slate-200 p-1.5 rounded-2xl shadow-sm inline-flex items-center gap-1 self-start">
+    <div className="bg-white border border-slate-200 rounded-xl p-2 sm:p-2.5 shadow-2xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+      {/* Compact Tab Switcher */}
+      <div className="bg-slate-100 p-0.5 rounded-lg inline-flex items-center gap-1 self-start sm:self-auto">
         <button
           onClick={() => setActiveTab("active")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition ${
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition cursor-pointer ${
             activeTab === "active"
-              ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-sm shadow-cyan-600/20"
-              : "text-slate-600 hover:text-cyan-700 hover:bg-cyan-50/50"
+              ? "bg-white text-slate-900 shadow-2xs"
+              : "text-slate-600 hover:text-slate-900"
           }`}
         >
-          <FiUsers className="text-sm" />
+          <FiUsers className="text-xs" />
           <span>Active Volunteers</span>
           <span
-            className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
-              activeTab === "active" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-700"
+            className={`px-1.5 py-0.2 rounded text-[10px] font-mono font-bold ${
+              activeTab === "active" ? "bg-slate-100 text-slate-900" : "text-slate-500"
             }`}
           >
             {activeCount}
@@ -45,17 +46,17 @@ export default function VolunteerFilters({
 
         <button
           onClick={() => setActiveTab("pending")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition ${
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition cursor-pointer ${
             activeTab === "pending"
-              ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-sm shadow-cyan-600/20"
-              : "text-slate-600 hover:text-cyan-700 hover:bg-cyan-50/50"
+              ? "bg-white text-slate-900 shadow-2xs"
+              : "text-slate-600 hover:text-slate-900"
           }`}
         >
-          <FiClock className="text-sm" />
+          <FiClock className="text-xs" />
           <span>Pending Invitations</span>
           <span
-            className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
-              activeTab === "pending" ? "bg-white/20 text-white" : "bg-amber-100 text-amber-900"
+            className={`px-1.5 py-0.2 rounded text-[10px] font-mono font-bold ${
+              activeTab === "pending" ? "bg-amber-100 text-amber-900" : "text-slate-500"
             }`}
           >
             {pendingCount}
@@ -63,20 +64,28 @@ export default function VolunteerFilters({
         </button>
       </div>
 
-      {/* Search Toolbar */}
-      <div className="relative w-full sm:w-72">
-        <FiSearch className="absolute left-3.5 top-3 text-slate-400 text-xs" />
+      {/* Aligned Search Box */}
+      <div className="relative w-full sm:w-64">
+        <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder={
             activeTab === "active"
-              ? "Search active volunteer..."
-              : "Search pending invitation..."
+              ? "Search by name or email..."
+              : "Search invitations..."
           }
-          className="w-full pl-9 pr-4 py-2 rounded-xl bg-white border border-slate-200 text-xs font-medium text-slate-900 focus:bg-white focus:outline-none focus:border-cyan-600 shadow-sm"
+          className="w-full pl-8 pr-7 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-xs font-medium text-slate-900 focus:bg-white focus:outline-none focus:border-cyan-600 focus:ring-1 focus:ring-cyan-600 transition"
         />
+        {search && (
+          <button
+            onClick={() => setSearch("")}
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+          >
+            <FiX className="text-xs" />
+          </button>
+        )}
       </div>
     </div>
   )

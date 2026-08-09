@@ -72,8 +72,7 @@ export default function StudentProfileView() {
 
   return (
     <PageTransition>
-      <main className="min-h-screen bg-slate-50 text-slate-900 py-8 px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-4xl">
+      <div className="space-y-4">
           {/* Header Navigation */}
           <div className="flex items-center justify-between mb-6">
             <Link
@@ -490,7 +489,6 @@ export default function StudentProfileView() {
             )}
           </form>
         </div>
-      </main>
     </PageTransition>
   )
 }
