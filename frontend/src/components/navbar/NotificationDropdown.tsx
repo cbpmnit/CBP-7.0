@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react"
 import { createPortal } from "react-dom"
 import Link from "next/link"
 import { FiBell, FiCheckCircle, FiCreditCard, FiAward, FiCheck, FiX } from "react-icons/fi"
+import { useAppSelector } from "@/store/hooks"
 
 interface NotificationItem {
   id: string
@@ -12,6 +13,7 @@ interface NotificationItem {
   time: string
   read: boolean
   type: "payment" | "registration" | "attendance" | "certificate"
+  roles: ("ADMIN" | "VOLUNTEER" | "STUDENT")[]
 }
 
 export default function NotificationDropdown() {
@@ -19,34 +21,98 @@ export default function NotificationDropdown() {
   const [mounted, setMounted] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
+  const { role } = useAppSelector((state) => state.auth)
+  const normalizedRole = (role || "").toUpperCase().replace("ROLE_", "") || "STUDENT"
+
   const [notifications, setNotifications] = useState<NotificationItem[]>([
+    // Student Notifications
     {
-      id: "1",
+      id: "stud-1",
       title: "Payment Confirmed",
-      desc: "₹500 registration fee payment verified successfully via PhonePe.",
+      desc: "Registration fee payment verified successfully.",
       time: "2h ago",
       read: false,
       type: "payment",
+      roles: ["STUDENT"],
     },
     {
-      id: "2",
+      id: "stud-2",
       title: "Registration Successful",
       desc: "Enrolled in soft skills training workshops at MNIT Jaipur.",
       time: "1d ago",
       read: false,
       type: "registration",
+      roles: ["STUDENT"],
     },
     {
-      id: "3",
+      id: "stud-3",
       title: "Session Attendance Active",
       desc: "Daily session QR is available for entry gate scanning.",
       time: "3d ago",
       read: true,
       type: "attendance",
+      roles: ["STUDENT"],
+    },
+    // Volunteer Notifications
+    {
+      id: "vol-1",
+      title: "Scanner Access Active",
+      desc: "Attendance QR scanner is ready for Day 1 entry gates.",
+      time: "1h ago",
+      read: false,
+      type: "attendance",
+      roles: ["VOLUNTEER"],
+    },
+    {
+      id: "vol-2",
+      title: "Session Assigned",
+      desc: "You have been assigned to Day 1 Orientation session at APJ Hall.",
+      time: "5h ago",
+      read: false,
+      type: "registration",
+      roles: ["VOLUNTEER"],
+    },
+    {
+      id: "vol-3",
+      title: "Roster Sheet Refreshed",
+      desc: "Assigned student directory logs synchronized.",
+      time: "1d ago",
+      read: true,
+      type: "certificate",
+      roles: ["VOLUNTEER"],
+    },
+    // Admin Notifications
+    {
+      id: "adm-1",
+      title: "New Student Registrations",
+      desc: "50+ new enrollment profiles require checklist verification.",
+      time: "10m ago",
+      read: false,
+      type: "registration",
+      roles: ["ADMIN"],
+    },
+    {
+      id: "adm-2",
+      title: "Pending Payout Actions",
+      desc: "Review fee payment receipts matching unresolved PhonePe hashes.",
+      time: "2h ago",
+      read: false,
+      type: "payment",
+      roles: ["ADMIN"],
+    },
+    {
+      id: "adm-3",
+      title: "System Backup Successful",
+      desc: "Daily automated database backups persisted to cloud storage.",
+      time: "1d ago",
+      read: true,
+      type: "certificate",
+      roles: ["ADMIN"],
     },
   ])
 
-  const unreadCount = notifications.filter((n) => !n.read).length
+  const userNotifications = notifications.filter((n) => n.roles.includes(normalizedRole as any))
+  const unreadCount = userNotifications.filter((n) => !n.read).length
 
   useEffect(() => {
     setMounted(true)
@@ -144,7 +210,7 @@ export default function NotificationDropdown() {
 
             {/* Scrollable Notifications List */}
             <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
-              {notifications.map((n) => (
+              {userNotifications.map((n) => (
                 <div
                   key={n.id}
                   onClick={() => toggleRead(n.id)}
@@ -231,7 +297,7 @@ export default function NotificationDropdown() {
 
           {/* Notifications List */}
           <div className="max-h-80 overflow-y-auto divide-y divide-slate-100">
-            {notifications.map((n) => (
+            {userNotifications.map((n) => (
               <div
                 key={n.id}
                 onClick={() => toggleRead(n.id)}
