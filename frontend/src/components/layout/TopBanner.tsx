@@ -31,7 +31,7 @@ function TopBannerComponent() {
         {/* Center Title & Institution Info */}
         <div className="flex-1 text-center min-w-0 px-1 sm:px-2">
           <h1 className="top-banner-title text-sm xs:text-base sm:text-2xl md:text-3xl font-extrabold tracking-tight text-slate-900 truncate">
-            Capacity Building Program
+            CAPACITY BUILDING PROGRAM
           </h1>
 
           <p className="top-banner-subtitle text-[8px] xs:text-[9px] sm:text-xs md:text-sm font-semibold text-cyan-700 mt-0.5 uppercase tracking-wider font-sans truncate">

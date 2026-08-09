@@ -12,6 +12,8 @@ import {
   FiMapPin,
   FiPhone,
   FiCheckCircle,
+  FiInstagram,
+  FiYoutube,
 } from "react-icons/fi"
 import { HiOutlineAcademicCap } from "react-icons/hi2"
 
@@ -24,21 +26,37 @@ const contactInfo = [
   },
   {
     title: "Address",
-    value: "Jawaharlal Nehru Marg, Jaipur",
+    value: "JLN Marg, Jaipur",
     sub: "Rajasthan - 302017",
     icon: <FiMapPin className="h-6 w-6 text-cyan-600" />,
   },
   {
     title: "Email",
-    value: "cbp@mnit.ac.in",
-    sub: "We typically respond within 24 hours",
+    value: "cbpmnit@gmail.com",
+    sub: "We respond within 24 hours",
     icon: <FiMail className="h-6 w-6 text-cyan-600" />,
+    href: "mailto:cbpmnit@gmail.com",
   },
   {
     title: "Phone",
-    value: "+91-141-XXX-XXXX",
+    value: "+91 6350 676296",
     sub: "Mon - Fri, 10:00 AM - 5:00 PM",
     icon: <FiPhone className="h-6 w-6 text-cyan-600" />,
+    href: "tel:+916350676296",
+  },
+  {
+    title: "Instagram",
+    value: "@cbpmnit",
+    sub: "Follow us for updates",
+    icon: <FiInstagram className="h-6 w-6 text-cyan-600" />,
+    href: "https://instagram.com/cbpmnit",
+  },
+  {
+    title: "YouTube",
+    value: "@cbpmnit",
+    sub: "Watch past sessions",
+    icon: <FiYoutube className="h-6 w-6 text-cyan-600" />,
+    href: "https://youtube.com/@cbpmnit",
   },
 ]
 
@@ -51,7 +69,11 @@ export default function ContactPage() {
     message: "",
   })
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
+  ) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }))
   }
 
@@ -83,7 +105,6 @@ export default function ContactPage() {
         <section className="py-16 sm:py-24">
           <div className="mx-auto max-w-7xl px-5 lg:px-8">
             <div className="grid gap-12 lg:grid-cols-2 lg:gap-16 items-start">
-              
               {/* Left Column: Contact Info Cards */}
               <div>
                 <Reveal>
@@ -99,10 +120,10 @@ export default function ContactPage() {
                   </p>
                 </Reveal>
 
-                <div className="mt-8 space-y-4">
-                  {contactInfo.map((item, i) => (
-                    <Reveal key={item.title} delay={120 + i * 60}>
-                      <div className="glass-card glass-card-hover rounded-2xl p-5 flex gap-4 items-center bg-white border border-slate-200 shadow-sm transition duration-300">
+                <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                  {contactInfo.map((item, i) => {
+                    const CardContent = (
+                      <div className="glass-card glass-card-hover rounded-2xl p-5 flex gap-4 items-center bg-white border border-slate-200 shadow-sm transition duration-300 h-full">
                         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-cyan-50 border border-cyan-200 text-cyan-600 shadow-sm">
                           {item.icon}
                         </div>
@@ -110,14 +131,39 @@ export default function ContactPage() {
                           <p className="text-[10px] font-bold text-cyan-800 uppercase tracking-widest font-mono">
                             {item.title}
                           </p>
-                          <p className="text-base font-extrabold text-slate-900">
+                          <p className="text-sm font-extrabold text-slate-900 truncate">
                             {item.value}
                           </p>
-                          <p className="text-xs text-slate-500 mt-0.5">{item.sub}</p>
+                          <p className="text-xs text-slate-500 mt-0.5">
+                            {item.sub}
+                          </p>
                         </div>
                       </div>
-                    </Reveal>
-                  ))}
+                    )
+
+                    return (
+                      <Reveal key={item.title} delay={120 + i * 60}>
+                        {item.href ? (
+                          <a
+                            href={item.href}
+                            target={
+                              item.href.startsWith("http") ? "_blank" : "_self"
+                            }
+                            rel={
+                              item.href.startsWith("http")
+                                ? "noopener noreferrer"
+                                : ""
+                            }
+                            className="block h-full"
+                          >
+                            {CardContent}
+                          </a>
+                        ) : (
+                          <div className="h-full">{CardContent}</div>
+                        )}
+                      </Reveal>
+                    )
+                  })}
                 </div>
               </div>
 
@@ -130,17 +176,29 @@ export default function ContactPage() {
                         <FiCheckCircle className="h-9 w-9" />
                       </div>
                       <h3 className="mt-5 text-2xl font-extrabold text-slate-900">
-                        Message Sent <span className="gradient-text-cyan">Successfully!</span>
+                        Message Sent{" "}
+                        <span className="gradient-text-cyan">Successfully!</span>
                       </h3>
                       <p className="mt-3 text-sm text-slate-600 leading-relaxed max-w-md mx-auto">
-                        Thank you for reaching out, <strong className="text-slate-900">{formData.name}</strong>.
-                        Our team will review your message and respond to{" "}
-                        <strong className="text-cyan-700">{formData.email}</strong> within 24 hours.
+                        Thank you for reaching out,{" "}
+                        <strong className="text-slate-900">
+                          {formData.name}
+                        </strong>
+                        . Our team will review your message and respond to{" "}
+                        <strong className="text-cyan-700">
+                          {formData.email}
+                        </strong>{" "}
+                        within 24 hours.
                       </p>
                       <button
                         onClick={() => {
                           setSubmitted(false)
-                          setFormData({ name: "", email: "", subject: "General Inquiry", message: "" })
+                          setFormData({
+                            name: "",
+                            email: "",
+                            subject: "General Inquiry",
+                            message: "",
+                          })
                         }}
                         className="mt-8 inline-flex items-center justify-center rounded-xl neon-button-cyan px-7 py-3 text-xs font-bold uppercase tracking-wider"
                       >
@@ -248,7 +306,6 @@ export default function ContactPage() {
                   )}
                 </div>
               </Reveal>
-
             </div>
           </div>
         </section>

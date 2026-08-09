@@ -1,9 +1,10 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import Image from "next/image"
+import { useState } from "react"
 import Reveal from "@/components/animations/RevealOnScroll"
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi"
+import { motion, AnimatePresence } from "framer-motion" // Added this import
 
 const testimonials = [
   {
@@ -31,7 +32,7 @@ const testimonials = [
     name: "Kuldeep Dadrwal",
     rollNumber: "2020UEC1645",
     quote:
-      "The Capacity Building Program affected my life very greatly. Through this program I learned how valuable the Bhagavad Gita is as a guide for living a disciplined and meaningful life. I gained practical wisdom on managing the mind, staying focused on goals, and building character — tools that have shaped both my academic and personal growth in ways I never imagined possible.",
+      "The Capacity Building Program affected my life very greatly. Through this program I learned how valuable the Bhagavad Gita is as a guide for living a disciplined and meaningful life. I gained practical wisdom on managing the mind, staying focused on goals, and building character, tools that have shaped both my academic and personal growth in ways I never imagined possible.",
     image: "/assets/seniors/TusharChoudhary.webp",
   },
 ]
@@ -44,38 +45,29 @@ export default function FeedbackSection() {
   }
 
   const handlePrev = () => {
-    setCurrentIndex((prev) => (prev - 1 + testimonials.length) % testimonials.length)
+    setCurrentIndex(
+      (prev) => (prev - 1 + testimonials.length) % testimonials.length
+    )
   }
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      handleNext()
-    }, 4500)
-
-    return () => clearInterval(timer)
-  }, [])
-
   return (
-    <section className="bg-slate-50 py-24 sm:py-32 relative overflow-hidden bg-grid-cyber border-t border-b border-slate-200">
-      <div className="mx-auto max-w-7xl px-5 lg:px-8 relative z-10">
-        <div className="mx-auto max-w-2xl text-center">
-          <Reveal>
-            <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
-              What Our Alumni <span className="gradient-text-cyan">Say</span>
-            </h2>
-          </Reveal>
-          <Reveal delay={80}>
-            <p className="mt-4 text-base leading-relaxed text-slate-600">
-              Real stories from students whose lives were transformed by the
-              Capacity Building Program.
-            </p>
-          </Reveal>
-        </div>
+    <section>
+      <div className="max-w-7xl mx-auto px-4">
+        <h2 className="text-center">What Our Alumni Say</h2>
+
+        <p className="text-center">
+          Real stories from students whose lives were transformed by the
+          Capacity Building Program.
+        </p>
 
         {/* Desktop Layout */}
         <div className="hidden md:grid mt-16 gap-6 md:grid-cols-2 lg:grid-cols-4">
           {testimonials.map((t, i) => (
-            <Reveal key={t.name} delay={i * 100} variant={i % 2 === 0 ? "left" : "right"}>
+            <Reveal
+              key={t.name}
+              delay={i * 100}
+              variant={i % 2 === 0 ? "left" : "right"}
+            >
               <div className="glass-card glass-card-hover rounded-2xl p-7 flex flex-col justify-between h-full group">
                 <div>
                   <div className="flex items-center gap-4">
@@ -87,10 +79,12 @@ export default function FeedbackSection() {
                         className="object-cover"
                       />
                     </div>
+
                     <div className="min-w-0">
                       <h3 className="text-sm font-bold text-slate-900 group-hover:text-cyan-700 transition duration-300 truncate">
                         {t.name}
                       </h3>
+
                       <p className="text-xs text-slate-500 font-sans truncate">
                         {t.rollNumber}
                       </p>
@@ -105,6 +99,7 @@ export default function FeedbackSection() {
                     >
                       <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4.995v10h-9.983zm-14.017 0v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4.995v10h-9.983z" />
                     </svg>
+
                     <p className="mt-3 text-sm leading-relaxed text-slate-600">
                       {t.quote}
                     </p>
@@ -128,41 +123,45 @@ export default function FeedbackSection() {
           ))}
         </div>
 
-        {/* Mobile Carousel */}
+        {/* Mobile Carousel With Sliding Animation */}
         <div className="block md:hidden mt-10 relative px-4">
-          <div className="overflow-hidden min-h-[360px] flex items-center justify-center">
-            {testimonials.map((t, idx) => (
-              <div
-                key={t.name}
-                className={`w-full transition-all duration-500 ease-in-out transform ${
-                  idx === currentIndex
-                    ? "opacity-100 translate-x-0 relative"
-                    : "opacity-0 absolute translate-x-12 pointer-events-none"
-                }`}
-              >
-                <div className="glass-card rounded-2xl p-6 flex flex-col justify-between">
+          <div className="min-h-[360px] flex items-center justify-center">
+            <div className="w-full">
+              {/* Added AnimatePresence to handle component mounting/unmounting */}
+              <AnimatePresence mode="wait">
+                <motion.div
+                  // The key prop tells Framer Motion to animate when currentIndex changes
+                  key={currentIndex} 
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                  className="glass-card rounded-2xl p-6 flex flex-col justify-between"
+                >
                   <div>
                     <div className="flex items-center gap-4">
                       <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full border-2 border-cyan-600/40">
                         <Image
-                          src={t.image}
-                          alt={t.name}
+                          src={testimonials[currentIndex].image}
+                          alt={testimonials[currentIndex].name}
                           fill
                           className="object-cover"
                         />
                       </div>
+
                       <div className="min-w-0">
                         <h3 className="text-sm font-bold text-slate-900 truncate">
-                          {t.name}
+                          {testimonials[currentIndex].name}
                         </h3>
+
                         <p className="text-xs text-slate-500 font-sans truncate">
-                          {t.rollNumber}
+                          {testimonials[currentIndex].rollNumber}
                         </p>
                       </div>
                     </div>
 
                     <p className="mt-4 text-sm leading-relaxed text-slate-600">
-                      {t.quote}
+                      {testimonials[currentIndex].quote}
                     </p>
                   </div>
 
@@ -178,11 +177,12 @@ export default function FeedbackSection() {
                       </svg>
                     ))}
                   </div>
-                </div>
-              </div>
-            ))}
+                </motion.div>
+              </AnimatePresence>
+            </div>
           </div>
 
+          {/* Controls */}
           <div className="mt-6 flex items-center justify-between">
             <button
               onClick={handlePrev}
@@ -197,11 +197,12 @@ export default function FeedbackSection() {
                 <button
                   key={idx}
                   onClick={() => setCurrentIndex(idx)}
-                  className={`h-2 rounded-full transition-all duration-300 ${
+                  className={`h-2 transition-all duration-300 rounded-full ${
                     idx === currentIndex
                       ? "w-6 bg-cyan-600"
                       : "w-2 bg-slate-300"
                   }`}
+                  aria-label={`Go to testimonial ${idx + 1}`}
                 />
               ))}
             </div>
@@ -215,7 +216,6 @@ export default function FeedbackSection() {
             </button>
           </div>
         </div>
-
       </div>
     </section>
   )
