@@ -9,21 +9,39 @@ import { motion, AnimatePresence } from "framer-motion"
 const team = [
   {
     name: "Dr. Niraja Saraswat",
-    role: "Faculty Coordinator",
+    role: "Assistant Professor",
     department: "Dept. of Humanities & Social Sciences",
-    image: "/assets/mnit-staff/dr-niraja-saraswat-upper-bg-removed.webp",
+    image: "/assets/advisors/doctor niraja saraswat, assistant professor, department of humanities and social sciences , mnit jaipur.jpeg",
+  },
+  {
+    name: "Dr. Meena Nemiwal",
+    role: "Assistant Professor",
+    department: "Dept. of Chemistry, MNIT Jaipur",
+    image: "/assets/advisors/dr. meena nemiwal , assistant professor , department of chemistry mnit jaipur.jpeg",
+  },
+  {
+    name: "Dr. Nidhi Sharma",
+    role: "Assistant Professor",
+    department: "Dept. of HSS, MNIT Jaipur",
+    image: "/assets/advisors/dr. nidhi sharma , assistant professor, department of hss , mnit jaipur.jpeg",
+  },
+  {
+    name: "Dr. Priyanka Harjule",
+    role: "Assistant Professor",
+    department: "Dept. of Mathematics, MNIT Jaipur",
+    image: "/assets/advisors/dr. priyanka harjule , assistant professor , department of mathematics, mnit jaipur.jpeg",
   },
   {
     name: "Prof. Nupur Tandon",
-    role: "Training & Placement Officer",
-    department: "Training & Placement Cell, MNIT Jaipur",
-    image: "/assets/mnit-staff/prof-nupur-tandon-head-bg-removed.webp",
+    role: "Head, Dept. of HSS",
+    department: "MNIT Jaipur",
+    image: "/assets/advisors/professor nupur tondon, head department of hss, mnit jaipur.jpeg",
   },
   {
-    name: "Rakesh",
-    role: "Technical Lead",
-    department: "Training & Placement Cell, MNIT Jaipur",
-    image: "/assets/mnit-staff/rakesh.webp",
+    name: "Prof. Rakesh Jain",
+    role: "In-charge, T&P Cell",
+    department: "MNIT Jaipur",
+    image: "/assets/advisors/professor rakesh jain, in-charge, t&p cell , mnit jaipur.jpeg",
   },
 ]
 
