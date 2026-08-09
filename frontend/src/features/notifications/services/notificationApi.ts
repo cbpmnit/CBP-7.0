@@ -10,6 +10,57 @@ import { EMAIL_VARIABLES } from "@/features/notifications/constants/emailVariabl
 import { AdminStudentListItem } from "@/features/students/services/studentApi"
 import { PageResponse } from "@/types/pagination"
 
+export interface EmailBlockItem {
+  id: string
+  name: string
+  category: "STUDENT" | "PAYMENT" | "ATTENDANCE" | "CERTIFICATE" | "CUSTOM"
+  content?: string
+  htmlSnippet: string
+  enabled: boolean
+  createdAt?: string
+  updatedAt?: string
+}
+
+export interface EmailOperationItem {
+  id: string
+  name: string
+  templateId: string
+  recipientType: "PAID_STUDENTS" | "ALL_STUDENTS" | "CUSTOM_FILTER" | "INDIVIDUAL"
+  filters?: string
+  status: "DRAFT" | "SCHEDULED" | "IN_PROGRESS" | "COMPLETED" | "FAILED" | "COMPLETED_WITH_ERRORS"
+  triggerType?: "MANUAL" | "EVENT_TRIGGER" | "SCHEDULED"
+  totalRecipients: number
+  sentCount: number
+  failedCount: number
+  scheduledAt?: string
+  executedAt?: string
+  createdBy?: string
+  createdAt?: string
+}
+
+export interface EmailLogItem {
+  id: string
+  operationId?: string
+  templateId?: string
+  templateName?: string
+  recipient: string
+  status: "PENDING" | "SENT" | "FAILED"
+  sentAt: string
+  errorMessage?: string
+  createdAt?: string
+}
+
+export interface CreateEmailOperationPayload {
+  name: string
+  templateId: string
+  recipientType: "PAID_STUDENTS" | "ALL_STUDENTS" | "CUSTOM_FILTER" | "INDIVIDUAL"
+  filters?: string
+  individualRecipients?: string[]
+  triggerType?: "MANUAL" | "EVENT_TRIGGER" | "SCHEDULED"
+  scheduledAt?: string
+  sampleData?: Record<string, string>
+}
+
 export const emailTemplateApi = {
   getAllTemplates: () => apiClient.get<NotificationTemplateResponse[]>("/api/v1/admin/email-templates"),
   getTemplateById: (id: string) => apiClient.get<NotificationTemplateResponse>(`/api/v1/admin/email-templates/${id}`),
@@ -45,6 +96,28 @@ export const emailTemplateApi = {
   },
 }
 
-// Backward-compatibility alias
+export const emailBlockApi = {
+  getAllBlocks: (activeOnly = false) =>
+    apiClient.get<EmailBlockItem[]>(`/api/v1/admin/email-blocks${activeOnly ? "?activeOnly=true" : ""}`),
+  getBlockById: (id: string) => apiClient.get<EmailBlockItem>(`/api/v1/admin/email-blocks/${id}`),
+  createBlock: (data: { name: string; category: string; content?: string; htmlSnippet: string; enabled?: boolean }) =>
+    apiClient.post<EmailBlockItem>("/api/v1/admin/email-blocks", data),
+  updateBlock: (id: string, data: { name: string; category: string; content?: string; htmlSnippet: string; enabled?: boolean }) =>
+    apiClient.put<EmailBlockItem>(`/api/v1/admin/email-blocks/${id}`, data),
+  toggleBlock: (id: string) => apiClient.post<EmailBlockItem>(`/api/v1/admin/email-blocks/${id}/toggle`),
+  deleteBlock: (id: string) => apiClient.delete<void>(`/api/v1/admin/email-blocks/${id}`),
+}
+
+export const emailOperationApi = {
+  getAllOperations: () => apiClient.get<EmailOperationItem[]>("/api/v1/admin/email-operations"),
+  getOperationById: (id: string) => apiClient.get<EmailOperationItem>(`/api/v1/admin/email-operations/${id}`),
+  executeOperation: (data: CreateEmailOperationPayload) =>
+    apiClient.post<EmailOperationItem>("/api/v1/admin/email-operations", data),
+  getDeliveryLogs: (page = 0, size = 30) =>
+    apiClient.get<PageResponse<EmailLogItem>>(`/api/v1/admin/email-operations/logs?page=${page}&size=${size}`),
+  getLogsByOperation: (operationId: string) =>
+    apiClient.get<EmailLogItem[]>(`/api/v1/admin/email-operations/${operationId}/logs`),
+}
+
 export const notificationApi = emailTemplateApi
 export default emailTemplateApi

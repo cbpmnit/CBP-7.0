@@ -7,6 +7,7 @@ import { cbpService } from "@/services/cbpService"
 import { paymentService } from "@/services/paymentService"
 import { attendanceService } from "@/services/attendanceService"
 import { certificateService } from "@/services/certificateService"
+import { apiClient } from "@/lib/apiClient"
 import { UserProfileResponse } from "@/types/profile"
 import { CbpRegistrationDetailResponse } from "@/types/cbp"
 import { PaymentDetailResponse } from "@/types/payment"
@@ -22,16 +23,18 @@ export function useDashboard() {
   const [payment, setPayment] = useState<PaymentDetailResponse | null>(null)
   const [attendance, setAttendance] = useState<StudentAttendanceSummaryResponse | null>(null)
   const [certificate, setCertificate] = useState<CertificateResponse | null>(null)
+  const [registrationFee, setRegistrationFee] = useState<number>(100)
 
   const fetchDashboardData = useCallback(async () => {
     setLoading(true)
     try {
-      const [profData, cbpData, payData, attData, certData] = await Promise.allSettled([
+      const [profData, cbpData, payData, attData, certData, configData] = await Promise.allSettled([
         profileService.getProfile(),
         cbpService.getMyRegistration(),
         paymentService.getMyPayment(),
         attendanceService.getMyAttendance(),
         certificateService.getMyCertificate(),
+        apiClient.get<{ registrationFee: number }>("/api/v1/config/public"),
       ])
 
       if (profData.status === "fulfilled") setProfile(profData.value)
@@ -39,6 +42,9 @@ export function useDashboard() {
       if (payData.status === "fulfilled") setPayment(payData.value)
       if (attData.status === "fulfilled") setAttendance(attData.value)
       if (certData.status === "fulfilled") setCertificate(certData.value)
+      if (configData.status === "fulfilled" && configData.value?.registrationFee) {
+        setRegistrationFee(configData.value.registrationFee)
+      }
     } catch (e) {
       console.error("Error fetching dashboard bootstrap data", e)
     } finally {
@@ -70,6 +76,7 @@ export function useDashboard() {
     isPaymentSuccess,
     attendancePct,
     isCertificateIssued,
+    registrationFee,
     reload: fetchDashboardData,
   }
 }

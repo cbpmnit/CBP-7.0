@@ -19,6 +19,7 @@ export interface ProgressTimelineProps {
   isPaymentSuccess?: boolean
   attendancePercentage?: number
   isCertificateIssued?: boolean
+  registrationFee?: number
 }
 
 export type StepState = "COMPLETED" | "CURRENT" | "LOCKED"
@@ -39,6 +40,7 @@ export default function ProgressTimeline({
   isPaymentSuccess = false,
   attendancePercentage = 0,
   isCertificateIssued = false,
+  registrationFee = 100,
 }: ProgressTimelineProps) {
   const router = useRouter()
   const [lockedNotice, setLockedNotice] = useState<string | null>(null)
@@ -155,7 +157,7 @@ export default function ProgressTimeline({
   } else if (!isPaymentSuccess) {
     nextAction = {
       title: "Complete Fee Payment",
-      desc: "Pay the ₹500 workshop fee via PhonePe to activate your attendance badge.",
+      desc: `Pay the ₹${registrationFee} workshop fee via PhonePe to activate your attendance badge.`,
       actionLabel: "Proceed to Payment",
       route: "/payment",
       icon: <FiCreditCard />,

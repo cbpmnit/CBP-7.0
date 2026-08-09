@@ -146,7 +146,7 @@ function LoginFormContent() {
       if (userRole === "ROLE_ADMIN" || userRole === "ADMIN") {
         redirectPath = "/admin/dashboard"
       } else if (userRole === "ROLE_VOLUNTEER" || userRole === "VOLUNTEER") {
-        redirectPath = "/volunteer/scanner"
+        redirectPath = "/volunteer/dashboard"
       } else {
         try {
           const completion: any = await profileService.getCompletion()

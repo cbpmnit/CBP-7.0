@@ -47,4 +47,19 @@ public class AdminAttendanceRecordController {
         AdminAttendanceSummaryResponse response = attendanceQueryService.getAdminAttendanceSummary();
         return ResponseEntity.ok(ApiResponse.success("Admin attendance summary retrieved successfully", response));
     }
+
+    @GetMapping("/export")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('ATTENDANCE_VIEW')")
+    public ResponseEntity<byte[]> exportAttendanceCsv(
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String search,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) java.util.UUID sessionId,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
+    ) {
+        byte[] csvBytes = attendanceQueryService.exportAttendanceCsv(search, sessionId, date);
+        String filename = "cbp-attendance-" + java.time.LocalDate.now() + ".csv";
+        return ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
+                .contentType(org.springframework.http.MediaType.parseMediaType("text/csv; charset=UTF-8"))
+                .body(csvBytes);
+    }
 }

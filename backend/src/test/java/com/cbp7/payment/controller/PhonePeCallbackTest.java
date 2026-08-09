@@ -94,7 +94,7 @@ public class PhonePeCallbackTest {
                 .userId(testUser.getId())
                 .paymentMode(PaymentMode.ONLINE)
                 .paymentStatus(PaymentStatus.PENDING)
-                .amount(new BigDecimal("500.00"))
+                .amount(new BigDecimal("100.00"))
                 .transactionId("CBP_TXN_TEST123456789")
                 .build();
         testPayment = paymentRepository.save(testPayment);

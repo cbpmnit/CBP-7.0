@@ -146,4 +146,45 @@ public class AdminDashboardService {
                 transactions
         );
     }
+
+    public byte[] exportPaymentsCsv(String search, String paymentStatus) {
+        AdminPaymentOverviewResponse overview = getPaymentOverview();
+        List<AdminPaymentOverviewResponse.PaymentTransactionDto> list = overview.transactions();
+
+        String q = search != null ? search.trim().toLowerCase() : "";
+        String statusFilter = paymentStatus != null && !paymentStatus.isBlank() && !"ALL".equalsIgnoreCase(paymentStatus)
+                ? paymentStatus.trim().toUpperCase() : null;
+
+        List<String> headers = List.of(
+                "Student ID", "Student Name", "Amount (INR)", "Transaction ID",
+                "Registration Ref", "Payment Status", "Payment Date"
+        );
+
+        List<List<String>> rows = new java.util.ArrayList<>();
+        for (AdminPaymentOverviewResponse.PaymentTransactionDto tx : list) {
+            if (!q.isEmpty()) {
+                boolean match = (tx.studentName() != null && tx.studentName().toLowerCase().contains(q))
+                        || (tx.studentId() != null && tx.studentId().toLowerCase().contains(q))
+                        || (tx.transactionId() != null && tx.transactionId().toLowerCase().contains(q))
+                        || (tx.registrationId() != null && tx.registrationId().toLowerCase().contains(q));
+                if (!match) continue;
+            }
+
+            if (statusFilter != null && !statusFilter.equalsIgnoreCase(tx.paymentStatus())) {
+                continue;
+            }
+
+            rows.add(List.of(
+                    tx.studentId() != null ? tx.studentId() : "",
+                    tx.studentName() != null ? tx.studentName() : "",
+                    String.format("%.2f", tx.amount()),
+                    tx.transactionId() != null ? tx.transactionId() : "",
+                    tx.registrationId() != null ? tx.registrationId() : "",
+                    tx.paymentStatus() != null ? tx.paymentStatus() : "",
+                    tx.paymentTime() != null ? tx.paymentTime().toString() : ""
+            ));
+        }
+
+        return com.cbp7.common.util.CsvExportUtil.generateCsv(headers, rows);
+    }
 }

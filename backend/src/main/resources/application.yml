@@ -86,3 +86,7 @@ phonepe:
 certificate:
   minimum-attendance-percentage: 75.0
 
+cbp:
+  registration:
+    fee: 100
+

@@ -87,7 +87,7 @@ function OAuthCallbackContent() {
       } else if (userRole === "ROLE_ADMIN" || userRole === "ADMIN") {
         redirectPath = "/admin/dashboard"
       } else if (userRole === "ROLE_VOLUNTEER" || userRole === "VOLUNTEER") {
-        redirectPath = "/volunteer/scanner"
+        redirectPath = "/volunteer/dashboard"
       } else {
         redirectPath = "/dashboard"
       }

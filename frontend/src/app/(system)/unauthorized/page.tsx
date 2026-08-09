@@ -17,8 +17,8 @@ export default function UnauthorizedPage() {
     redirectPath = "/admin/dashboard"
     redirectLabel = "Go to Admin Dashboard"
   } else if (normalizedRole === "ROLE_VOLUNTEER" || normalizedRole === "VOLUNTEER") {
-    redirectPath = "/volunteer/scanner"
-    redirectLabel = "Go to Volunteer Scanner"
+    redirectPath = "/volunteer/dashboard"
+    redirectLabel = "Go to Volunteer Dashboard"
   } else if (!isAuthenticated) {
     redirectPath = "/login"
     redirectLabel = "Go to Login"

@@ -8,6 +8,7 @@ import { DataTable } from "@/components/ui/DataTable"
 import { FilterBar } from "@/components/ui/FilterBar"
 import { StatusBadge } from "@/components/ui/StatusBadge"
 import { MobileRecordCard } from "@/components/ui/MobileRecordCard"
+import { ExportCsvButton } from "@/components/ui/ExportCsvButton"
 import {
   AttendanceSessionDto,
   SessionSummaryResponse,
@@ -267,6 +268,14 @@ export default function AdminAttendanceView() {
         subtitle="Workshop day check-ins, gate scanner metrics, and student QR passes"
         actions={
           <div className="flex items-center gap-2">
+            <ExportCsvButton
+              endpoint="/api/v1/admin/attendance/export"
+              filenamePrefix="cbp-attendance"
+              params={{
+                search,
+                sessionId: selectedSessionId || undefined,
+              }}
+            />
             <button
               onClick={() => setShowCreateModal(true)}
               className="px-3.5 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold uppercase tracking-wider shadow-2xs transition inline-flex items-center gap-1.5 cursor-pointer"

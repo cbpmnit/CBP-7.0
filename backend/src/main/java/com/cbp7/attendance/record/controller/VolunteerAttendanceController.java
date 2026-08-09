@@ -25,7 +25,7 @@ public class VolunteerAttendanceController {
     private final AttendanceService attendanceService;
 
     @PostMapping("/scan")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('VOLUNTEER') or hasAuthority('ATTENDANCE_SCAN')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('ATTENDANCE_SCAN')")
     public ResponseEntity<ApiResponse<ScanAttendanceResponse>> scanAttendance(
             @AuthenticationPrincipal User volunteerUser,
             @Valid @RequestBody ScanAttendanceRequest request
@@ -36,7 +36,7 @@ public class VolunteerAttendanceController {
     }
 
     @PostMapping("/mark")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('VOLUNTEER') or hasAuthority('ATTENDANCE_SCAN')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('ATTENDANCE_SCAN')")
     public ResponseEntity<ApiResponse<AttendanceRecordResponse>> markAttendance(
             @AuthenticationPrincipal User volunteerUser,
             @Valid @RequestBody MarkAttendanceRequest request

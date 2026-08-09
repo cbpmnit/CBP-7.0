@@ -14,6 +14,7 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(schema = "program", name = "certificates")
@@ -26,6 +27,9 @@ public class Certificate extends BaseEntity {
 
     @Column(name = "student_id", nullable = false)
     private String studentId;
+
+    @Column(name = "template_id")
+    private UUID templateId;
 
     @Column(name = "certificate_number", nullable = false, unique = true)
     private String certificateNumber;

@@ -5,8 +5,14 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.cbp7.cbp.service.RegistrationFeeService;
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class TemplateProcessorService {
+
+    private final RegistrationFeeService registrationFeeService;
 
     private static final Pattern VARIABLE_PATTERN = Pattern.compile("\\{\\{\\s*([a-zA-Z0-9_]+)\\s*\\}\\}");
 
@@ -45,7 +51,9 @@ public class TemplateProcessorService {
             case "studentId" -> "2024UCH1198";
             case "email" -> "student@mnit.ac.in";
             case "phoneNumber" -> "+91 98765 43210";
-            case "amount" -> "500.00";
+            case "amount" -> registrationFeeService != null && registrationFeeService.getRegistrationFee() != null
+                    ? registrationFeeService.getRegistrationFee().setScale(2, java.math.RoundingMode.HALF_UP).toString()
+                    : "100.00";
             case "transactionId" -> "TXN_CBP_SAMPLE";
             case "paidAt" -> "09 August 2026";
             case "paymentStatus" -> "SUCCESS";

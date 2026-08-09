@@ -28,6 +28,20 @@ public class AdminVolunteerController {
         return ResponseEntity.ok(ApiResponse.success("Volunteers directory retrieved successfully", response));
     }
 
+    @GetMapping("/export")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<byte[]> exportVolunteersCsv(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String status
+    ) {
+        byte[] csvBytes = volunteerInvitationService.exportVolunteersCsv(search, status);
+        String filename = "cbp-volunteers-" + java.time.LocalDate.now() + ".csv";
+        return ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
+                .contentType(org.springframework.http.MediaType.parseMediaType("text/csv; charset=UTF-8"))
+                .body(csvBytes);
+    }
+
     @GetMapping("/invitations")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<List<VolunteerInvitationResponse>>> getPendingInvitations() {

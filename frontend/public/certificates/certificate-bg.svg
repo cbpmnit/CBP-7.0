@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 700" width="1000" height="700">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="50%" stop-color="#f8fafc"/>
+      <stop offset="100%" stop-color="#f1f5f9"/>
+    </linearGradient>
+
+    <!-- Gold Border Gradient -->
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#b45309"/>
+      <stop offset="30%" stop-color="#f59e0b"/>
+      <stop offset="50%" stop-color="#fbbf24"/>
+      <stop offset="70%" stop-color="#d97706"/>
+      <stop offset="100%" stop-color="#92400e"/>
+    </linearGradient>
+
+    <!-- Navy Accent Gradient -->
+    <linearGradient id="navyGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="50%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Base Paper -->
+  <rect width="1000" height="700" fill="url(#bgGrad)"/>
+
+  <!-- Outer Double Border -->
+  <rect x="25" y="25" width="950" height="650" fill="none" stroke="url(#goldGrad)" stroke-width="4" rx="4"/>
+  <rect x="35" y="35" width="930" height="630" fill="none" stroke="#0f172a" stroke-width="1.5" rx="2"/>
+
+  <!-- Corner Ornaments -->
+  <!-- Top Left -->
+  <path d="M45 45 L90 45 M45 45 L45 90 M45 45 L75 75" fill="none" stroke="url(#goldGrad)" stroke-width="2"/>
+  <!-- Top Right -->
+  <path d="M955 45 L910 45 M955 45 L955 90 M955 45 L925 75" fill="none" stroke="url(#goldGrad)" stroke-width="2"/>
+  <!-- Bottom Left -->
+  <path d="M45 655 L90 655 M45 655 L45 610 M45 655 L75 625" fill="none" stroke="url(#goldGrad)" stroke-width="2"/>
+  <!-- Bottom Right -->
+  <path d="M955 655 L910 655 M955 655 L955 610 M955 655 L925 625" fill="none" stroke="url(#goldGrad)" stroke-width="2"/>
+
+  <!-- Header Text -->
+  <text x="500" y="110" font-family="'Cinzel', serif, 'Times New Roman'" font-size="16" font-weight="700" fill="#b45309" text-anchor="middle" letter-spacing="4">
+    MALAVIYA NATIONAL INSTITUTE OF TECHNOLOGY JAIPUR
+  </text>
+  <text x="500" y="135" font-family="'Inter', sans-serif" font-size="11" font-weight="600" fill="#64748b" text-anchor="middle" letter-spacing="2">
+    TRAINING AND PLACEMENT CELL &bull; CAPACITY BUILDING PROGRAMME
+  </text>
+
+  <!-- Ribbon / Divider -->
+  <line x1="320" y1="155" x2="680" y2="155" stroke="url(#goldGrad)" stroke-width="1.5"/>
+  <polygon points="500,150 505,155 500,160 495,155" fill="#d97706"/>
+
+  <!-- Main Title -->
+  <text x="500" y="210" font-family="'Cinzel', serif, Georgia" font-size="34" font-weight="700" fill="#0f172a" text-anchor="middle" letter-spacing="3">
+    CERTIFICATE OF PARTICIPATION
+  </text>
+
+  <!-- Subtitle -->
+  <text x="500" y="250" font-family="'Inter', sans-serif" font-size="13" font-weight="500" fill="#475569" text-anchor="middle" letter-spacing="1">
+    PROUDLY PRESENTED TO
+  </text>
+
+  <!-- Body Explanation (Fixed Text) -->
+  <text x="500" y="445" font-family="'Inter', sans-serif" font-size="12" font-weight="400" fill="#475569" text-anchor="middle">
+    for successfully completing the 5-Day Soft Skills, Aptitude &amp; Professional Leadership Workshop
+  </text>
+  <text x="500" y="468" font-family="'Inter', sans-serif" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle" letter-spacing="1">
+    CAPACITY BUILDING PROGRAMME (CBP 7.0)
+  </text>
+  <text x="500" y="490" font-family="'Inter', sans-serif" font-size="11" font-weight="500" fill="#64748b" text-anchor="middle">
+    Held at VLTC Main Auditorium, MNIT Jaipur with required attendance and active engagement.
+  </text>
+
+  <!-- Signatures & Official Stamp -->
+  <!-- Left Signature -->
+  <line x1="160" y1="585" x2="340" y2="585" stroke="#94a3b8" stroke-width="1"/>
+  <text x="250" y="605" font-family="'Inter', sans-serif" font-size="11" font-weight="700" fill="#0f172a" text-anchor="middle">
+    Prof. Training &amp; Placement
+  </text>
+  <text x="250" y="620" font-family="'Inter', sans-serif" font-size="9" font-weight="500" fill="#64748b" text-anchor="middle">
+    Faculty Coordinator, CBP 7.0
+  </text>
+
+  <!-- Center Seal -->
+  <circle cx="500" cy="575" r="32" fill="none" stroke="url(#goldGrad)" stroke-width="2"/>
+  <circle cx="500" cy="575" r="28" fill="none" stroke="#d97706" stroke-width="0.8" stroke-dasharray="3,2"/>
+  <text x="500" y="572" font-family="'Cinzel', serif" font-size="8" font-weight="700" fill="#b45309" text-anchor="middle">
+    CBP 7.0
+  </text>
+  <text x="500" y="584" font-family="'Inter', sans-serif" font-size="6.5" font-weight="700" fill="#64748b" text-anchor="middle">
+    VERIFIED
+  </text>
+
+  <!-- Right Signature -->
+  <line x1="660" y1="585" x2="840" y2="585" stroke="#94a3b8" stroke-width="1"/>
+  <text x="750" y="605" font-family="'Inter', sans-serif" font-size="11" font-weight="700" fill="#0f172a" text-anchor="middle">
+    Head, Training &amp; Placement
+  </text>
+  <text x="750" y="620" font-family="'Inter', sans-serif" font-size="9" font-weight="500" fill="#64748b" text-anchor="middle">
+    MNIT Jaipur
+  </text>
+</svg>

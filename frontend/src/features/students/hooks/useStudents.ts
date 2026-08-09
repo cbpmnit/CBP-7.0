@@ -87,14 +87,18 @@ export function useStudents() {
   const handleExportCsv = async () => {
     setExporting(true)
     try {
-      await studentApi.exportStudentsCsv({
-        search,
-        registrationStatus: regFilter,
-        paymentStatus: payFilter,
-        attendanceStatus: attFilter,
+      await (await import("@/utils/csvExport")).downloadCsvExport({
+        endpoint: "/api/v1/admin/students/export",
+        filenamePrefix: "cbp-students",
+        params: {
+          search,
+          registrationStatus: regFilter,
+          paymentStatus: payFilter,
+          attendanceStatus: attFilter,
+        },
       })
-    } catch (err) {
-      console.error("Export failed", err)
+    } catch (err: any) {
+      alert(err?.message || "Unable to export data. Please try again.")
     } finally {
       setExporting(false)
     }

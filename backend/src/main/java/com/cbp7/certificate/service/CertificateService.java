@@ -7,12 +7,12 @@ import com.cbp7.auth.repository.UserRepository;
 import com.cbp7.cbp.entity.CbpRegistration;
 import com.cbp7.cbp.repository.CbpRegistrationRepository;
 import com.cbp7.certificate.dto.CertificateResponse;
+import com.cbp7.certificate.dto.CertificateTemplateDto;
 import com.cbp7.certificate.entity.Certificate;
 import com.cbp7.certificate.entity.CertificateStatus;
 import com.cbp7.certificate.entity.CertificateType;
 import com.cbp7.certificate.generator.PdfCertificateGenerator;
 import com.cbp7.certificate.repository.CertificateRepository;
-import com.cbp7.common.exception.DuplicateResourceException;
 import com.cbp7.common.exception.ResourceNotFoundException;
 import com.cbp7.notification.event.CertificateGeneratedEvent;
 import com.cbp7.notification.event.NotificationEventPublisher;
@@ -28,7 +28,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -42,6 +41,7 @@ public class CertificateService {
     private final UserRepository userRepository;
     private final PdfCertificateGenerator pdfCertificateGenerator;
     private final NotificationEventPublisher notificationEventPublisher;
+    private final CertificateTemplateService certificateTemplateService;
 
     @Value("${certificate.minimum-attendance-percentage:75.0}")
     private double minimumAttendancePercentage;
@@ -52,9 +52,15 @@ public class CertificateService {
             throw new IllegalArgumentException("Student ID must not be empty");
         }
 
+        CertificateTemplateDto activeTemplate = certificateTemplateService.getActivePublishedTemplate();
+
         if (certificateRepository.existsByStudentIdAndCertificateType(studentId, CertificateType.PARTICIPATION)) {
             Certificate existing = certificateRepository.findByStudentIdAndCertificateType(studentId, CertificateType.PARTICIPATION)
                     .orElseThrow();
+            if (existing.getTemplateId() == null && activeTemplate != null) {
+                existing.setTemplateId(activeTemplate.id());
+                existing = certificateRepository.save(existing);
+            }
             return CertificateResponse.fromEntity(existing);
         }
 
@@ -64,17 +70,11 @@ public class CertificateService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found for student ID: " + studentId));
 
         String certNumber = generateUniqueCertificateNumber();
-        byte[] pdfBytes = pdfCertificateGenerator.generateCertificatePdf(
-                user.getName() != null ? user.getName() : studentId,
-                studentId,
-                certNumber,
-                LocalDate.now()
-        );
-
         String downloadUrl = "/api/v1/student/certificate";
 
         Certificate certificate = Certificate.builder()
                 .studentId(studentId)
+                .templateId(activeTemplate != null ? activeTemplate.id() : null)
                 .certificateNumber(certNumber)
                 .certificateType(CertificateType.PARTICIPATION)
                 .status(CertificateStatus.GENERATED)
@@ -116,7 +116,7 @@ public class CertificateService {
         }
 
         Certificate certificate = certificateRepository.findByStudentId(studentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Certificate not found for student: " + studentId));
+                .orElseThrow(() -> new ResourceNotFoundException("Certificate not available yet for student: " + studentId));
 
         return CertificateResponse.fromEntity(certificate);
     }
@@ -174,5 +174,53 @@ public class CertificateService {
         } catch (Exception e) {
             log.error("Failed to publish CertificateGeneratedEvent for student: {}", cert.getStudentId(), e);
         }
+    }
+
+    @Transactional
+    public List<CertificateResponse> publishAllCertificates() {
+        List<Certificate> certificates = certificateRepository.findAll();
+        List<CertificateResponse> publishedList = new java.util.ArrayList<>();
+        for (Certificate cert : certificates) {
+            if (cert.getStatus() == CertificateStatus.GENERATED) {
+                cert.setStatus(CertificateStatus.PUBLISHED);
+                Certificate saved = certificateRepository.save(cert);
+                publishedList.add(CertificateResponse.fromEntity(saved));
+            }
+        }
+        return publishedList;
+    }
+
+    @Transactional(readOnly = true)
+    public byte[] exportCertificatesCsv() {
+        List<Certificate> certificates = certificateRepository.findAll();
+        List<User> users = userRepository.findAll();
+        java.util.Map<String, String> userNames = new java.util.HashMap<>();
+        for (User u : users) {
+            if (u.getStudentId() != null) {
+                userNames.put(u.getStudentId().toLowerCase(), u.getName() != null ? u.getName() : "Student");
+            }
+        }
+
+        List<String> headers = List.of(
+                "Certificate Number", "Student ID", "Student Name",
+                "Certificate Type", "Status", "Issue Date"
+        );
+
+        List<List<String>> rows = new java.util.ArrayList<>();
+        for (Certificate cert : certificates) {
+            String sid = cert.getStudentId() != null ? cert.getStudentId() : "";
+            String sName = userNames.getOrDefault(sid.toLowerCase(), sid);
+
+            rows.add(List.of(
+                    cert.getCertificateNumber() != null ? cert.getCertificateNumber() : "",
+                    sid,
+                    sName,
+                    cert.getCertificateType() != null ? cert.getCertificateType().name() : "PARTICIPATION",
+                    cert.getStatus() != null ? cert.getStatus().name() : "GENERATED",
+                    cert.getGeneratedAt() != null ? cert.getGeneratedAt().toString() : ""
+            ));
+        }
+
+        return com.cbp7.common.util.CsvExportUtil.generateCsv(headers, rows);
     }
 }

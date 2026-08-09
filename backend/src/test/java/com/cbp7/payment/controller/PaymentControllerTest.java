@@ -148,7 +148,7 @@ public class PaymentControllerTest {
                 .andExpect(jsonPath("$.data.paymentId", notNullValue()))
                 .andExpect(jsonPath("$.data.paymentMode", equalTo(PaymentMode.ONLINE.name())))
                 .andExpect(jsonPath("$.data.paymentStatus", equalTo(PaymentStatus.PENDING.name())))
-                .andExpect(jsonPath("$.data.amount", equalTo(500.0)))
+                .andExpect(jsonPath("$.data.amount", equalTo(100)))
                 .andReturn();
 
         printResponse("CREATE ONLINE PAYMENT RESPONSE", result);
@@ -298,7 +298,7 @@ public class PaymentControllerTest {
                 .andExpect(jsonPath("$.data.paymentId", notNullValue()))
                 .andExpect(jsonPath("$.data.paymentMode", equalTo(PaymentMode.ONLINE.name())))
                 .andExpect(jsonPath("$.data.paymentStatus", equalTo(PaymentStatus.PENDING.name())))
-                .andExpect(jsonPath("$.data.amount", equalTo(500.0)))
+                .andExpect(jsonPath("$.data.amount", equalTo(100)))
                 .andExpect(jsonPath("$.data.createdAt", notNullValue()))
                 .andReturn();
 

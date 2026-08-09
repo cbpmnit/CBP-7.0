@@ -24,6 +24,7 @@ export default function StudentDashboard() {
     isPaymentSuccess,
     attendancePct,
     isCertificateIssued,
+    registrationFee,
   } = useDashboard()
 
   const quickNavPortals = [
@@ -83,6 +84,7 @@ export default function StudentDashboard() {
         isPaymentSuccess={isPaymentSuccess}
         attendancePercentage={attendancePct}
         isCertificateIssued={isCertificateIssued}
+        registrationFee={registrationFee}
       />
 
       {/* 3. Quick Portal Links */}

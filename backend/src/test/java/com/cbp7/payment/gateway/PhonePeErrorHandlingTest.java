@@ -38,7 +38,7 @@ class PhonePeErrorHandlingTest {
         payment = Payment.builder()
                 .userId(UUID.randomUUID())
                 .registrationId(UUID.randomUUID())
-                .amount(new BigDecimal("500.00"))
+                .amount(new BigDecimal("100.00"))
                 .transactionId("CBP_TXN_ERROR_TEST")
                 .build();
         payment.setId(UUID.randomUUID());

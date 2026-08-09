@@ -179,6 +179,7 @@ class CertificateControllerTest {
     @DisplayName("2. Student downloads certificate -> HTTP 200 OK application/pdf")
     void studentDownloadsCertificateSuccessfully() throws Exception {
         certificateService.generateCertificateForStudent("2024certstudent01");
+        certificateService.publishAllCertificates();
 
         mockMvc.perform(get("/api/v1/student/certificate/download")
                         .header("Authorization", "Bearer " + studentToken))

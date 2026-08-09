@@ -137,7 +137,7 @@ public class AdminAttendanceSessionController {
     }
 
     @GetMapping("/{id}/qr")
-    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('ATTENDANCE_SCAN')")
     public ResponseEntity<ApiResponse<SessionQrCodeResponse>> getActiveSessionQr(@PathVariable UUID id) {
         SessionQrCodeResponse response = qrService.getActiveSessionQr(id);
         return ResponseEntity.ok(ApiResponse.success("Active session QR code retrieved successfully", response));
@@ -158,7 +158,7 @@ public class AdminAttendanceSessionController {
     }
 
     @GetMapping("/{id}/records")
-    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('ATTENDANCE_VIEW')")
     public ResponseEntity<ApiResponse<Page<StudentSessionRecordDto>>> getSessionAttendanceRecords(
             @PathVariable UUID id,
             @RequestParam(required = false) String search,

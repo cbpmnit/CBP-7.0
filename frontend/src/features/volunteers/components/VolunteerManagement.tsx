@@ -8,6 +8,7 @@ import VolunteerFilters from "./VolunteerFilters"
 import VolunteerTable from "./VolunteerTable"
 import InviteVolunteerModal from "./InviteVolunteerModal"
 import { PageHeader } from "@/components/ui/PageHeader"
+import { ExportCsvButton } from "@/components/ui/ExportCsvButton"
 import {
   FiUserPlus,
   FiCheckCircle,
@@ -64,18 +65,25 @@ export default function VolunteerManagement() {
             countLabel={countLabel}
             subtitle="Manage operational staff accounts, duty assignments, and permission scopes"
             actions={
-              <button
-                onClick={() => {
-                  setCheckResult(null)
-                  setInviteEmail("")
-                  setInviteName("")
-                  setIsInviteModalOpen(true)
-                }}
-                className="px-3.5 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold uppercase tracking-wider transition inline-flex items-center gap-1.5 shadow-2xs cursor-pointer"
-              >
-                <FiUserPlus className="text-sm" />
-                <span>Invite Volunteer</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <ExportCsvButton
+                  endpoint="/api/v1/admin/volunteers/export"
+                  filenamePrefix="cbp-volunteers"
+                  params={{ search }}
+                />
+                <button
+                  onClick={() => {
+                    setCheckResult(null)
+                    setInviteEmail("")
+                    setInviteName("")
+                    setIsInviteModalOpen(true)
+                  }}
+                  className="px-3.5 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold uppercase tracking-wider transition inline-flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                >
+                  <FiUserPlus className="text-sm" />
+                  <span>Invite Volunteer</span>
+                </button>
+              </div>
             }
           />
 

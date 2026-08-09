@@ -2,6 +2,7 @@ package com.cbp7.certificate.entity;
 
 public enum CertificateStatus {
     GENERATED,
+    PUBLISHED,
     FAILED,
     REVOKED
 }

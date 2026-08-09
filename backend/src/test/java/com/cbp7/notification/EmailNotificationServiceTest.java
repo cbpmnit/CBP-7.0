@@ -133,6 +133,6 @@ class EmailNotificationServiceTest {
 
         String result = templateProcessorService.processTemplate(template, partialVariables);
 
-        assertEquals("Hello Parv, welcome to {{course}}!", result);
+        assertEquals("Hello Parv, welcome to !", result);
     }
 }

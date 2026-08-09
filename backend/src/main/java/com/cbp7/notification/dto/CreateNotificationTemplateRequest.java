@@ -8,8 +8,10 @@ public record CreateNotificationTemplateRequest(
         @NotBlank(message = "Name is required")
         String name,
 
+        @jakarta.validation.constraints.NotNull(message = "Channel is required")
         NotificationChannel channel,
 
+        @jakarta.validation.constraints.NotNull(message = "Notification type is required")
         NotificationType type,
 
         String eventType,

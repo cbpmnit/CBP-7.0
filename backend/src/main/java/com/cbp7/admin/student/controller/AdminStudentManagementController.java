@@ -75,17 +75,22 @@ public class AdminStudentManagementController {
                 .body(pdfBytes);
     }
 
-    @GetMapping("/students/export")
-    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping({"/students/export", "/students/export/csv"})
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('STUDENT_VIEW')")
     public ResponseEntity<byte[]> exportStudentsCsv(
-            @RequestParam(required = false) String paymentStatus,
+            @RequestParam(required = false) String search,
             @RequestParam(required = false) String registrationStatus,
-            @RequestParam(required = false) String search
+            @RequestParam(required = false) String paymentStatus,
+            @RequestParam(required = false) String attendanceStatus,
+            @RequestParam(required = false) String profileStatus
     ) {
-        byte[] csvBytes = studentManagementService.exportStudentsCsv(paymentStatus, registrationStatus, search);
+        byte[] csvBytes = studentManagementService.exportStudentsCsv(
+                search, registrationStatus, paymentStatus, attendanceStatus, profileStatus
+        );
+        String filename = "cbp-students-" + java.time.LocalDate.now() + ".csv";
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=CBP7_Students_Export.csv")
-                .contentType(MediaType.parseMediaType("text/csv"))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
+                .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
                 .body(csvBytes);
     }
 

@@ -209,6 +209,57 @@ public class AttendanceQueryService {
         );
     }
 
+    @Transactional(readOnly = true)
+    public byte[] exportAttendanceCsv(String search, UUID sessionId, LocalDate date) {
+        List<AttendanceRecord> records = attendanceRecordRepository.findAll();
+        List<AttendanceSession> sessions = sessionRepository.findAll();
+        java.util.Map<UUID, AttendanceSession> sessionMap = new java.util.HashMap<>();
+        for (AttendanceSession s : sessions) sessionMap.put(s.getId(), s);
+
+        List<User> allUsers = userRepository.findAll();
+        java.util.Map<String, String> userNameMap = new java.util.HashMap<>();
+        for (User u : allUsers) {
+            if (u.getStudentId() != null) {
+                userNameMap.put(u.getStudentId().toLowerCase(), u.getName() != null ? u.getName() : "Student");
+            }
+        }
+
+        String q = search != null ? search.trim().toLowerCase() : "";
+
+        List<String> headers = List.of(
+                "Student ID", "Student Name", "Session Title", "Day Number",
+                "Session Date", "Attendance Status", "Marked At", "Marked By"
+        );
+
+        List<List<String>> rows = new java.util.ArrayList<>();
+        for (AttendanceRecord r : records) {
+            AttendanceSession session = sessionMap.get(r.getSessionId());
+            if (sessionId != null && !sessionId.equals(r.getSessionId())) continue;
+            if (date != null && (session == null || !date.equals(session.getSessionDate()))) continue;
+
+            String sid = r.getStudentId() != null ? r.getStudentId() : "";
+            String sName = userNameMap.getOrDefault(sid.toLowerCase(), sid);
+
+            if (!q.isEmpty()) {
+                boolean match = sid.toLowerCase().contains(q) || sName.toLowerCase().contains(q);
+                if (!match) continue;
+            }
+
+            rows.add(List.of(
+                    sid,
+                    sName,
+                    session != null ? session.getTitle() : "Session",
+                    session != null ? String.valueOf(session.getDayNumber()) : "-",
+                    session != null && session.getSessionDate() != null ? session.getSessionDate().toString() : "-",
+                    r.getStatus() != null ? r.getStatus().name() : "PRESENT",
+                    r.getMarkedAt() != null ? r.getMarkedAt().toString() : "-",
+                    r.getMarkedBy() != null ? r.getMarkedBy() : "Admin/Scanner"
+            ));
+        }
+
+        return com.cbp7.common.util.CsvExportUtil.generateCsv(headers, rows);
+    }
+
     private double roundToTwoDecimals(double value) {
         return BigDecimal.valueOf(value)
                 .setScale(2, RoundingMode.HALF_UP)

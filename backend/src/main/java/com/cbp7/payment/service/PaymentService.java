@@ -23,6 +23,7 @@ import com.cbp7.payment.config.PhonePeConfig;
 import com.cbp7.payment.dto.PhonePeStatusDetailsResponse;
 import com.cbp7.payment.dto.PhonePeStatusResponse;
 import com.cbp7.cbp.enums.RegistrationStatus;
+import com.cbp7.cbp.service.RegistrationFeeService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -40,14 +41,13 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class PaymentService {
 
-    public static final BigDecimal CBP_REGISTRATION_FEE = new BigDecimal("500.00");
-
     private final PaymentRepository paymentRepository;
     private final CbpRegistrationRepository cbpRegistrationRepository;
     private final PaymentGateway paymentGateway;
     private final PhonePeConfig phonePeConfig;
     private final ObjectMapper objectMapper;
     private final PaymentVerificationService paymentVerificationService;
+    private final RegistrationFeeService registrationFeeService;
 
     @Transactional
     public PaymentResponse createPayment(User user, CreatePaymentRequest request) {
@@ -71,7 +71,7 @@ public class PaymentService {
                 .userId(user.getId())
                 .paymentMode(request.paymentMode())
                 .paymentStatus(PaymentStatus.PENDING)
-                .amount(CBP_REGISTRATION_FEE)
+                .amount(registrationFeeService.getRegistrationFee())
                 .build();
 
         Payment savedPayment = paymentRepository.save(payment);
@@ -110,7 +110,7 @@ public class PaymentService {
                             .userId(user.getId())
                             .paymentMode(PaymentMode.ONLINE)
                             .paymentStatus(PaymentStatus.PENDING)
-                            .amount(CBP_REGISTRATION_FEE)
+                            .amount(registrationFeeService.getRegistrationFee())
                             .build();
                     return paymentRepository.save(newPayment);
                 });

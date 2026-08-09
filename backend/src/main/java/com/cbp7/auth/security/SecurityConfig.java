@@ -87,6 +87,7 @@ public class SecurityConfig {
                                 "/api/v1/auth/volunteer/**",
                                 "/api/auth/volunteer/**",
                                 "/api/v1/payment/phonepe/callback",
+                                "/api/v1/config/public",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/swagger-ui.html",
@@ -94,7 +95,7 @@ public class SecurityConfig {
                                 "/actuator/health"
                         ).permitAll()
                         .requestMatchers("/api/v1/admin/volunteers/**", "/api/admin/volunteers/**").hasRole("ADMIN")
-                        .requestMatchers("/api/v1/admin/**", "/api/admin/**").authenticated()
+                        .requestMatchers("/api/v1/admin/**", "/api/admin/**").hasAnyRole("ADMIN", "VOLUNTEER")
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2

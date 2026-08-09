@@ -52,7 +52,7 @@ class PhonePeGatewayTest {
         Payment payment = Payment.builder()
                 .userId(userId)
                 .registrationId(regId)
-                .amount(new BigDecimal("500.00"))
+                .amount(new BigDecimal("100.00"))
                 .transactionId("CBP_TXN_TEST12345")
                 .build();
         payment.setId(UUID.randomUUID());
@@ -69,7 +69,7 @@ class PhonePeGatewayTest {
 
         StandardCheckoutPayRequest capturedRequest = requestCaptor.getValue();
         assertEquals("CBP_TXN_TEST12345", capturedRequest.getMerchantOrderId());
-        assertEquals(50000L, capturedRequest.getAmount());
+        assertEquals(10000L, capturedRequest.getAmount());
         assertNotNull(capturedRequest.getMetaInfo());
         assertEquals(regId.toString(), capturedRequest.getMetaInfo().getUdf1());
         assertEquals(userId.toString(), capturedRequest.getMetaInfo().getUdf2());
@@ -101,7 +101,7 @@ class PhonePeGatewayTest {
         Payment payment = Payment.builder()
                 .userId(UUID.randomUUID())
                 .registrationId(UUID.randomUUID())
-                .amount(new BigDecimal("500.00"))
+                .amount(new BigDecimal("100.00"))
                 .transactionId("CBP_TXN_ERROR")
                 .build();
 
@@ -120,7 +120,7 @@ class PhonePeGatewayTest {
         Payment payment = Payment.builder()
                 .userId(UUID.randomUUID())
                 .registrationId(UUID.randomUUID())
-                .amount(new BigDecimal("500.00"))
+                .amount(new BigDecimal("100.00"))
                 .transactionId("CBP_TXN_ERROR")
                 .build();
 

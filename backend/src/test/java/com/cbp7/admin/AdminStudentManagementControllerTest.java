@@ -227,6 +227,6 @@ class AdminStudentManagementControllerTest {
         mockMvc.perform(get("/api/v1/admin/students/export")
                         .header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk())
-                .andExpect(header().string("Content-Type", "text/csv"));
+                .andExpect(header().string("Content-Type", "text/csv;charset=UTF-8"));
     }
 }

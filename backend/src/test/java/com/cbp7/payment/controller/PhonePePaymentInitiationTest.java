@@ -192,7 +192,7 @@ public class PhonePePaymentInitiationTest {
                 .userId(user.getId())
                 .paymentMode(PaymentMode.ONLINE)
                 .paymentStatus(PaymentStatus.SUCCESS)
-                .amount(new BigDecimal("500.00"))
+                .amount(new BigDecimal("100.00"))
                 .transactionId("CBP_TXN_PREV")
                 .build();
         paymentRepository.saveAndFlush(payment);

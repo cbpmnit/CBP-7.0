@@ -466,37 +466,33 @@ public class AdminStudentManagementService {
     }
 
     @Transactional(readOnly = true)
-    public byte[] exportStudentsCsv(String paymentStatus, String registrationStatus, String search) {
+    public byte[] exportStudentsCsv(String search, String registrationStatus, String paymentStatus, String attendanceStatus, String profileStatus) {
         Page<AdminStudentListItemResponse> pageRes = getStudentsPaginated(
-                search, registrationStatus, paymentStatus, "ALL", "ALL", Pageable.unpaged()
+                search, registrationStatus, paymentStatus, attendanceStatus, profileStatus, Pageable.unpaged()
         );
 
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (PrintWriter writer = new PrintWriter(out, true, StandardCharsets.UTF_8)) {
-            writer.println("Student ID,Name,Email,Phone,Course,Branch,Year,Registration Status,Payment Status,Attendance %");
+        List<String> headers = List.of(
+                "Student ID", "Name", "Email", "Phone", "Course", "Branch", "Year",
+                "Registration Status", "Payment Status", "Attendance %"
+        );
 
-            for (AdminStudentListItemResponse item : pageRes.getContent()) {
-                writer.printf("\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%.1f%%\"%n",
-                        escapeCsv(item.studentId()),
-                        escapeCsv(item.name()),
-                        escapeCsv(item.email()),
-                        escapeCsv(item.phone()),
-                        escapeCsv(item.course()),
-                        escapeCsv(item.branch()),
-                        escapeCsv(item.year()),
-                        escapeCsv(item.registrationStatus()),
-                        escapeCsv(item.paymentStatus()),
-                        item.attendancePercentage()
-                );
-            }
-            writer.flush();
-            return out.toByteArray();
+        List<List<String>> rows = new ArrayList<>();
+        for (AdminStudentListItemResponse item : pageRes.getContent()) {
+            rows.add(List.of(
+                    item.studentId() != null ? item.studentId() : "",
+                    item.name() != null ? item.name() : "",
+                    item.email() != null ? item.email() : "",
+                    item.phone() != null ? item.phone() : "",
+                    item.course() != null ? item.course() : "",
+                    item.branch() != null ? item.branch() : "",
+                    item.year() != null ? item.year() : "",
+                    item.registrationStatus() != null ? item.registrationStatus() : "",
+                    item.paymentStatus() != null ? item.paymentStatus() : "",
+                    String.format("%.1f%%", item.attendancePercentage())
+            ));
         }
-    }
 
-    private String escapeCsv(String input) {
-        if (input == null) return "";
-        return input.replace("\"", "\"\"");
+        return com.cbp7.common.util.CsvExportUtil.generateCsv(headers, rows);
     }
 
     @Transactional(readOnly = true)

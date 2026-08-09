@@ -13,6 +13,7 @@ import {
   FiCreditCard,
   FiAward,
   FiMail,
+  FiSliders,
 } from "react-icons/fi"
 
 export interface NavItem {
@@ -25,6 +26,7 @@ export interface NavItem {
 
 export const ALL_ADMIN_NAV_ITEMS: NavItem[] = [
   { id: "admin-dashboard", label: "Dashboard", href: "/admin/dashboard", icon: <FiGrid /> },
+  { id: "admin-operations", label: "Operations Control", href: "/admin/operations", icon: <FiSliders />, permission: "ADMIN_ONLY" },
   { id: "admin-students", label: "Student Management", href: "/admin/students", icon: <FiUsers />, permission: "STUDENT_VIEW" },
   { id: "admin-volunteers", label: "Volunteer Management", href: "/admin/volunteers", icon: <FiUserCheck />, permission: "VOLUNTEER_MANAGE" },
   { id: "admin-sessions", label: "Session Management", href: "/admin/sessions", icon: <FiCalendar />, permission: "SESSION_VIEW" },
@@ -111,7 +113,13 @@ function SidebarNavContent({ allowedPermissions }: SidebarNavigationProps) {
     navItems = ALL_ADMIN_NAV_ITEMS
   } else {
     // Volunteer role or scope-restricted user
-    navItems = ALL_ADMIN_NAV_ITEMS.filter((item) => {
+    navItems = ALL_ADMIN_NAV_ITEMS.map((item) => {
+      if (item.id === "admin-dashboard") {
+        return { ...item, label: "Volunteer Dashboard", href: "/volunteer/dashboard" }
+      }
+      return item
+    }).filter((item) => {
+      if (item.permission === "ADMIN_ONLY") return false
       if (!item.permission) return true // Dashboard always visible
       return userPermissions.includes(item.permission)
     })

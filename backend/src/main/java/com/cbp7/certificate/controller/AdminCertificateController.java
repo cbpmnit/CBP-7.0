@@ -33,4 +33,15 @@ public class AdminCertificateController {
         List<CertificateResponse> response = certificateService.generateAllEligibleCertificates();
         return ResponseEntity.ok(ApiResponse.success("Eligible certificates generated successfully", response));
     }
+
+    @org.springframework.web.bind.annotation.GetMapping("/export")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<byte[]> exportCertificatesCsv() {
+        byte[] csvBytes = certificateService.exportCertificatesCsv();
+        String filename = "cbp-certificates-" + java.time.LocalDate.now() + ".csv";
+        return ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
+                .contentType(org.springframework.http.MediaType.parseMediaType("text/csv; charset=UTF-8"))
+                .body(csvBytes);
+    }
 }

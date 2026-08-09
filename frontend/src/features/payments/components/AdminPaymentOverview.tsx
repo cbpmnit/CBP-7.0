@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/ui/PageHeader"
 import { DataTable } from "@/components/ui/DataTable"
 import { StatusBadge } from "@/components/ui/StatusBadge"
 import { MobileRecordCard } from "@/components/ui/MobileRecordCard"
+import { ExportCsvButton } from "@/components/ui/ExportCsvButton"
 import { FiRefreshCw, FiAlertCircle } from "react-icons/fi"
 
 export default function AdminPaymentOverview() {
@@ -66,14 +67,21 @@ export default function AdminPaymentOverview() {
         countLabel="total"
         subtitle="PhonePe fee reconciliation, transaction verification, and ledger records"
         actions={
-          <button
-            onClick={fetchPaymentOverview}
-            disabled={loading}
-            className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold transition inline-flex items-center gap-1.5 shadow-2xs cursor-pointer"
-          >
-            <FiRefreshCw className={loading ? "animate-spin text-cyan-600" : "text-slate-500"} />
-            <span>Refresh</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <ExportCsvButton
+              endpoint="/api/v1/admin/payments/export"
+              filenamePrefix="cbp-payments"
+              params={{ search }}
+            />
+            <button
+              onClick={fetchPaymentOverview}
+              disabled={loading}
+              className="px-3 py-1.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold transition inline-flex items-center gap-1.5 shadow-2xs cursor-pointer"
+            >
+              <FiRefreshCw className={loading ? "animate-spin text-cyan-600" : "text-slate-500"} />
+              <span className="hidden sm:inline">Refresh</span>
+            </button>
+          </div>
         }
       />
 

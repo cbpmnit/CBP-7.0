@@ -6,9 +6,12 @@ export interface LoginRequest {
 
 export interface LoginResponse {
   token: string
+  id?: string
+  userId?: string
   studentId: string
   name: string
   role: string
+  roles?: string[]
   permissions?: string[]
 }
 
@@ -24,10 +27,12 @@ export interface RegisterRequest {
 
 export interface UserResponse {
   id?: string
+  userId?: string
   studentId: string
   email: string
   name: string
   phoneNumber?: string
   role: string
+  roles?: string[]
   permissions?: string[]
 }

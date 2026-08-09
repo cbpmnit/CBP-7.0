@@ -19,7 +19,7 @@ public class AdminDashboardController {
     private final AdminDashboardService adminDashboardService;
 
     @GetMapping("/dashboard/summary")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('VOLUNTEER')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<AdminDashboardSummaryResponse>> getDashboardSummary() {
         AdminDashboardSummaryResponse response = adminDashboardService.getSummary();
         return ResponseEntity.ok(ApiResponse.success("Admin dashboard summary retrieved successfully", response));
@@ -30,5 +30,19 @@ public class AdminDashboardController {
     public ResponseEntity<ApiResponse<AdminPaymentOverviewResponse>> getPaymentOverview() {
         AdminPaymentOverviewResponse response = adminDashboardService.getPaymentOverview();
         return ResponseEntity.ok(ApiResponse.success("Payment overview retrieved successfully", response));
+    }
+
+    @GetMapping({"/payments/export", "/payment/export"})
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('PAYMENT_VIEW')")
+    public ResponseEntity<byte[]> exportPaymentsCsv(
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String search,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String paymentStatus
+    ) {
+        byte[] csvBytes = adminDashboardService.exportPaymentsCsv(search, paymentStatus);
+        String filename = "cbp-payments-" + java.time.LocalDate.now() + ".csv";
+        return ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
+                .contentType(org.springframework.http.MediaType.parseMediaType("text/csv; charset=UTF-8"))
+                .body(csvBytes);
     }
 }

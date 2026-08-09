@@ -126,12 +126,20 @@ public class AuthService {
         }
 
         String token = jwtProvider.generateToken(user);
+        String uid = user.getId() != null ? user.getId().toString() : "";
+        Set<String> roleNames = new java.util.HashSet<>();
+        if (user.getRole() != null) roleNames.add(user.getRole().name());
+        if (user.getRoles() != null) {
+            for (Role r : user.getRoles()) roleNames.add(r.name());
+        }
 
         return new LoginResponse(
                 token,
+                uid,
                 user.getStudentId(),
                 user.getName(),
-                user.getRole().name(),
+                user.getRole() != null ? user.getRole().name() : "ROLE_STUDENT",
+                roleNames,
                 user.getPermissions() != null ? user.getPermissions() : java.util.Set.of()
         );
     }
@@ -210,13 +218,33 @@ public class AuthService {
             throw new UnauthorizedException("User is not authenticated");
         }
 
+        User freshUser = user.getId() != null
+                ? userRepository.findById(user.getId()).orElse(user)
+                : user;
+
+        String uid = freshUser.getId() != null ? freshUser.getId().toString() : "";
+        Set<String> roleNames = new java.util.HashSet<>();
+        if (freshUser.getRole() != null) {
+            roleNames.add(freshUser.getRole().name());
+        }
+        if (freshUser.getRoles() != null) {
+            for (Role r : freshUser.getRoles()) {
+                roleNames.add(r.name());
+            }
+        }
+
+        Set<String> perms = freshUser.getPermissions() != null ? freshUser.getPermissions() : java.util.Set.of();
+
         return new UserResponse(
-                user.getStudentId(),
-                user.getEmail(),
-                user.getName(),
-                user.getPhoneNumber(),
-                user.getRole().name(),
-                user.getPermissions() != null ? user.getPermissions() : java.util.Set.of()
+                uid,
+                uid,
+                freshUser.getStudentId(),
+                freshUser.getEmail(),
+                freshUser.getName(),
+                freshUser.getPhoneNumber(),
+                freshUser.getRole() != null ? freshUser.getRole().name() : "ROLE_STUDENT",
+                roleNames,
+                perms
         );
     }
 
