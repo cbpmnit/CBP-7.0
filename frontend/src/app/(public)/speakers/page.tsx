@@ -1,3 +1,5 @@
+"use client"
+
 import Image from "next/image"
 import Reveal from "@/components/animations/RevealOnScroll"
 import PageTransition from "@/components/animations/PageTransition"
@@ -8,61 +10,105 @@ type Speaker = {
   image: string | null
 }
 
-const yearGroups: { year: string; speakers: Speaker[] }[] = [
+const speakers: Speaker[] = [
   {
-    year: "2025",
-    speakers: [
-      { name: "Mr. Munish Nandwani", designation: "Life Coach & Speaker", image: "/assets/speakers/mr. munish nandwani.webp" },
-      { name: "Mr. Mahesh Punjabi", designation: "Communication Expert", image: "/assets/speakers/mr. mahesh punjabi .webp" },
-      { name: "Adv. Anuj Saxena", designation: "Advocate", image: "/assets/speakers/advocate anuj saxena.webp" },
-      { name: "Dr. Anupama Soni", designation: "Doctor & Speaker", image: "/assets/speakers/dr. anupama soni.webp" },
-      { name: "Mr. Hari Bhakti Das", designation: "Spiritual Mentor", image: "/assets/speakers/mr. hari bhakti das.webp" },
-    ],
+    name: "Mr. Munish Nandwani",
+    designation: "Director, Hindustan Unilever Limited",
+    image: "/assets/speakers-v2/munish-nandwani-directior-hindustan-unilever-limited.webp",
   },
   {
-    year: "2024",
-    speakers: [
-      { name: "Mr. Munish Nandwani", designation: "Life Coach & Speaker", image: "/assets/speakers/mr. munish nandwani.webp" },
-      { name: "Mr. Mahesh Punjabi", designation: "Communication Expert", image: "/assets/speakers/mr. mahesh punjabi .webp" },
-      { name: "Mr. Hari Bhakti Das", designation: "Spiritual Mentor", image: "/assets/speakers/mr. hari bhakti das.webp" },
-      { name: "Mr. Hemant Kumar", designation: "Speaker", image: "/assets/speakers/hemant kumar.webp" },
-      { name: "Mr. Sanjay Pungliya", designation: "Speaker", image: null },
-    ],
+    name: "Mr. Mahesh Punjabi",
+    designation: "Vice President Infosys, Gold Medalist IIT Delhi",
+    image: "/assets/speakers-v2/mahesh-punjabi-vice-president-infosys-gold-medalist-iit-delhi.webp",
   },
   {
-    year: "2023",
-    speakers: [
-      { name: "Sh. Chakravarti Das", designation: "Spiritual Mentor & Leadership Coach", image: "/assets/speakers/mr. chakravarti das.webp" },
-      { name: "Mr. Mohit Kumar", designation: "Productivity Expert", image: null },
-      { name: "Mr. Ravi Kumar", designation: "Speaker", image: "/assets/speakers/mr. ravi kumar.webp" },
-      { name: "Mrs. Vibhuti Mehra", designation: "Speaker", image: "/assets/speakers/mrs. vibhuti mehra.webp" },
-    ],
+    name: "Adv. Anuj Saxena",
+    designation: "Advocate on Record - Supreme Court of India",
+    image: "/assets/speakers-v2/advocate-anuj-saxena-advocate-on-record-supreme-court-of-india.webp",
   },
   {
-    year: "2022",
-    speakers: [
-      { name: "Mr. Chakravarti Das", designation: "Spiritual Mentor", image: "/assets/speakers/mr. chakravarti das.webp" },
-      { name: "Mr. Rajat Gupta", designation: "Motivational Speaker", image: "/assets/speakers/mr. rajat gupta.webp" },
-      { name: "Mr. Aditya Jha", designation: "Motivational Speaker", image: "/assets/speakers/mr. aditya jha.webp" },
-    ],
+    name: "Dr. Anupama Soni",
+    designation: "Mrs. Asia International 2018",
+    image: "/assets/speakers-v2/dr-anupama-sono-mrs-asia-international-2018-mrs-india-2018.webp",
   },
   {
-    year: "2021",
-    speakers: [
-      { name: "Mr. Amogh Lila Das", designation: "Spiritual Mentor", image: "/assets/speakers/amogh-lila-das.webp" },
-      { name: "Prof. Jyoti Pahwa", designation: "Professor", image: "/assets/speakers/professor jyoti pahwa.webp" },
-      { name: "Mr. Rajat Gupta", designation: "Motivational Speaker", image: "/assets/speakers/mr. rajat gupta.webp" },
-      { name: "Mr. Munish Nandwani", designation: "Life Coach & Speaker", image: "/assets/speakers/mr. munish nandwani.webp" },
-      { name: "Mr. Chakravarti Das", designation: "Spiritual Mentor", image: "/assets/speakers/mr. chakravarti das.webp" },
-      { name: "Mr. Aditya Jha", designation: "Motivational Speaker", image: "/assets/speakers/mr. aditya jha.webp" },
-    ],
+    name: "Mr. Hari Bhakti Das",
+    designation: "Director at ISKCON Jaipur",
+    image: "/assets/speakers-v2/haribhakti-das-director-at-iskcon-jaipur.webp",
+  },
+  {
+    name: "Mr. Hemant Kumar",
+    designation: "Alumni IIT Bombay",
+    image: "/assets/speakers-v2/hemant-kumar-alumini-iit-bombay.webp",
+  },
+  {
+    name: "Sh. Chakravarti Das",
+    designation: "Practicing ISKCON Monk & Life Coach",
+    image: "/assets/speakers-v2/chakravarti-das-practicing-iskcon-monk-life-coach-and-spiritual-teacher.webp",
+  },
+  {
+    name: "Mr. Mohit Kumar",
+    designation: "Gold Medalist, IIT Roorkee",
+    image: "/assets/speakers-v2/mohit-kumar-gold-medalist-iit-rurkee.webp",
+  },
+  {
+    name: "Pancharatna Das",
+    designation: "Spiritual Mentor",
+    image: "/assets/speakers-v2/pancharatna-das.webp",
+  },
+  { 
+    name: "Mr. Sanjay Pungliya", 
+    designation: "Speaker", 
+    image: null 
+  },
+  { 
+    name: "Mr. Ravi Kumar", 
+    designation: "Speaker", 
+    image: null 
+  },
+  { 
+    name: "Mrs. Vibhuti Mehra", 
+    designation: "Speaker", 
+    image: null 
+  },
+  { 
+    name: "Mr. Rajat Gupta", 
+    designation: "Motivational Speaker", 
+    image: null 
+  },
+  { 
+    name: "Mr. Aditya Jha", 
+    designation: "Motivational Speaker", 
+    image: null 
+  },
+  { 
+    name: "Mr. Amogh Lila Das", 
+    designation: "Spiritual Mentor", 
+    image: null 
+  },
+  { 
+    name: "Prof. Jyoti Pahwa", 
+    designation: "Professor", 
+    image: null 
   },
 ]
 
+// Helper to remove prefixes like "Mr." or "Dr." before grabbing initials
+function getInitials(name: string) {
+  const cleanName = name.replace(/^(Mr\.|Mrs\.|Ms\.|Dr\.|Adv\.|Sh\.|Prof\.)\s+/i, "")
+  return cleanName
+    .split(" ")
+    .filter(Boolean)
+    .map((n) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase()
+}
+
 function SpeakerCard({ speaker }: { speaker: Speaker }) {
   return (
-    <div className="glass-card glass-card-hover rounded-3xl p-6 flex flex-col items-center text-center group">
-      <div className="relative h-36 w-36 overflow-hidden rounded-full border-2 border-cyan-500/40 shadow-[0_0_20px_rgba(0,240,255,0.3)] transition duration-500 group-hover:scale-105 group-hover:border-cyan-400">
+    <div className="glass-card glass-card-hover rounded-3xl p-6 flex flex-col items-center text-center group h-full">
+      <div className="relative h-36 w-36 overflow-hidden rounded-full border-2 border-cyan-600/40 shadow-sm transition duration-500 group-hover:scale-105 group-hover:border-cyan-600">
         {speaker.image ? (
           <Image
             src={speaker.image}
@@ -71,27 +117,24 @@ function SpeakerCard({ speaker }: { speaker: Speaker }) {
             className="object-cover transition duration-500 group-hover:scale-110"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center bg-cyan-500/20 text-cyan-300 text-xl font-bold">
-            {speaker.name
-              .split(" ")
-              .map((n) => n[0])
-              .join("")
-              .slice(0, 2)}
+          <div className="flex h-full w-full items-center justify-center bg-cyan-100 text-cyan-700 text-2xl font-bold transition duration-500 group-hover:scale-110">
+            {getInitials(speaker.name)}
           </div>
         )}
       </div>
-      <h3 className="mt-5 text-base font-extrabold text-white group-hover:text-cyan-300 transition duration-300">
+      <h3 className="mt-5 text-lg font-bold text-slate-900 group-hover:text-cyan-700 transition duration-300">
         {speaker.name}
       </h3>
-      <p className="mt-1 text-xs font-mono text-gray-400">{speaker.designation}</p>
+      <p className="mt-1 text-sm font-sans text-slate-600">{speaker.designation}</p>
     </div>
   )
 }
 
-export const metadata = {
-  title: "Speakers — CBP 7.0",
-  description: "Meet our distinguished past speakers from CBP programs across the years.",
-}
+// Ensure you export metadata in layout.tsx or a separate file if using "use client"
+// export const metadata = {
+//   title: "Speakers — CBP 7.0",
+//   description: "Meet our distinguished speakers from CBP programs.",
+// }
 
 export default function SpeakersPage() {
   return (
@@ -109,34 +152,21 @@ export default function SpeakersPage() {
             <Reveal delay={120}>
               <p className="mt-4 max-w-2xl mx-auto text-base text-slate-600">
                 Distinguished academicians, industry leaders, and spiritual
-                mentors who have graced CBP programs from 2021 to 2025.
+                mentors who have graced our programs.
               </p>
             </Reveal>
           </div>
         </section>
 
         <section className="py-24 sm:py-32">
-          <div className="mx-auto max-w-7xl px-5 lg:px-8 space-y-20">
-            {yearGroups.map((group) => (
-              <div key={group.year}>
-                <Reveal>
-                  <div className="flex items-center gap-4 mb-10">
-                    <span className="text-5xl font-black gradient-text-cyan drop-shadow-[0_0_15px_rgba(0,240,255,0.3)]">
-                      {group.year}
-                    </span>
-                    <div className="h-px flex-1 bg-gradient-to-r from-cyan-500/40 to-transparent" />
-                  </div>
+          <div className="mx-auto max-w-7xl px-5 lg:px-8">
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {speakers.map((speaker, i) => (
+                <Reveal key={speaker.name} delay={(i % 4) * 60}>
+                  <SpeakerCard speaker={speaker} />
                 </Reveal>
-
-                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                  {group.speakers.map((speaker, i) => (
-                    <Reveal key={speaker.name} delay={i * 60}>
-                      <SpeakerCard speaker={speaker} />
-                    </Reveal>
-                  ))}
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </section>
       </main>
