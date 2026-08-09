@@ -33,7 +33,7 @@ const speakers: Speaker[] = [
   },
   {
     name: "Mr. Hari Bhakti Das",
-    designation: "Director at ISKCON Jaipur",
+    designation: "Director, ISKCON Youth Forum",
     image: "/assets/speakers-v2/haribhakti-das-director-at-iskcon-jaipur.webp",
   },
   {
@@ -43,7 +43,7 @@ const speakers: Speaker[] = [
   },
   {
     name: "Sh. Chakravarti Das",
-    designation: "Practicing ISKCON Monk & Life Coach",
+    designation: "ISKCON Juhu",
     image: "/assets/speakers-v2/chakravarti-das-practicing-iskcon-monk-life-coach-and-spiritual-teacher.webp",
   },
   {
@@ -58,7 +58,7 @@ const speakers: Speaker[] = [
   },
   { 
     name: "Mr. Sanjay Pungliya", 
-    designation: "Speaker", 
+    designation: "Income Tax Officer", 
     image: null 
   },
   { 

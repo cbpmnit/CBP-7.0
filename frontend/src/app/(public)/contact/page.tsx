@@ -14,8 +14,10 @@ import {
   FiCheckCircle,
   FiInstagram,
   FiYoutube,
+  FiLinkedin,
 } from "react-icons/fi"
 import { HiOutlineAcademicCap } from "react-icons/hi2"
+import { FaWhatsapp } from "react-icons/fa"
 
 const contactInfo = [
   {
@@ -57,6 +59,20 @@ const contactInfo = [
     sub: "Watch past sessions",
     icon: <FiYoutube className="h-6 w-6 text-cyan-600" />,
     href: "https://youtube.com/@cbpmnit",
+  },
+  {
+    title: "LinkedIn",
+    value: "CBP MNIT",
+    sub: "Connect professionally",
+    icon: <FiLinkedin className="h-6 w-6 text-cyan-600" />,
+    href: "https://linkedin.com/company/cbpmnit",
+  },
+  {
+    title: "WhatsApp",
+    value: "Channel",
+    sub: "Join for quick updates",
+    icon: <FaWhatsapp className="h-6 w-6 text-cyan-600" />,
+    href: "https://whatsapp.com/channel/0029VbAx31s3QxS1vLfQCw3N",
   },
 ]
 
