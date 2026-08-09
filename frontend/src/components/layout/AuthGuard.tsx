@@ -10,6 +10,8 @@ const PUBLIC_EXACT_ROUTES = [
   "/login",
   "/register",
   "/registration",
+  "/forgot-password",
+  "/unauthorized",
   "/about",
   "/contact",
   "/speakers",
