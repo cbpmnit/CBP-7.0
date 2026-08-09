@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -31,6 +32,7 @@ public class NotificationTemplateController {
     private final NotificationTemplateService notificationTemplateService;
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<NotificationTemplateResponse>> createTemplate(
             @AuthenticationPrincipal User currentUser,
             @Valid @RequestBody CreateNotificationTemplateRequest request
@@ -42,18 +44,21 @@ public class NotificationTemplateController {
     }
 
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('EMAIL_SEND')")
     public ResponseEntity<ApiResponse<List<NotificationTemplateResponse>>> getAllTemplates() {
         List<NotificationTemplateResponse> response = notificationTemplateService.getAllTemplates();
         return ResponseEntity.ok(ApiResponse.success("Notification templates retrieved successfully", response));
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('EMAIL_SEND')")
     public ResponseEntity<ApiResponse<NotificationTemplateResponse>> getTemplateById(@PathVariable UUID id) {
         NotificationTemplateResponse response = notificationTemplateService.getTemplateById(id);
         return ResponseEntity.ok(ApiResponse.success("Notification template retrieved successfully", response));
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<NotificationTemplateResponse>> updateTemplate(
             @PathVariable UUID id,
             @Valid @RequestBody UpdateNotificationTemplateRequest request
@@ -63,6 +68,7 @@ public class NotificationTemplateController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteTemplate(@PathVariable UUID id) {
         notificationTemplateService.deleteTemplate(id);
         return ResponseEntity.noContent().build();

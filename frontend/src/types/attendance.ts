@@ -93,12 +93,16 @@ export interface SessionQrCodeResponse {
 export interface BatchQrGenerationResponse {
   totalStudents: number
   generated: number
+  generatedCount?: number
 }
 
 export interface QrGenerationStatusResponse {
   totalStudents: number
   generatedQr: number
   pendingQr: number
+  totalRegisteredStudents?: number
+  qrGenerated?: number
+  pendingGeneration?: number
 }
 
 export interface StudentSessionQrResponse {

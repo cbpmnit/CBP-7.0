@@ -5,10 +5,10 @@ spring:
     password: 
     driver-class-name: org.h2.Driver
     hikari:
-      connection-init-sql: CREATE SCHEMA IF NOT EXISTS cbp; CREATE SCHEMA IF NOT EXISTS profile; CREATE SCHEMA IF NOT EXISTS payment;
+      connection-init-sql: CREATE SCHEMA IF NOT EXISTS cbp; CREATE SCHEMA IF NOT EXISTS profile; CREATE SCHEMA IF NOT EXISTS payment; CREATE SCHEMA IF NOT EXISTS identity; CREATE SCHEMA IF NOT EXISTS academic; CREATE SCHEMA IF NOT EXISTS attendance; CREATE SCHEMA IF NOT EXISTS certificate; CREATE SCHEMA IF NOT EXISTS notification; CREATE SCHEMA IF NOT EXISTS program;
   flyway:
     enabled: true
-    schemas: cbp, profile, payment, public
+    schemas: cbp, profile, payment, identity, academic, attendance, certificate, notification, program, public
     create-schemas: true
     baseline-on-migrate: true
   jpa:
@@ -30,6 +30,7 @@ cors:
 
 frontend:
   payment-status-url: http://localhost:3000/payment-status
+  url: http://localhost:3000
 
 phonepe:
   client-id: xxxxx

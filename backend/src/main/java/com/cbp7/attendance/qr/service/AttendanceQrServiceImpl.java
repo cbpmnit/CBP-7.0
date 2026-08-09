@@ -9,7 +9,8 @@ import com.cbp7.attendance.qr.generator.QrImageGenerator;
 import com.cbp7.attendance.qr.repository.AttendanceQrRepository;
 import com.cbp7.attendance.session.entity.AttendanceSession;
 import com.cbp7.attendance.session.repository.AttendanceSessionRepository;
-import com.cbp7.cbp.entity.CbpRegistration;
+import com.cbp7.auth.entity.Role;
+import com.cbp7.auth.repository.UserRepository;
 import com.cbp7.cbp.repository.CbpRegistrationRepository;
 import com.cbp7.common.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -18,9 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -30,9 +29,25 @@ public class AttendanceQrServiceImpl implements AttendanceQrService {
     private final AttendanceQrRepository attendanceQrRepository;
     private final AttendanceSessionRepository sessionRepository;
     private final CbpRegistrationRepository cbpRegistrationRepository;
+    private final UserRepository userRepository;
     private final QrImageGenerator qrImageGenerator;
 
     private static final String TOKEN_PREFIX = "CBP_STUDENT_QR_";
+
+    private Set<String> getRegisteredStudentIds() {
+        Set<String> distinctStudentIds = new LinkedHashSet<>();
+        cbpRegistrationRepository.findAll().forEach(r -> {
+            if (r.getStudentId() != null && !r.getStudentId().isBlank()) {
+                distinctStudentIds.add(r.getStudentId().trim().toLowerCase());
+            }
+        });
+        userRepository.findAll().forEach(u -> {
+            if (u.hasRole(Role.ROLE_STUDENT) && u.getStudentId() != null && !u.getStudentId().isBlank()) {
+                distinctStudentIds.add(u.getStudentId().trim().toLowerCase());
+            }
+        });
+        return distinctStudentIds;
+    }
 
     @Override
     @Transactional
@@ -40,8 +55,8 @@ public class AttendanceQrServiceImpl implements AttendanceQrService {
         AttendanceSession session = sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Session not found with ID: " + sessionId));
 
-        List<CbpRegistration> registeredStudents = cbpRegistrationRepository.findAll();
-        long totalStudents = registeredStudents.size();
+        Set<String> studentIds = getRegisteredStudentIds();
+        long totalStudents = studentIds.size();
         long generatedCount = 0;
 
         LocalDateTime now = LocalDateTime.now();
@@ -49,11 +64,8 @@ public class AttendanceQrServiceImpl implements AttendanceQrService {
                 ? LocalDateTime.of(session.getSessionDate(), session.getEndTime())
                 : session.getSessionDate().atTime(23, 59, 59);
 
-        for (CbpRegistration student : registeredStudents) {
-            String studentId = student.getStudentId();
-            if (studentId == null || studentId.isBlank()) continue;
-
-            // Deactivate previous active QR for this student and session
+        for (String studentId : studentIds) {
+            // Deactivate previous active QR for this student and session (invalidate old tokens)
             attendanceQrRepository.findBySessionIdAndStudentIdAndActiveTrue(sessionId, studentId).ifPresent(qr -> {
                 qr.setActive(false);
                 attendanceQrRepository.save(qr);
@@ -81,7 +93,8 @@ public class AttendanceQrServiceImpl implements AttendanceQrService {
     @Override
     @Transactional(readOnly = true)
     public QrGenerationStatusResponse getQrGenerationStatus(UUID sessionId) {
-        long totalStudents = cbpRegistrationRepository.count();
+        Set<String> studentIds = getRegisteredStudentIds();
+        long totalStudents = studentIds.size();
         long generatedQr = attendanceQrRepository.countBySessionIdAndActiveTrue(sessionId);
         long pendingQr = Math.max(0, totalStudents - generatedQr);
         return new QrGenerationStatusResponse(totalStudents, generatedQr, pendingQr);
@@ -93,7 +106,8 @@ public class AttendanceQrServiceImpl implements AttendanceQrService {
         AttendanceSession session = sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Session not found with ID: " + sessionId));
 
-        Optional<AttendanceQrCode> existingQr = attendanceQrRepository.findBySessionIdAndStudentIdAndActiveTrue(sessionId, studentId);
+        String cleanStudentId = studentId != null ? studentId.trim().toLowerCase() : "";
+        Optional<AttendanceQrCode> existingQr = attendanceQrRepository.findBySessionIdAndStudentIdAndActiveTrue(sessionId, cleanStudentId);
         AttendanceQrCode qrCode;
 
         if (existingQr.isPresent()) {

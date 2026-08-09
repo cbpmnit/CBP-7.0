@@ -31,7 +31,7 @@ public class AdminStudentManagementController {
     private final AdminStudentManagementService studentManagementService;
 
     @GetMapping("/students")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('STUDENT_VIEW')")
     public ResponseEntity<ApiResponse<Page<AdminStudentListItemResponse>>> getStudents(
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String registrationStatus,
@@ -47,7 +47,7 @@ public class AdminStudentManagementController {
     }
 
     @GetMapping("/students/{studentId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('STUDENT_VIEW')")
     public ResponseEntity<ApiResponse<AdminFullStudentDetailResponse>> getStudentById(
             @PathVariable String studentId
     ) {

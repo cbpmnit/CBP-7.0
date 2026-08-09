@@ -3,6 +3,7 @@ import { api } from "@/utils/api"
 export interface InviteVolunteerRequest {
   email: string
   name?: string
+  permissions?: string[]
 }
 
 export interface VolunteerInvitationResponse {
@@ -13,6 +14,7 @@ export interface VolunteerInvitationResponse {
   status: "PENDING" | "ACCEPTED" | "EXPIRED" | "REVOKED"
   expiresAt: string
   activationLink: string
+  permissions?: string[]
 }
 
 export interface VolunteerListItemResponse {
@@ -21,6 +23,7 @@ export interface VolunteerListItemResponse {
   email: string
   role: string
   status: "INVITED" | "ACTIVE" | "DISABLED" | "EXPIRED" | "PENDING"
+  permissions?: string[]
   createdAt: string
 }
 
@@ -35,6 +38,11 @@ export interface VolunteerPasswordSetupRequest {
   token: string
   password: string
   confirmPassword?: string
+}
+
+export interface AcceptVolunteerInvitationRequest {
+  token: string
+  password?: string
 }
 
 export const volunteerService = {
@@ -62,6 +70,11 @@ export const volunteerService = {
   // Public Volunteer Activation Endpoints
   async verifyInvitation(token: string): Promise<VerifyInvitationResponse> {
     const res = await api.get<any>(`/api/v1/auth/volunteer/verify-invitation?token=${encodeURIComponent(token)}`)
+    return res?.data || res
+  },
+
+  async acceptInvitation(data: AcceptVolunteerInvitationRequest): Promise<any> {
+    const res = await api.post<any>("/api/v1/auth/volunteer/accept-invitation", data)
     return res?.data || res
   },
 

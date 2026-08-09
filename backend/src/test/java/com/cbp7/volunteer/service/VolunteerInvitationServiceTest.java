@@ -56,7 +56,7 @@ class VolunteerInvitationServiceTest {
 
     @BeforeEach
     void setUp() {
-        inviteRequest = new InviteVolunteerRequest("volunteer@mnit.ac.in", "John Volunteer", Set.of("ATTENDANCE_SCAN", "ATTENDANCE_VIEW"));
+        inviteRequest = new InviteVolunteerRequest("volunteer@mnit.ac.in", "John Volunteer", Set.of("ATTENDANCE_SCAN", "ATTENDANCE_VIEW", "STUDENT_VIEW"));
         lenient().when(frontendProperties.buildUrl(anyString())).thenAnswer(i -> "http://localhost:3000" + i.getArgument(0));
         lenient().when(frontendProperties.getUrl()).thenReturn("http://localhost:3000");
     }
@@ -85,8 +85,8 @@ class VolunteerInvitationServiceTest {
     }
 
     @Test
-    @DisplayName("Admin inviting existing user returns exists=true without throwing exception")
-    void testInviteVolunteerExistingUserReturnsExistsTrue() {
+    @DisplayName("Admin inviting existing user automatically upgrades role to ROLE_VOLUNTEER and persists permissions")
+    void testInviteVolunteerExistingUserUpgradesRole() {
         User existingUser = User.builder()
                 .id(UUID.randomUUID())
                 .studentId("2024ucp1186")
@@ -98,6 +98,9 @@ class VolunteerInvitationServiceTest {
                 .build();
 
         when(userRepository.findByEmailIgnoreCase("volunteer@mnit.ac.in")).thenReturn(Optional.of(existingUser));
+        when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArgument(0));
+        when(invitationRepository.findByEmailIgnoreCase("volunteer@mnit.ac.in")).thenReturn(Optional.empty());
+        when(invitationRepository.save(any(VolunteerInvitation.class))).thenAnswer(i -> i.getArgument(0));
 
         VolunteerInviteCheckResponse response = volunteerInvitationService.inviteVolunteer(inviteRequest, "admin_user");
 
@@ -105,10 +108,11 @@ class VolunteerInvitationServiceTest {
         assertThat(response.exists()).isTrue();
         assertThat(response.name()).isEqualTo("Existing Student");
         assertThat(response.email()).isEqualTo("volunteer@mnit.ac.in");
-        assertThat(response.currentRoles()).contains("ROLE_STUDENT");
+        assertThat(existingUser.getRole()).isEqualTo(Role.ROLE_VOLUNTEER);
+        assertThat(existingUser.getRoles()).contains(Role.ROLE_VOLUNTEER);
+        assertThat(existingUser.getPermissions()).contains("ATTENDANCE_SCAN", "ATTENDANCE_VIEW", "STUDENT_VIEW");
 
-        verify(invitationRepository, never()).save(any());
-        verify(emailSender, never()).sendEmail(anyString(), anyString(), anyString());
+        verify(emailSender, times(1)).sendEmail(eq("volunteer@mnit.ac.in"), contains("Volunteer Access Granted"), anyString());
     }
 
     @Test
@@ -137,10 +141,50 @@ class VolunteerInvitationServiceTest {
         VolunteerDetailResponse response = volunteerInvitationService.grantVolunteerAccess(grantReq, "admin_user");
 
         assertThat(response).isNotNull();
-        assertThat(studentUser.getRoles()).contains(Role.ROLE_VOLUNTEER, Role.ROLE_STUDENT);
+        assertThat(studentUser.getRole()).isEqualTo(Role.ROLE_VOLUNTEER);
+        assertThat(studentUser.getRoles()).contains(Role.ROLE_VOLUNTEER);
         assertThat(studentUser.getPermissions()).contains("ATTENDANCE_SCAN", "STUDENT_VIEW");
 
         verify(emailSender, times(1)).sendEmail(eq("volunteer@mnit.ac.in"), contains("Volunteer Access Granted"), anyString());
+    }
+
+    @Test
+    @DisplayName("Accept invitation for existing user upgrades role and assigns permissions")
+    void testAcceptInvitationExistingUser() {
+        String token = "valid_token_existing";
+        VolunteerInvitation invitation = VolunteerInvitation.builder()
+                .id(UUID.randomUUID())
+                .email("student@mnit.ac.in")
+                .name("Student Person")
+                .invitationToken(token)
+                .status(VolunteerInvitationStatus.PENDING)
+                .expiresAt(LocalDateTime.now().plusHours(12))
+                .permissions(Set.of("ATTENDANCE_SCAN", "ATTENDANCE_VIEW", "SESSION_VIEW"))
+                .createdBy("admin")
+                .build();
+
+        User studentUser = User.builder()
+                .id(UUID.randomUUID())
+                .studentId("2024ucp1190")
+                .name("Student Person")
+                .email("student@mnit.ac.in")
+                .role(Role.ROLE_STUDENT)
+                .roles(new HashSet<>(List.of(Role.ROLE_STUDENT)))
+                .enabled(true)
+                .build();
+
+        when(invitationRepository.findByInvitationToken(token)).thenReturn(Optional.of(invitation));
+        when(userRepository.findByEmailIgnoreCase("student@mnit.ac.in")).thenReturn(Optional.of(studentUser));
+        when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArgument(0));
+
+        AcceptVolunteerInvitationRequest request = new AcceptVolunteerInvitationRequest(token, null);
+        AcceptVolunteerInvitationResponse response = volunteerInvitationService.acceptInvitation(request);
+
+        assertThat(response).isNotNull();
+        assertThat(studentUser.getRole()).isEqualTo(Role.ROLE_VOLUNTEER);
+        assertThat(studentUser.getRoles()).contains(Role.ROLE_VOLUNTEER);
+        assertThat(studentUser.getPermissions()).contains("ATTENDANCE_SCAN", "SESSION_VIEW");
+        assertThat(invitation.getStatus()).isEqualTo(VolunteerInvitationStatus.ACCEPTED);
     }
 
     @Test
@@ -154,6 +198,7 @@ class VolunteerInvitationServiceTest {
                 .invitationToken(token)
                 .status(VolunteerInvitationStatus.PENDING)
                 .expiresAt(LocalDateTime.now().plusHours(12))
+                .permissions(Set.of("ATTENDANCE_SCAN", "ATTENDANCE_VIEW"))
                 .createdBy("admin")
                 .build();
 
@@ -161,6 +206,7 @@ class VolunteerInvitationServiceTest {
         when(userRepository.findByEmailIgnoreCase("volunteer@mnit.ac.in")).thenReturn(Optional.empty());
         when(userRepository.existsByStudentId(anyString())).thenReturn(false);
         when(passwordEncoder.encode("secretPassword123")).thenReturn("hashed_secret");
+        when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArgument(0));
 
         VolunteerPasswordSetupRequest request = new VolunteerPasswordSetupRequest(token, "secretPassword123", "secretPassword123");
         String message = volunteerInvitationService.setupPassword(request);
@@ -171,6 +217,7 @@ class VolunteerInvitationServiceTest {
         verify(userRepository, times(1)).save(argThat(user ->
                 user.getEmail().equals("volunteer@mnit.ac.in") &&
                 user.hasRole(Role.ROLE_VOLUNTEER) &&
+                user.getRole() == Role.ROLE_VOLUNTEER &&
                 user.getEnabled()
         ));
         verify(invitationRepository, times(1)).save(invitation);

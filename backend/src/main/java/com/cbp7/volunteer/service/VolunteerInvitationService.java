@@ -32,10 +32,21 @@ public class VolunteerInvitationService {
     private final EmailSender emailSender;
     private final FrontendProperties frontendProperties;
 
+    private static final Set<String> DEFAULT_VOLUNTEER_PERMS = Set.of(
+            "ATTENDANCE_VIEW",
+            "SESSION_VIEW",
+            "ATTENDANCE_SCAN",
+            "STUDENT_VIEW",
+            "PAYMENT_VIEW",
+            "EMAIL_SEND"
+    );
+
     /**
-     * Case A & B: Check or Invite Volunteer.
-     * If user already exists in DB -> returns exists=true with user details so admin can grant access directly.
-     * If user does NOT exist -> creates invitation, generates setup token, and sends invitation email.
+     * Case 1 & 2: Check or Invite Volunteer.
+     * Case 1: If user already exists in DB -> automatically upgrades role to ROLE_VOLUNTEER,
+     * assigns permission scopes into identity.user_permissions, marks invitation ACCEPTED,
+     * and sends access confirmation email.
+     * Case 2: If user does NOT exist -> creates invitation with token and sends setup email.
      */
     @Transactional
     public VolunteerInviteCheckResponse inviteVolunteer(InviteVolunteerRequest request, String adminId) {
@@ -44,20 +55,58 @@ public class VolunteerInvitationService {
 
         Set<String> perms = request.permissions() != null && !request.permissions().isEmpty()
                 ? new HashSet<>(request.permissions())
-                : new HashSet<>(List.of("ATTENDANCE_SCAN", "ATTENDANCE_VIEW"));
+                : new HashSet<>(DEFAULT_VOLUNTEER_PERMS);
 
-        // 1. Check if user already exists in identity.users
+        // 1. Case 1: Check if user already exists in identity.users
         Optional<User> existingUserOpt = userRepository.findByEmailIgnoreCase(email);
         if (existingUserOpt.isPresent()) {
             User existingUser = existingUserOpt.get();
-            log.info("Existing user account found for volunteer invite check: email={}, currentRole={}", email, existingUser.getRole());
+            log.info("Existing user account found for volunteer invite: email={}, upgrading to ROLE_VOLUNTEER", email);
 
-            Set<String> currentRoles = new HashSet<>();
-            if (existingUser.getRoles() != null && !existingUser.getRoles().isEmpty()) {
-                currentRoles = existingUser.getRoles().stream().map(Enum::name).collect(Collectors.toSet());
-            } else if (existingUser.getRole() != null) {
-                currentRoles.add(existingUser.getRole().name());
+            // Upgrade role: ROLE_STUDENT to ROLE_VOLUNTEER
+            if (!existingUser.hasRole(Role.ROLE_ADMIN)) {
+                existingUser.setRole(Role.ROLE_VOLUNTEER);
             }
+            existingUser.addRole(Role.ROLE_VOLUNTEER);
+
+            // Store assigned permission scopes in identity.user_permissions
+            existingUser.setPermissions(new HashSet<>(perms));
+            existingUser.setEnabled(true);
+            if (request.name() != null && !request.name().isBlank() && (existingUser.getName() == null || existingUser.getName().isBlank())) {
+                existingUser.setName(request.name().trim());
+            }
+            existingUser = userRepository.save(existingUser);
+
+            // Mark or create invitation as ACCEPTED
+            Optional<VolunteerInvitation> existingInv = invitationRepository.findByEmailIgnoreCase(email);
+            VolunteerInvitation invitation;
+            if (existingInv.isPresent()) {
+                invitation = existingInv.get();
+                invitation.setStatus(VolunteerInvitationStatus.ACCEPTED);
+                invitation.setAcceptedAt(LocalDateTime.now());
+                invitation.setPermissions(perms);
+            } else {
+                invitation = VolunteerInvitation.builder()
+                        .email(email)
+                        .name(existingUser.getName())
+                        .invitationToken("accepted_" + UUID.randomUUID().toString().replace("-", ""))
+                        .status(VolunteerInvitationStatus.ACCEPTED)
+                        .expiresAt(LocalDateTime.now().plusDays(30))
+                        .emailSentAt(LocalDateTime.now())
+                        .emailDeliveryStatus("SENT")
+                        .acceptedAt(LocalDateTime.now())
+                        .permissions(perms)
+                        .createdBy(adminId != null ? adminId : "admin")
+                        .build();
+            }
+            invitationRepository.save(invitation);
+
+            // Send notification email
+            sendVolunteerAccessGrantedEmail(existingUser.getEmail(), existingUser.getName(), perms);
+
+            Set<String> currentRoles = existingUser.getRoles() != null
+                    ? existingUser.getRoles().stream().map(Enum::name).collect(Collectors.toSet())
+                    : Set.of("ROLE_VOLUNTEER");
 
             return new VolunteerInviteCheckResponse(
                     true,
@@ -65,17 +114,17 @@ public class VolunteerInvitationService {
                     existingUser.getName(),
                     existingUser.getEmail(),
                     currentRoles,
-                    existingUser.getPermissions() != null ? existingUser.getPermissions() : Set.of(),
+                    existingUser.getPermissions() != null ? existingUser.getPermissions() : perms,
+                    invitation.getId(),
+                    invitation.getInvitationToken(),
+                    invitation.getStatus(),
+                    invitation.getExpiresAt(),
                     null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    "Existing user account found. You can grant volunteer access directly."
+                    "Existing user account upgraded to ROLE_VOLUNTEER with assigned permissions."
             );
         }
 
-        // 2. New User: Create or update VolunteerInvitation
+        // 2. Case 2: New User: Create or update VolunteerInvitation
         Optional<VolunteerInvitation> existingInv = invitationRepository.findByEmailIgnoreCase(email);
         VolunteerInvitation invitation;
 
@@ -159,13 +208,16 @@ public class VolunteerInvitationService {
 
         User user = userOpt.get();
 
-        // 1. Add ROLE_VOLUNTEER to roles
+        // 1. Upgrade role: Set primary role to ROLE_VOLUNTEER (unless admin) and add to roles set
+        if (!user.hasRole(Role.ROLE_ADMIN)) {
+            user.setRole(Role.ROLE_VOLUNTEER);
+        }
         user.addRole(Role.ROLE_VOLUNTEER);
 
-        // 2. Set permissions
+        // 2. Set permissions in identity.user_permissions
         Set<String> perms = request.permissions() != null && !request.permissions().isEmpty()
                 ? new HashSet<>(request.permissions())
-                : new HashSet<>(List.of("ATTENDANCE_SCAN", "ATTENDANCE_VIEW"));
+                : new HashSet<>(DEFAULT_VOLUNTEER_PERMS);
         user.setPermissions(perms);
 
         // 3. Ensure user is enabled
@@ -181,6 +233,7 @@ public class VolunteerInvitationService {
         invitationRepository.findByEmailIgnoreCase(user.getEmail()).ifPresent(inv -> {
             inv.setStatus(VolunteerInvitationStatus.ACCEPTED);
             inv.setAcceptedAt(LocalDateTime.now());
+            inv.setPermissions(perms);
             invitationRepository.save(inv);
         });
 
@@ -198,7 +251,7 @@ public class VolunteerInvitationService {
                 user.getName(),
                 user.getEmail(),
                 user.getPhoneNumber() != null ? user.getPhoneNumber() : "",
-                "ROLE_VOLUNTEER",
+                user.getRole().name(),
                 Boolean.TRUE.equals(user.getEnabled()) ? "ACTIVE" : "DISABLED",
                 user.getPermissions(),
                 assignedSessions,
@@ -206,6 +259,114 @@ public class VolunteerInvitationService {
                 user.getUpdatedAt(),
                 null
         );
+    }
+
+    /**
+     * Accept volunteer invitation and assign volunteer role & permission scopes.
+     */
+    @Transactional
+    public AcceptVolunteerInvitationResponse acceptInvitation(AcceptVolunteerInvitationRequest request) {
+        String token = request.token() != null ? request.token().trim() : "";
+        String rawPassword = request.password() != null ? request.password().trim() : "";
+
+        if (token.isEmpty()) {
+            throw new IllegalArgumentException("Invitation token is required");
+        }
+
+        VolunteerInvitation invitation = invitationRepository.findByInvitationToken(token)
+                .orElseThrow(() -> new InvalidCredentialsException("Invalid or expired invitation token"));
+
+        if (invitation.getStatus() == VolunteerInvitationStatus.ACCEPTED) {
+            throw new InvalidCredentialsException("This invitation has already been accepted and activated");
+        }
+
+        if (invitation.getStatus() == VolunteerInvitationStatus.REVOKED) {
+            throw new InvalidCredentialsException("This volunteer invitation was revoked by the administrator");
+        }
+
+        if (invitation.getExpiresAt().isBefore(LocalDateTime.now())) {
+            invitation.setStatus(VolunteerInvitationStatus.EXPIRED);
+            invitationRepository.save(invitation);
+            throw new InvalidCredentialsException("Invitation link has expired. Please request a new invitation from admin");
+        }
+
+        String email = invitation.getEmail().trim().toLowerCase();
+        String name = invitation.getName() != null && !invitation.getName().isBlank()
+                ? invitation.getName().trim()
+                : email.split("@")[0];
+
+        Set<String> perms = invitation.getPermissions() != null && !invitation.getPermissions().isEmpty()
+                ? new HashSet<>(invitation.getPermissions())
+                : new HashSet<>(DEFAULT_VOLUNTEER_PERMS);
+
+        Optional<User> existingUserOpt = userRepository.findByEmailIgnoreCase(email);
+        User user;
+
+        if (existingUserOpt.isPresent()) {
+            // Case 1: Existing CBP User -> Upgrade role and persist permissions
+            user = existingUserOpt.get();
+            if (!user.hasRole(Role.ROLE_ADMIN)) {
+                user.setRole(Role.ROLE_VOLUNTEER);
+            }
+            user.addRole(Role.ROLE_VOLUNTEER);
+            user.setPermissions(perms);
+            if (!rawPassword.isEmpty()) {
+                user.setPassword(passwordEncoder.encode(rawPassword));
+            }
+            user.setEnabled(true);
+        } else {
+            // Case 2: New User -> Require password and create volunteer account
+            if (rawPassword.isEmpty()) {
+                throw new IllegalArgumentException("Password is required for new volunteer account activation");
+            }
+
+            String baseId = "vol_" + email.split("@")[0].replaceAll("[^a-zA-Z0-9]", "");
+            String studentId = baseId;
+            int count = 1;
+            while (userRepository.existsByStudentId(studentId)) {
+                studentId = baseId + count++;
+            }
+
+            user = User.builder()
+                    .studentId(studentId)
+                    .email(email)
+                    .name(name)
+                    .password(passwordEncoder.encode(rawPassword))
+                    .role(Role.ROLE_VOLUNTEER)
+                    .roles(new HashSet<>(List.of(Role.ROLE_VOLUNTEER)))
+                    .enabled(true)
+                    .permissions(perms)
+                    .build();
+        }
+
+        user = userRepository.save(user);
+
+        invitation.setStatus(VolunteerInvitationStatus.ACCEPTED);
+        invitation.setAcceptedAt(LocalDateTime.now());
+        invitation.setUpdatedAt(LocalDateTime.now());
+        invitationRepository.save(invitation);
+
+        log.info("Volunteer invitation accepted for {} with role {} and permissions {}", email, user.getRole(), perms);
+
+        return new AcceptVolunteerInvitationResponse(
+                user.getEmail(),
+                user.getName(),
+                user.getRole().name(),
+                user.getPermissions(),
+                "Volunteer account activated successfully! You can now log in."
+        );
+    }
+
+    /**
+     * Backward-compatible setup password method delegating to acceptInvitation.
+     */
+    @Transactional
+    public String setupPassword(VolunteerPasswordSetupRequest request) {
+        AcceptVolunteerInvitationResponse res = acceptInvitation(new AcceptVolunteerInvitationRequest(
+                request.token(),
+                request.password()
+        ));
+        return res.message();
     }
 
     /**
@@ -218,7 +379,7 @@ public class VolunteerInvitationService {
 
         for (VolunteerInvitation inv : all) {
             if (inv.getStatus() == VolunteerInvitationStatus.ACCEPTED) {
-                continue; // Accepted invitations are in Active Volunteers
+                continue;
             }
 
             VolunteerInvitationStatus currentStatus = inv.getStatus();
@@ -240,7 +401,7 @@ public class VolunteerInvitationService {
                     inv.getAcceptedAt(),
                     inv.getEmailDeliveryStatus() != null ? inv.getEmailDeliveryStatus() : "SENT",
                     inv.getEmailFailureReason(),
-                    inv.getPermissions() != null ? inv.getPermissions() : Set.of("ATTENDANCE_SCAN", "ATTENDANCE_VIEW"),
+                    inv.getPermissions() != null ? inv.getPermissions() : DEFAULT_VOLUNTEER_PERMS,
                     activationLink,
                     inv.getCreatedBy() != null ? inv.getCreatedBy() : "Admin"
             ));
@@ -276,7 +437,7 @@ public class VolunteerInvitationService {
                 inv.getAcceptedAt(),
                 inv.getEmailDeliveryStatus() != null ? inv.getEmailDeliveryStatus() : "SENT",
                 inv.getEmailFailureReason(),
-                inv.getPermissions() != null ? inv.getPermissions() : Set.of("ATTENDANCE_SCAN", "ATTENDANCE_VIEW"),
+                inv.getPermissions() != null ? inv.getPermissions() : DEFAULT_VOLUNTEER_PERMS,
                 activationLink,
                 inv.getCreatedBy() != null ? inv.getCreatedBy() : "Admin"
         );
@@ -387,7 +548,6 @@ public class VolunteerInvitationService {
     public List<VolunteerListItemResponse> getAllVolunteers() {
         List<VolunteerListItemResponse> list = new ArrayList<>();
 
-        // Registered Volunteer Users (Users with ROLE_VOLUNTEER in roles set or role field)
         List<User> activeVolunteers = userRepository.findAll().stream()
                 .filter(u -> u.hasRole(Role.ROLE_VOLUNTEER))
                 .toList();
@@ -396,13 +556,13 @@ public class VolunteerInvitationService {
             String status = Boolean.TRUE.equals(u.getEnabled()) ? "ACTIVE" : "DISABLED";
             Set<String> perms = u.getPermissions() != null && !u.getPermissions().isEmpty()
                     ? u.getPermissions()
-                    : Set.of("ATTENDANCE_SCAN", "ATTENDANCE_VIEW");
+                    : new HashSet<>(DEFAULT_VOLUNTEER_PERMS);
 
             list.add(new VolunteerListItemResponse(
                     u.getId() != null ? u.getId().toString() : u.getStudentId(),
                     u.getName(),
                     u.getEmail(),
-                    "ROLE_VOLUNTEER",
+                    u.getRole().name(),
                     status,
                     perms,
                     Set.of("All Workshop Sessions"),
@@ -435,14 +595,14 @@ public class VolunteerInvitationService {
             String status = Boolean.TRUE.equals(u.getEnabled()) ? "ACTIVE" : "DISABLED";
             Set<String> perms = u.getPermissions() != null && !u.getPermissions().isEmpty()
                     ? u.getPermissions()
-                    : Set.of("ATTENDANCE_SCAN", "ATTENDANCE_VIEW");
+                    : new HashSet<>(DEFAULT_VOLUNTEER_PERMS);
 
             return new VolunteerDetailResponse(
                     u.getId() != null ? u.getId().toString() : u.getStudentId(),
                     u.getName(),
                     u.getEmail(),
                     u.getPhoneNumber() != null ? u.getPhoneNumber() : "",
-                    "ROLE_VOLUNTEER",
+                    u.getRole().name(),
                     status,
                     perms,
                     Set.of("All Active Workshop Sessions"),
@@ -470,7 +630,7 @@ public class VolunteerInvitationService {
                         "",
                         "ROLE_VOLUNTEER",
                         status,
-                        inv.getPermissions() != null && !inv.getPermissions().isEmpty() ? inv.getPermissions() : Set.of("ATTENDANCE_SCAN"),
+                        inv.getPermissions() != null && !inv.getPermissions().isEmpty() ? inv.getPermissions() : DEFAULT_VOLUNTEER_PERMS,
                         Set.of("Gate Access Verification"),
                         inv.getCreatedAt() != null ? inv.getCreatedAt() : LocalDateTime.now(),
                         null,
@@ -494,7 +654,7 @@ public class VolunteerInvitationService {
                     "",
                     "ROLE_VOLUNTEER",
                     status,
-                    inv.getPermissions() != null && !inv.getPermissions().isEmpty() ? inv.getPermissions() : Set.of("ATTENDANCE_SCAN"),
+                    inv.getPermissions() != null && !inv.getPermissions().isEmpty() ? inv.getPermissions() : DEFAULT_VOLUNTEER_PERMS,
                     Set.of("Gate Access Verification"),
                     inv.getCreatedAt() != null ? inv.getCreatedAt() : LocalDateTime.now(),
                     null,
@@ -524,6 +684,10 @@ public class VolunteerInvitationService {
         if (userOpt.isPresent()) {
             User u = userOpt.get();
             u.setPermissions(new HashSet<>(newPerms));
+            if (!u.hasRole(Role.ROLE_ADMIN)) {
+                u.setRole(Role.ROLE_VOLUNTEER);
+            }
+            u.addRole(Role.ROLE_VOLUNTEER);
             userRepository.save(u);
             log.info("Updated permission scopes for volunteer user {}", u.getEmail());
             sendVolunteerPermissionsUpdatedEmail(u.getEmail(), u.getName(), newPerms);
@@ -581,77 +745,6 @@ public class VolunteerInvitationService {
         }
 
         return new VerifyInvitationResponse(inv.getEmail(), inv.getName(), true, "Invitation verified successfully");
-    }
-
-    @Transactional
-    public String setupPassword(VolunteerPasswordSetupRequest request) {
-        String token = request.token() != null ? request.token().trim() : "";
-        String rawPassword = request.password() != null ? request.password().trim() : "";
-
-        if (token.isEmpty() || rawPassword.isEmpty()) {
-            throw new IllegalArgumentException("Token and password are required");
-        }
-
-        VolunteerInvitation invitation = invitationRepository.findByInvitationToken(token)
-                .orElseThrow(() -> new InvalidCredentialsException("Invalid or expired invitation token"));
-
-        if (invitation.getStatus() != VolunteerInvitationStatus.PENDING) {
-            throw new InvalidCredentialsException("Invitation is no longer active (status: " + invitation.getStatus() + ")");
-        }
-
-        if (invitation.getExpiresAt().isBefore(LocalDateTime.now())) {
-            invitation.setStatus(VolunteerInvitationStatus.EXPIRED);
-            invitationRepository.save(invitation);
-            throw new InvalidCredentialsException("Invitation link has expired");
-        }
-
-        String email = invitation.getEmail().trim().toLowerCase();
-        String name = invitation.getName() != null && !invitation.getName().isBlank()
-                ? invitation.getName().trim()
-                : email.split("@")[0];
-
-        Set<String> perms = invitation.getPermissions() != null && !invitation.getPermissions().isEmpty()
-                ? new HashSet<>(invitation.getPermissions())
-                : new HashSet<>(List.of("ATTENDANCE_SCAN", "ATTENDANCE_VIEW"));
-
-        Optional<User> existingUserOpt = userRepository.findByEmailIgnoreCase(email);
-        User user;
-
-        if (existingUserOpt.isPresent()) {
-            user = existingUserOpt.get();
-            user.addRole(Role.ROLE_VOLUNTEER);
-            user.setPassword(passwordEncoder.encode(rawPassword));
-            user.setPermissions(perms);
-            user.setEnabled(true);
-        } else {
-            String baseId = "vol_" + email.split("@")[0].replaceAll("[^a-zA-Z0-9]", "");
-            String studentId = baseId;
-            int count = 1;
-            while (userRepository.existsByStudentId(studentId)) {
-                studentId = baseId + count++;
-            }
-
-            user = User.builder()
-                    .studentId(studentId)
-                    .email(email)
-                    .name(name)
-                    .password(passwordEncoder.encode(rawPassword))
-                    .role(Role.ROLE_VOLUNTEER)
-                    .roles(new HashSet<>(List.of(Role.ROLE_VOLUNTEER)))
-                    .enabled(true)
-                    .permissions(perms)
-                    .build();
-        }
-
-        userRepository.save(user);
-
-        invitation.setStatus(VolunteerInvitationStatus.ACCEPTED);
-        invitation.setAcceptedAt(LocalDateTime.now());
-        invitation.setUpdatedAt(LocalDateTime.now());
-        invitationRepository.save(invitation);
-
-        log.info("Volunteer account activated for {} with permissions {}", email, perms);
-        return "Volunteer account activated successfully! You can now log in with your email or Student ID.";
     }
 
     // --- EMAIL DISPATCH TEMPLATES ---

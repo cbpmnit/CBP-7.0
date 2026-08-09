@@ -1,6 +1,8 @@
 package com.cbp7.volunteer.controller;
 
 import com.cbp7.common.response.ApiResponse;
+import com.cbp7.volunteer.dto.AcceptVolunteerInvitationRequest;
+import com.cbp7.volunteer.dto.AcceptVolunteerInvitationResponse;
 import com.cbp7.volunteer.dto.VerifyInvitationResponse;
 import com.cbp7.volunteer.dto.VolunteerPasswordSetupRequest;
 import com.cbp7.volunteer.service.VolunteerInvitationService;
@@ -10,7 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/auth/volunteer")
+@RequestMapping({"/api/v1/auth/volunteer", "/api/auth/volunteer"})
 @RequiredArgsConstructor
 public class VolunteerAuthController {
 
@@ -21,6 +23,14 @@ public class VolunteerAuthController {
             @RequestParam String token
     ) {
         VerifyInvitationResponse response = volunteerInvitationService.verifyInvitation(token);
+        return ResponseEntity.ok(ApiResponse.success(response.message(), response));
+    }
+
+    @PostMapping("/accept-invitation")
+    public ResponseEntity<ApiResponse<AcceptVolunteerInvitationResponse>> acceptInvitation(
+            @Valid @RequestBody AcceptVolunteerInvitationRequest request
+    ) {
+        AcceptVolunteerInvitationResponse response = volunteerInvitationService.acceptInvitation(request);
         return ResponseEntity.ok(ApiResponse.success(response.message(), response));
     }
 

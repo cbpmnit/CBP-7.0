@@ -59,14 +59,14 @@ public class AdminAttendanceSessionController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('VOLUNTEER') or hasAuthority('SESSION_VIEW') or hasAuthority('ATTENDANCE_VIEW')")
     public ResponseEntity<ApiResponse<List<AttendanceSessionResponse>>> getAllSessions() {
         List<AttendanceSessionResponse> response = sessionService.getAllSessions();
         return ResponseEntity.ok(ApiResponse.success("Attendance sessions retrieved successfully", response));
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('VOLUNTEER') or hasAuthority('SESSION_VIEW') or hasAuthority('ATTENDANCE_VIEW')")
     public ResponseEntity<ApiResponse<AttendanceSessionResponse>> getSessionById(@PathVariable UUID id) {
         AttendanceSessionResponse response = sessionService.getSessionById(id);
         return ResponseEntity.ok(ApiResponse.success("Attendance session retrieved successfully", response));
