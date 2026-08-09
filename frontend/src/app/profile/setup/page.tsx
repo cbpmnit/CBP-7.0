@@ -72,6 +72,7 @@ export default function ProfileSetupPage() {
           studentId: updatedUser.studentId,
           name: updatedUser.name,
           role: updatedUser.role,
+          permissions: updatedUser.permissions || [],
         })
       )
 

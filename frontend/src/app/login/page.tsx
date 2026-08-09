@@ -137,6 +137,7 @@ function LoginFormContent() {
           studentId: response.studentId,
           name: response.name,
           role: response.role,
+          permissions: response.permissions || [],
         })
       )
 

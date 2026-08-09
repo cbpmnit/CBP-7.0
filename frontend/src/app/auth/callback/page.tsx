@@ -76,6 +76,7 @@ function OAuthCallbackContent() {
           studentId: userRes.studentId,
           name: userRes.name,
           role: userRes.role,
+          permissions: userRes.permissions || [],
         })
       )
 

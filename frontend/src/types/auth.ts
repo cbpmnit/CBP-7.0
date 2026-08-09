@@ -9,12 +9,15 @@ export interface LoginResponse {
   studentId: string
   name: string
   role: string
+  permissions?: string[]
 }
 
 export interface UserResponse {
+  id?: string
   studentId: string
   email: string
   name: string
   phoneNumber?: string
   role: string
+  permissions?: string[]
 }

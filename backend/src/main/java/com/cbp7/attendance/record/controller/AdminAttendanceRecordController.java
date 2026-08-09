@@ -17,14 +17,14 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.LocalDate;
 
 @RestController
-@RequestMapping("/api/v1/admin/attendance")
+@RequestMapping({"/api/v1/admin/attendance", "/api/admin/attendance"})
 @RequiredArgsConstructor
 public class AdminAttendanceRecordController {
 
     private final AttendanceQueryService attendanceQueryService;
 
     @GetMapping("/date/{date}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('ATTENDANCE_VIEW')")
     public ResponseEntity<ApiResponse<DailyAttendanceReportResponse>> getAttendanceForDate(
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
     ) {
@@ -33,7 +33,7 @@ public class AdminAttendanceRecordController {
     }
 
     @GetMapping("/student/{studentId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('ATTENDANCE_VIEW')")
     public ResponseEntity<ApiResponse<StudentAttendanceSummaryResponse>> getStudentAttendanceHistory(
             @PathVariable String studentId
     ) {
@@ -42,7 +42,7 @@ public class AdminAttendanceRecordController {
     }
 
     @GetMapping("/summary")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('ATTENDANCE_VIEW')")
     public ResponseEntity<ApiResponse<AdminAttendanceSummaryResponse>> getAdminAttendanceSummary() {
         AdminAttendanceSummaryResponse response = attendanceQueryService.getAdminAttendanceSummary();
         return ResponseEntity.ok(ApiResponse.success("Admin attendance summary retrieved successfully", response));

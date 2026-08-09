@@ -12,21 +12,21 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/v1/admin")
+@RequestMapping({"/api/v1/admin", "/api/admin"})
 @RequiredArgsConstructor
 public class AdminDashboardController {
 
     private final AdminDashboardService adminDashboardService;
 
     @GetMapping("/dashboard/summary")
-    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTEER')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('VOLUNTEER')")
     public ResponseEntity<ApiResponse<AdminDashboardSummaryResponse>> getDashboardSummary() {
         AdminDashboardSummaryResponse response = adminDashboardService.getSummary();
         return ResponseEntity.ok(ApiResponse.success("Admin dashboard summary retrieved successfully", response));
     }
 
     @GetMapping("/payments")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('PAYMENT_VIEW')")
     public ResponseEntity<ApiResponse<AdminPaymentOverviewResponse>> getPaymentOverview() {
         AdminPaymentOverviewResponse response = adminDashboardService.getPaymentOverview();
         return ResponseEntity.ok(ApiResponse.success("Payment overview retrieved successfully", response));

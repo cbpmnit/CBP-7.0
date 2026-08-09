@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/admin/attendance/qr")
+@RequestMapping({"/api/v1/admin/attendance/qr", "/api/admin/attendance/qr"})
 @RequiredArgsConstructor
 public class AdminAttendanceQrController {
 
@@ -31,7 +31,7 @@ public class AdminAttendanceQrController {
     }
 
     @GetMapping("/session/{sessionId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('SESSION_VIEW') or hasAuthority('ATTENDANCE_VIEW')")
     public ResponseEntity<ApiResponse<SessionQrCodeResponse>> getSessionQr(@PathVariable UUID sessionId) {
         SessionQrCodeResponse response = attendanceQrService.getActiveSessionQr(sessionId);
         return ResponseEntity.ok(ApiResponse.success("Active session QR code retrieved successfully", response));

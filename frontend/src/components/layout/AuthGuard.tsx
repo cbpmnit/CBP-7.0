@@ -31,6 +31,16 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     const storedStudentId = typeof window !== "undefined" ? localStorage.getItem("cbp-studentId") || "" : ""
     const storedRole = typeof window !== "undefined" ? localStorage.getItem("cbp-role") || "" : ""
     const storedName = typeof window !== "undefined" ? localStorage.getItem("cbp-name") || "" : ""
+    const storedPermissionsRaw = typeof window !== "undefined" ? localStorage.getItem("cbp-permissions") : null
+
+    let storedPermissions: string[] = []
+    if (storedPermissionsRaw) {
+      try {
+        storedPermissions = JSON.parse(storedPermissionsRaw)
+      } catch {
+        storedPermissions = []
+      }
+    }
 
     if (!isAuthenticated && storedToken) {
       dispatch(
@@ -39,6 +49,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
           studentId: storedStudentId,
           role: storedRole,
           name: storedName,
+          permissions: storedPermissions,
         })
       )
     }
@@ -53,7 +64,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         if (effectiveRole === "ROLE_ADMIN" || effectiveRole === "ADMIN") {
           router.replace("/admin/dashboard")
         } else if (effectiveRole === "ROLE_VOLUNTEER" || effectiveRole === "VOLUNTEER") {
-          router.replace("/volunteer/scanner")
+          router.replace("/admin/dashboard")
         } else {
           router.replace("/dashboard")
         }
@@ -69,34 +80,32 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       return
     }
 
-    // 3. Admin Routes: /admin/*
+    // 3. Admin Routes: /admin/* (Permit ADMIN and VOLUNTEER; individual module permissions checked by PermissionGuard)
     if (pathname.startsWith("/admin")) {
-      if (effectiveRole !== "ROLE_ADMIN" && effectiveRole !== "ADMIN") {
+      const isPrivileged =
+        effectiveRole === "ROLE_ADMIN" ||
+        effectiveRole === "ADMIN" ||
+        effectiveRole === "ROLE_VOLUNTEER" ||
+        effectiveRole === "VOLUNTEER"
+
+      if (!isPrivileged) {
         router.replace("/unauthorized")
         return
       }
     }
 
-    // 4. Volunteer Routes: /volunteer/*
+    // 4. Volunteer Routes: /volunteer/* (Permit VOLUNTEER and ADMIN)
     if (pathname.startsWith("/volunteer") && !pathname.startsWith("/volunteer/setup-password")) {
-      if (
-        effectiveRole !== "ROLE_VOLUNTEER" &&
-        effectiveRole !== "VOLUNTEER" &&
-        effectiveRole !== "ROLE_ADMIN" &&
-        effectiveRole !== "ADMIN"
-      ) {
+      const isVolunteerOrAdmin =
+        effectiveRole === "ROLE_VOLUNTEER" ||
+        effectiveRole === "VOLUNTEER" ||
+        effectiveRole === "ROLE_ADMIN" ||
+        effectiveRole === "ADMIN"
+
+      if (!isVolunteerOrAdmin) {
         router.replace("/unauthorized")
         return
       }
-    }
-
-    // 5. Volunteer trying to access student pages
-    if (
-      (effectiveRole === "ROLE_VOLUNTEER" || effectiveRole === "VOLUNTEER") &&
-      ["/dashboard", "/profile", "/payment"].some((p) => pathname.startsWith(p))
-    ) {
-      router.replace("/volunteer/scanner")
-      return
     }
 
     setLoading(false)
