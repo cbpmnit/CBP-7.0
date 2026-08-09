@@ -10,5 +10,7 @@ public record StudentSessionRecordDto(
         String studentEmail,
         AttendanceStatus status,
         LocalDateTime markedAt,
-        String markedBy
+        String markedBy,
+        StudentInfo student,
+        MarkedByInfo markedByDetail
 ) {}

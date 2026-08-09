@@ -31,7 +31,6 @@ export const ALL_ADMIN_NAV_ITEMS: NavItem[] = [
   { id: "admin-volunteers", label: "Volunteers", href: "/admin/volunteers", icon: <FiUserCheck />, permission: "VOLUNTEER_MANAGE" },
   { id: "admin-sessions", label: "Sessions", href: "/admin/sessions", icon: <FiCalendar />, permission: "SESSION_VIEW" },
   { id: "admin-attendance", label: "Attendance", href: "/admin/attendance", icon: <FiCamera />, permission: "ATTENDANCE_VIEW" },
-  { id: "volunteer-scanner", label: "Scanner", href: "/volunteer/scanner", icon: <FiCamera />, permission: "ATTENDANCE_SCAN" },
   { id: "admin-payments", label: "Payments", href: "/admin/payments", icon: <FiCreditCard />, permission: "PAYMENT_VIEW" },
   { id: "admin-certificates", label: "Certificates", href: "/admin/certificates", icon: <FiAward />, permission: "CERTIFICATE_VIEW" },
   { id: "admin-emails", label: "Notification Templates", href: "/admin/emails", icon: <FiMail />, permission: "EMAIL_SEND" },

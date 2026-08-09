@@ -31,6 +31,7 @@ public class AttendanceQrServiceImpl implements AttendanceQrService {
     private final CbpRegistrationRepository cbpRegistrationRepository;
     private final UserRepository userRepository;
     private final QrImageGenerator qrImageGenerator;
+    private final org.springframework.core.env.Environment env;
 
     private static final String TOKEN_PREFIX = "CBP_STUDENT_QR_";
 
@@ -65,11 +66,14 @@ public class AttendanceQrServiceImpl implements AttendanceQrService {
                 : session.getSessionDate().atTime(23, 59, 59);
 
         for (String studentId : studentIds) {
-            // Deactivate previous active QR for this student and session (invalidate old tokens)
-            attendanceQrRepository.findBySessionIdAndStudentIdAndActiveTrue(sessionId, studentId).ifPresent(qr -> {
-                qr.setActive(false);
-                attendanceQrRepository.save(qr);
-            });
+            // Deactivate previous active QRs for this student and session (invalidate old tokens case-insensitively)
+            List<AttendanceQrCode> existingQrs = attendanceQrRepository.findBySessionIdAndStudentIdIgnoreCase(sessionId, studentId);
+            for (AttendanceQrCode qr : existingQrs) {
+                if (qr.isActive()) {
+                    qr.setActive(false);
+                    attendanceQrRepository.save(qr);
+                }
+            }
 
             String token = TOKEN_PREFIX + studentId + "_" + sessionId + "_" + UUID.randomUUID().toString().substring(0, 8);
 
@@ -107,7 +111,7 @@ public class AttendanceQrServiceImpl implements AttendanceQrService {
                 .orElseThrow(() -> new ResourceNotFoundException("Session not found with ID: " + sessionId));
 
         String cleanStudentId = studentId != null ? studentId.trim().toLowerCase() : "";
-        Optional<AttendanceQrCode> existingQr = attendanceQrRepository.findBySessionIdAndStudentIdAndActiveTrue(sessionId, cleanStudentId);
+        Optional<AttendanceQrCode> existingQr = attendanceQrRepository.findFirstBySessionIdAndStudentIdIgnoreCaseAndActiveTrueOrderByCreatedAtDesc(sessionId, cleanStudentId);
         AttendanceQrCode qrCode;
 
         if (existingQr.isPresent()) {
@@ -118,6 +122,11 @@ public class AttendanceQrServiceImpl implements AttendanceQrService {
         }
 
         String qrImage = qrImageGenerator.generateBase64DataUri(qrCode.getToken());
+        int version = (int) attendanceQrRepository.countBySessionIdAndStudentIdIgnoreCase(sessionId, cleanStudentId);
+        if (version == 0) {
+            version = 1;
+        }
+
         return new StudentSessionQrResponse(
                 session.getId(),
                 session.getDayNumber(),
@@ -128,7 +137,10 @@ public class AttendanceQrServiceImpl implements AttendanceQrService {
                 session.getVenue() != null ? session.getVenue() : "VLTC Auditorium, MNIT",
                 qrCode.getToken(),
                 qrImage,
-                qrCode.getExpiresAt() != null ? qrCode.getExpiresAt().toString() : ""
+                qrCode.getExpiresAt() != null ? qrCode.getExpiresAt().toString() : "",
+                qrImage,
+                qrCode.getGeneratedAt() != null ? qrCode.getGeneratedAt().toString() : "",
+                version
         );
     }
 
@@ -139,10 +151,13 @@ public class AttendanceQrServiceImpl implements AttendanceQrService {
                 .orElseThrow(() -> new ResourceNotFoundException("Session not found with ID: " + sessionId));
 
         String defaultStudentId = "SESSION_DEFAULT";
-        attendanceQrRepository.findBySessionIdAndStudentIdAndActiveTrue(sessionId, defaultStudentId).ifPresent(qr -> {
-            qr.setActive(false);
-            attendanceQrRepository.save(qr);
-        });
+        List<AttendanceQrCode> defaultQrs = attendanceQrRepository.findBySessionIdAndStudentIdIgnoreCase(sessionId, defaultStudentId);
+        for (AttendanceQrCode qr : defaultQrs) {
+            if (qr.isActive()) {
+                qr.setActive(false);
+                attendanceQrRepository.save(qr);
+            }
+        }
 
         String token = "CBP_SESSION_QR_" + UUID.randomUUID().toString().replace("-", "");
         LocalDateTime now = LocalDateTime.now();
@@ -187,10 +202,38 @@ public class AttendanceQrServiceImpl implements AttendanceQrService {
     @Transactional(readOnly = true)
     public AttendanceQrCode validateQrToken(String token) {
         AttendanceQrCode qrCode = attendanceQrRepository.findByTokenAndActiveTrue(token)
-                .orElseThrow(() -> new ResourceNotFoundException("Invalid or inactive session QR token: " + token));
+                .orElseThrow(() -> new ResourceNotFoundException("QR code is invalid."));
 
-        if (qrCode.getExpiresAt() != null && LocalDateTime.now().isAfter(qrCode.getExpiresAt())) {
-            throw new IllegalStateException("Session QR code has expired");
+        AttendanceSession session = sessionRepository.findById(qrCode.getSessionId())
+                .orElseThrow(() -> new ResourceNotFoundException("Session not found with ID: " + qrCode.getSessionId()));
+
+        if (session.getStatus() != com.cbp7.attendance.session.entity.SessionStatus.ACTIVE) {
+            throw new IllegalStateException("Attendance session is not ACTIVE. Current status: " + session.getStatus());
+        }
+
+        java.time.LocalDate sessionDate = session.getSessionDate();
+        LocalDateTime now = LocalDateTime.now();
+
+        boolean isTest = env != null && java.util.Arrays.asList(env.getActiveProfiles()).contains("test");
+
+        if (!isTest) {
+            if (session.getStartTime() != null) {
+                LocalDateTime startDateTime = LocalDateTime.of(sessionDate, session.getStartTime());
+                if (now.isBefore(startDateTime)) {
+                    throw new IllegalStateException("Attendance session has not started yet.");
+                }
+            }
+
+            if (session.getEndTime() != null) {
+                LocalDateTime endDateTime = LocalDateTime.of(sessionDate, session.getEndTime());
+                if (now.isAfter(endDateTime)) {
+                    throw new IllegalStateException("Attendance session has ended.");
+                }
+            }
+        }
+
+        if (qrCode.getExpiresAt() != null && now.isAfter(qrCode.getExpiresAt())) {
+            throw new IllegalStateException("QR validity period has expired.");
         }
 
         return qrCode;

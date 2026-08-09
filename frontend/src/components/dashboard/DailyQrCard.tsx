@@ -64,6 +64,7 @@ export default function DailyQrCard({ studentQr }: DailyQrCardProps) {
         {studentQr ? (
           <div className="flex items-center gap-3 bg-white p-2.5 rounded-lg border border-slate-200 mt-2">
             <img
+              key={studentQr.token}
               src={studentQr.qrImageBase64}
               alt="Daily QR"
               className="w-14 h-14 rounded border border-slate-100 shrink-0"

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useAppSelector } from "@/store/hooks"
 import { attendanceService } from "@/services/attendanceService"
 import { adminService, CreateSessionPayload } from "@/services/adminService"
 import { PageHeader } from "@/components/ui/PageHeader"
@@ -15,6 +16,8 @@ import {
   StudentSessionRecordDto,
   PageResponse,
   QrGenerationStatusResponse,
+  StudentAttendanceProfile,
+  UserAttendanceProfile,
 } from "@/types/attendance"
 import {
   FiCalendar,
@@ -28,12 +31,41 @@ import {
   FiMail,
   FiEye,
   FiSend,
+  FiAlertCircle,
+  FiUser,
+  FiInfo,
+  FiDollarSign,
+  FiAward,
+  FiActivity,
+  FiLock,
+  FiUnlock,
+  FiShield,
 } from "react-icons/fi"
 
 export default function AdminAttendanceView() {
+  const { role, permissions } = useAppSelector((state) => state.auth)
+  const normalizedRole = (role || "").toUpperCase().replace("ROLE_", "")
+  const canEdit =
+    normalizedRole === "ADMIN" ||
+    (permissions || []).includes("SESSION_EDIT") ||
+    (permissions || []).includes("SESSION_MANAGE")
+
   const [sessions, setSessions] = useState<AttendanceSessionDto[]>([])
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
   const [loadingSessions, setLoadingSessions] = useState(true)
+
+  // Session Edit Modal State
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [editingSessionId, setEditingSessionId] = useState<string | null>(null)
+  const [editTitle, setEditTitle] = useState("")
+  const [editDesc, setEditDesc] = useState("")
+  const [editDate, setEditDate] = useState("")
+  const [editStart, setEditStart] = useState("")
+  const [editEnd, setEditEnd] = useState("")
+  const [editVenue, setEditVenue] = useState("")
+  const [editStatus, setEditStatus] = useState<any>("UPCOMING")
+  const [updating, setUpdating] = useState(false)
+  const [editError, setEditError] = useState<string | null>(null)
 
   // Session Creation Modal State
   const [showCreateModal, setShowCreateModal] = useState(false)
@@ -69,6 +101,44 @@ export default function AdminAttendanceView() {
   // View QR Token Modal State
   const [viewingRecord, setViewingRecord] = useState<StudentSessionRecordDto | null>(null)
   const [copiedToken, setCopiedToken] = useState(false)
+
+  // Drawers State
+  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null)
+  const [studentProfile, setStudentProfile] = useState<StudentAttendanceProfile | null>(null)
+  const [studentProfileLoading, setStudentProfileLoading] = useState(false)
+
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
+  const [userProfile, setUserProfile] = useState<UserAttendanceProfile | null>(null)
+  const [userProfileLoading, setUserProfileLoading] = useState(false)
+
+  // Drawer handlers
+  const handleOpenStudentDrawer = async (studentId: string) => {
+    setSelectedStudentId(studentId)
+    setStudentProfileLoading(true)
+    setStudentProfile(null)
+    try {
+      const data = await attendanceService.getStudentAttendanceProfile(studentId)
+      setStudentProfile(data)
+    } catch (err) {
+      console.error("Failed to load student profile:", err)
+    } finally {
+      setStudentProfileLoading(false)
+    }
+  }
+
+  const handleOpenUserDrawer = async (userId: string) => {
+    setSelectedUserId(userId)
+    setUserProfileLoading(true)
+    setUserProfile(null)
+    try {
+      const data = await attendanceService.getUserAttendanceProfile(userId)
+      setUserProfile(data)
+    } catch (err) {
+      console.error("Failed to load user profile:", err)
+    } finally {
+      setUserProfileLoading(false)
+    }
+  }
 
   useEffect(() => {
     fetchSessions()
@@ -122,6 +192,69 @@ export default function AdminAttendanceView() {
       }
     } finally {
       setSummaryLoading(false)
+    }
+  }
+
+  const formatTime12h = (timeStr?: string | null) => {
+    if (!timeStr) return "—"
+    const parts = timeStr.split(":")
+    if (parts.length < 2) return timeStr
+    let hours = parseInt(parts[0], 10)
+    const minutes = parts[1]
+    const ampm = hours >= 12 ? "PM" : "AM"
+    hours = hours % 12
+    hours = hours ? hours : 12
+    const hoursStr = hours < 10 ? `0${hours}` : hours.toString()
+    return `${hoursStr}:${minutes} ${ampm}`
+  }
+
+  const handleOpenEditModal = (session: AttendanceSessionDto) => {
+    setEditingSessionId(session.id)
+    setEditTitle(session.title)
+    setEditDesc(session.description || "")
+    setEditDate(session.sessionDate || "")
+    setEditStart(session.startTime ? session.startTime.substring(0, 5) : "")
+    setEditEnd(session.endTime ? session.endTime.substring(0, 5) : "")
+    setEditVenue(session.venue || "")
+    setEditStatus(session.status)
+    setEditError(null)
+    setShowEditModal(true)
+  }
+
+  const handleEditSessionSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editTitle.trim() || !editDate || !editingSessionId) {
+      setEditError("Please enter session title and date.")
+      return
+    }
+
+    setUpdating(true)
+    setEditError(null)
+
+    const payload = {
+      title: editTitle.trim(),
+      description: editDesc.trim() || undefined,
+      sessionDate: editDate,
+      startTime: editStart ? `${editStart}:00` : undefined,
+      endTime: editEnd ? `${editEnd}:00` : undefined,
+      venue: editVenue.trim() || undefined,
+      status: editStatus,
+    }
+
+    try {
+      await adminService.updateSession(editingSessionId, payload)
+      setActionMessage("Session updated successfully. Attendance validity synchronized.")
+      setTimeout(() => setActionMessage(null), 4000)
+      setShowEditModal(false)
+      await fetchSessions()
+      if (selectedSessionId) {
+        await loadSessionDetails(selectedSessionId)
+        await loadRecords(selectedSessionId, search, statusFilter, page)
+      }
+    } catch (err: any) {
+      setEditError(err?.message || "Failed to update attendance session.")
+    } finally {
+      setUpdating(false)
     }
   }
 
@@ -181,13 +314,14 @@ export default function AdminAttendanceView() {
     setGeneratingStudentQrs(true)
     setActionMessage(null)
     try {
-      const res = await attendanceService.generateStudentQrsForSession(selectedSessionId)
-      setActionMessage(`Successfully generated ${res.generated} student QR passes for this session!`)
+      await attendanceService.generateStudentQrsForSession(selectedSessionId)
+      setActionMessage("QR passes regenerated successfully.")
       await loadSessionDetails(selectedSessionId)
       await loadRecords(selectedSessionId, search, statusFilter, page)
       setTimeout(() => setActionMessage(null), 4000)
     } catch (err: any) {
-      setActionMessage(err?.message || "Failed to generate student QR codes.")
+      setActionMessage("QR regeneration failed. Please retry.")
+      setTimeout(() => setActionMessage(null), 4000)
     } finally {
       setGeneratingStudentQrs(false)
     }
@@ -228,12 +362,32 @@ export default function AdminAttendanceView() {
     return (
       <MobileRecordCard
         key={rec.studentId}
-        title={rec.studentName || rec.studentId}
+        title={
+          <button
+            onClick={() => handleOpenStudentDrawer(rec.studentId)}
+            className="font-bold text-cyan-700 hover:text-cyan-900 hover:underline text-left text-xs"
+          >
+            {rec.studentName || rec.studentId}
+          </button>
+        }
         subtitle={`${rec.studentId} • ${rec.studentEmail || ""}`}
         status={rec.status}
         fields={[
           { label: "QR Pass", value: qrStatus && qrStatus.generatedQr > 0 ? "Generated" : "Pending" },
           { label: "Marked Time", value: rec.markedAt ? rec.markedAt.replace("T", " ").substring(0, 16) : "—", mono: true },
+          {
+            label: "Marked By",
+            value: rec.markedByDetail ? (
+              <button
+                onClick={() => handleOpenUserDrawer(rec.markedByDetail?.id || rec.markedBy || "")}
+                className="text-cyan-700 hover:underline text-[11px] font-semibold text-left"
+              >
+                {rec.markedBy || "System"} ({rec.markedByDetail.role.replace("ROLE_", "").toLowerCase()})
+              </button>
+            ) : (
+              <span className="text-[11px] text-slate-600">{rec.markedBy || "System"}</span>
+            )
+          }
         ]}
         actions={
           <div className="flex items-center gap-1.5">
@@ -244,11 +398,17 @@ export default function AdminAttendanceView() {
               <FiEye /> View Pass
             </button>
             <button
+              onClick={() => handleOpenStudentDrawer(rec.studentId)}
+              className="px-2.5 py-1 rounded-lg bg-cyan-50 hover:bg-cyan-100 text-cyan-800 text-[11px] font-bold inline-flex items-center gap-1 border border-cyan-200"
+            >
+              <FiUser /> Profile
+            </button>
+            <button
               onClick={() => {
                 setActionMessage(`Resent pass to ${rec.studentEmail}`)
                 setTimeout(() => setActionMessage(null), 3000)
               }}
-              className="px-2.5 py-1 rounded-lg bg-cyan-50 hover:bg-cyan-100 text-cyan-900 text-[11px] font-bold inline-flex items-center gap-1 border border-cyan-200"
+              className="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-900 text-[11px] font-bold inline-flex items-center gap-1 border border-emerald-200"
             >
               <FiSend /> Resend
             </button>
@@ -338,6 +498,20 @@ export default function AdminAttendanceView() {
                     </div>
                     <h4 className="text-xs font-bold text-slate-900 truncate">{session.title}</h4>
                     <p className="text-[11px] font-mono text-slate-500 mt-0.5">{session.sessionDate}</p>
+                    <p className="text-[10px] font-mono text-cyan-800 font-semibold mt-0.5">
+                      {formatTime12h(session.startTime || undefined)} - {formatTime12h(session.endTime || undefined)}
+                    </p>
+                    {canEdit && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleOpenEditModal(session)
+                        }}
+                        className="mt-1.5 text-[10px] font-bold text-cyan-700 bg-cyan-50/50 hover:bg-cyan-50 px-2 py-0.5 rounded border border-cyan-200/60 transition w-full text-center cursor-pointer"
+                      >
+                        Edit Session
+                      </button>
+                    )}
                   </div>
 
                   <div className="mt-2 pt-1.5 border-t border-slate-100 flex items-center justify-between">
@@ -476,6 +650,7 @@ export default function AdminAttendanceView() {
                   <th className="px-4 py-2.5">Email</th>
                   <th className="px-4 py-2.5">Status</th>
                   <th className="px-4 py-2.5">Marked Time</th>
+                  <th className="px-4 py-2.5">Marked By</th>
                   <th className="px-4 py-2.5 text-right">Actions</th>
                 </tr>
               </thead>
@@ -484,7 +659,14 @@ export default function AdminAttendanceView() {
                   const isPresent = rec.status === "PRESENT"
                   return (
                     <tr key={rec.studentId} className="hover:bg-slate-50/70 transition">
-                      <td className="px-4 py-2.5 font-bold text-slate-900">{rec.studentName}</td>
+                      <td className="px-4 py-2.5">
+                        <button
+                          onClick={() => handleOpenStudentDrawer(rec.studentId)}
+                          className="font-bold text-cyan-700 hover:text-cyan-900 hover:underline text-left text-xs"
+                        >
+                          {rec.studentName || rec.studentId}
+                        </button>
+                      </td>
                       <td className="px-4 py-2.5 font-mono font-bold text-slate-700">{rec.studentId}</td>
                       <td className="px-4 py-2.5 text-slate-500 font-mono">{rec.studentEmail}</td>
                       <td className="px-4 py-2.5">
@@ -493,21 +675,50 @@ export default function AdminAttendanceView() {
                       <td className="px-4 py-2.5 text-slate-500 font-mono text-[11px]">
                         {rec.markedAt ? rec.markedAt.replace("T", " ").substring(0, 16) : "—"}
                       </td>
-                      <td className="px-4 py-2.5 text-right space-x-1.5">
+                      <td className="px-4 py-2.5">
+                        {rec.markedByDetail ? (
+                          <button
+                            onClick={() => handleOpenUserDrawer(rec.markedByDetail?.id || rec.markedBy || "")}
+                            className="text-left group"
+                          >
+                            <div className="font-semibold text-slate-800 group-hover:text-cyan-700 group-hover:underline text-xs">
+                              {rec.markedBy || "System"}
+                            </div>
+                            <div className="text-[10px] text-slate-500 font-mono">
+                              {rec.markedByDetail.role.replace("ROLE_", "").toLowerCase()}
+                            </div>
+                          </button>
+                        ) : (
+                          <span className="text-slate-500 font-mono text-[11px]">{rec.markedBy || "System"}</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-2.5 text-right space-x-1.5 whitespace-nowrap">
                         <button
                           onClick={() => setViewingRecord(rec)}
-                          className="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold inline-flex items-center gap-1 border border-slate-200"
+                          title="View Gate Pass"
+                          className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold inline-flex items-center gap-1 border border-slate-200"
                         >
-                          <FiEye className="text-xs text-slate-600" /> Pass
+                          <FiEye className="text-xs text-slate-600" />
+                          <span className="hidden sm:inline">Pass</span>
+                        </button>
+                        <button
+                          onClick={() => handleOpenStudentDrawer(rec.studentId)}
+                          title="View Student Profile"
+                          className="p-1.5 rounded-lg bg-cyan-50 hover:bg-cyan-100 text-cyan-800 text-xs font-semibold inline-flex items-center gap-1 border border-cyan-100"
+                        >
+                          <FiUser className="text-xs text-cyan-600" />
+                          <span className="hidden sm:inline">Profile</span>
                         </button>
                         <button
                           onClick={() => {
                             setActionMessage(`Resent pass to ${rec.studentEmail}`)
                             setTimeout(() => setActionMessage(null), 3000)
                           }}
-                          className="px-2 py-1 rounded-lg bg-cyan-50 hover:bg-cyan-100 text-cyan-900 text-xs font-semibold inline-flex items-center gap-1 border border-cyan-200"
+                          title="Resend Gate Pass Email"
+                          className="p-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold inline-flex items-center gap-1 border border-emerald-100"
                         >
-                          <FiSend className="text-xs text-cyan-700" /> Resend
+                          <FiSend className="text-xs text-emerald-600" />
+                          <span className="hidden sm:inline">Resend</span>
                         </button>
                       </td>
                     </tr>
@@ -629,6 +840,130 @@ export default function AdminAttendanceView() {
         </div>
       )}
 
+      {/* MODAL 1.5: Edit Session */}
+      {showEditModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl p-5 max-w-sm w-full border border-slate-200 shadow-xl relative animate-in zoom-in-95 duration-200">
+            <button
+              onClick={() => setShowEditModal(false)}
+              className="absolute right-4 top-4 text-slate-400 hover:text-slate-700 cursor-pointer"
+            >
+              <FiX className="text-lg" />
+            </button>
+
+            <h3 className="text-sm font-extrabold text-slate-900 mb-1">Edit Session</h3>
+            <p className="text-xs text-slate-500 mb-4">
+              Modify timing, venue, and status parameters.
+            </p>
+
+            {editError && (
+              <div className="mb-3.5 p-2 rounded-lg bg-rose-50 border border-rose-200 text-rose-900 text-[11px] font-semibold flex items-center gap-1.5">
+                <FiAlertCircle className="text-rose-600 shrink-0" />
+                <span>{editError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleEditSessionSubmit} className="space-y-3.5 text-xs">
+              <div className="grid grid-cols-3 gap-2.5">
+                <div className="col-span-1">
+                  <label className="block font-bold uppercase tracking-wider text-slate-700 mb-1">Day</label>
+                  <input
+                    type="number"
+                    disabled
+                    value={editingSessionId ? sessions.find(s => s.id === editingSessionId)?.dayNumber || 1 : 1}
+                    className="w-full rounded-lg bg-slate-100 border border-slate-200 px-3 py-2 text-xs text-slate-500 focus:outline-none font-semibold cursor-not-allowed"
+                  />
+                </div>
+                <div className="col-span-2">
+                  <label className="block font-bold uppercase tracking-wider text-slate-700 mb-1">Date *</label>
+                  <input
+                    type="date"
+                    required
+                    value={editDate}
+                    onChange={(e) => setEditDate(e.target.value)}
+                    className="w-full rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:bg-white focus:border-cyan-600 focus:outline-none font-semibold"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold uppercase tracking-wider text-slate-700 mb-1">Title *</label>
+                <input
+                  type="text"
+                  required
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  className="w-full rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:bg-white focus:border-cyan-600 focus:outline-none font-semibold"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className="block font-bold uppercase tracking-wider text-slate-700 mb-1">Start Time</label>
+                  <input
+                    type="time"
+                    value={editStart}
+                    onChange={(e) => setEditStart(e.target.value)}
+                    className="w-full rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:bg-white focus:border-cyan-600 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold uppercase tracking-wider text-slate-700 mb-1">End Time</label>
+                  <input
+                    type="time"
+                    value={editEnd}
+                    onChange={(e) => setEditEnd(e.target.value)}
+                    className="w-full rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:bg-white focus:border-cyan-600 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold uppercase tracking-wider text-slate-700 mb-1">Venue</label>
+                <input
+                  type="text"
+                  value={editVenue}
+                  onChange={(e) => setEditVenue(e.target.value)}
+                  className="w-full rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:bg-white focus:border-cyan-600 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold uppercase tracking-wider text-slate-700 mb-1">Status</label>
+                <select
+                  value={editStatus}
+                  onChange={(e) => setEditStatus(e.target.value)}
+                  className="w-full rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-900 focus:bg-white focus:border-cyan-600 focus:outline-none font-semibold"
+                >
+                  <option value="UPCOMING">Upcoming</option>
+                  <option value="ACTIVE">Active</option>
+                  <option value="COMPLETED">Completed</option>
+                  <option value="CLOSED">Closed</option>
+                  <option value="CANCELLED">Cancelled</option>
+                </select>
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="w-1/2 rounded-lg bg-slate-100 border border-slate-200 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-700 hover:bg-slate-200 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={updating}
+                  className="w-1/2 rounded-lg bg-cyan-600 hover:bg-cyan-700 text-white py-2.5 text-xs font-bold uppercase tracking-wider shadow-2xs transition disabled:opacity-50"
+                >
+                  {updating ? "Saving..." : "Save Changes"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* MODAL 2: View Student QR Pass Token */}
       {viewingRecord && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
@@ -669,6 +1004,282 @@ export default function AdminAttendanceView() {
                 {copiedToken ? <FiCheck className="text-emerald-200" /> : <FiCopy />}
                 <span>{copiedToken ? "Copied!" : "Copy Token"}</span>
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DRAWER 1: Student Profile Drawer */}
+      {selectedStudentId && (
+        <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/50 backdrop-blur-2xs transition-opacity">
+          <div className="fixed inset-0" onClick={() => setSelectedStudentId(null)} />
+          <div className="relative w-full max-w-sm sm:max-w-md bg-white h-full shadow-2xl border-l border-slate-100 flex flex-col animate-slide-in">
+            {/* Drawer Header */}
+            <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-cyan-100 text-cyan-800">
+                  <FiUser className="text-sm" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-extrabold text-slate-900">Student Profile Summary</h3>
+                  <p className="text-[10px] text-slate-500 font-mono">ID: {selectedStudentId}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedStudentId(null)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+              >
+                <FiX className="text-base" />
+              </button>
+            </div>
+
+            {/* Drawer Content */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {studentProfileLoading ? (
+                <div className="flex flex-col items-center justify-center h-48 gap-2">
+                  <FiRefreshCw className="text-lg text-cyan-600 animate-spin" />
+                  <p className="text-[10px] text-slate-500 font-mono">Fetching student audit history...</p>
+                </div>
+              ) : studentProfile ? (
+                <>
+                  {/* Card 1: Student Info */}
+                  <div className="bg-slate-50/60 p-3 rounded-xl border border-slate-100 space-y-2">
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono">Student Information</div>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <span className="text-[10px] text-slate-400 block font-mono">Full Name</span>
+                        <span className="font-bold text-slate-900">{studentProfile.name || "N/A"}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block font-mono">Branch</span>
+                        <span className="font-bold text-slate-900">{studentProfile.branch || "N/A"}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block font-mono">Email Address</span>
+                        <span className="font-bold text-slate-700 break-all">{studentProfile.email || "N/A"}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block font-mono">Academic Year</span>
+                        <span className="font-bold text-slate-900">Year {studentProfile.year || "N/A"}</span>
+                      </div>
+                      <div className="col-span-2">
+                        <span className="text-[10px] text-slate-400 block font-mono">Phone Number</span>
+                        <span className="font-bold text-slate-900">{studentProfile.phoneNumber || "N/A"}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card 2: Registration & Payments */}
+                  <div className="bg-slate-50/60 p-3 rounded-xl border border-slate-100 space-y-2">
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono">Registration Status</div>
+                    <div className="grid grid-cols-3 gap-2 text-xs">
+                      <div className="p-2 bg-white rounded-lg border border-slate-100">
+                        <span className="text-[9px] text-slate-400 block font-mono">Date</span>
+                        <span className="font-bold text-slate-800 text-[10px]">
+                          {studentProfile.registrationDate ? studentProfile.registrationDate.substring(0, 10) : "N/A"}
+                        </span>
+                      </div>
+                      <div className="p-2 bg-white rounded-lg border border-slate-100 flex flex-col">
+                        <span className="text-[9px] text-slate-400 block font-mono mb-0.5">Payment</span>
+                        <span className={`text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full text-center ${
+                          studentProfile.paymentStatus === "PAID" 
+                            ? "bg-emerald-100 text-emerald-800" 
+                            : "bg-amber-100 text-amber-800"
+                        }`}>
+                          {studentProfile.paymentStatus}
+                        </span>
+                      </div>
+                      <div className="p-2 bg-white rounded-lg border border-slate-100 flex flex-col">
+                        <span className="text-[9px] text-slate-400 block font-mono mb-0.5">Certificate</span>
+                        <span className={`text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full text-center ${
+                          studentProfile.certificateStatus === "ISSUED"
+                            ? "bg-emerald-100 text-emerald-800"
+                            : studentProfile.certificateStatus === "ELIGIBLE"
+                            ? "bg-cyan-100 text-cyan-800"
+                            : "bg-slate-100 text-slate-800"
+                        }`}>
+                          {studentProfile.certificateStatus}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card 3: Attendance Summary */}
+                  <div className="bg-slate-50/60 p-3 rounded-xl border border-slate-100 space-y-2.5">
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono">Attendance Statistics</div>
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                      <div className="bg-white p-2 rounded-lg border border-slate-100">
+                        <span className="text-[9px] text-slate-400 block font-mono">Sessions</span>
+                        <span className="text-sm font-extrabold text-slate-800">{studentProfile.totalSessions}</span>
+                      </div>
+                      <div className="bg-white p-2 rounded-lg border border-slate-100">
+                        <span className="text-[9px] text-slate-400 block font-mono">Attended</span>
+                        <span className="text-sm font-extrabold text-emerald-600">{studentProfile.presentCount}</span>
+                      </div>
+                      <div className="bg-white p-2 rounded-lg border border-slate-100">
+                        <span className="text-[9px] text-slate-400 block font-mono">Absent</span>
+                        <span className="text-sm font-extrabold text-rose-600">{studentProfile.absentCount}</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1 bg-white p-2.5 rounded-lg border border-slate-100">
+                      <div className="flex justify-between items-center text-[10px] font-bold">
+                        <span className="text-slate-500 font-mono">Progress Percentage</span>
+                        <span className={studentProfile.attendancePercentage >= 75 ? "text-emerald-600" : "text-rose-600"}>
+                          {studentProfile.attendancePercentage}%
+                        </span>
+                      </div>
+                      <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div 
+                          className={`h-full rounded-full transition-all duration-500 ${
+                            studentProfile.attendancePercentage >= 75 ? "bg-emerald-500" : "bg-rose-500"
+                          }`}
+                          style={{ width: `${studentProfile.attendancePercentage}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Timeline: Attendance History */}
+                  <div className="space-y-2">
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono">Attendance History Timeline</div>
+                    <div className="relative border-l border-slate-200 pl-4 ml-2.5 space-y-3.5">
+                      {studentProfile.attendanceHistory && studentProfile.attendanceHistory.map((hist, idx) => {
+                        const isPresent = hist.status === "PRESENT"
+                        return (
+                          <div key={idx} className="relative">
+                            {/* Dot indicator */}
+                            <span className={`absolute -left-[21px] mt-1.5 w-2.5 h-2.5 rounded-full border-2 border-white shadow-xs ${
+                              isPresent ? "bg-emerald-500" : "bg-slate-300"
+                            }`} />
+                            <div className="p-2 bg-white rounded-lg border border-slate-100 shadow-xs space-y-1">
+                              <div className="flex justify-between items-start gap-1">
+                                <span className="font-extrabold text-slate-800 text-[10.5px]">Day {hist.dayNumber}: {hist.title}</span>
+                                <span className={`text-[8.5px] font-extrabold px-1 rounded-sm uppercase ${
+                                  isPresent ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600"
+                                }`}>
+                                  {hist.status}
+                                </span>
+                              </div>
+                              {isPresent && (
+                                <div className="text-[9px] text-slate-500 flex flex-col font-mono">
+                                  <span>Marked At: {hist.markedAt ? hist.markedAt.replace("T", " ").substring(0, 16) : "—"}</span>
+                                  <span>Marked By: {hist.markedBy || "System"}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center text-xs text-slate-400 py-12">No profile information available.</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DRAWER 2: Volunteer/Admin Profile Drawer */}
+      {selectedUserId && (
+        <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/50 backdrop-blur-2xs transition-opacity">
+          <div className="fixed inset-0" onClick={() => setSelectedUserId(null)} />
+          <div className="relative w-full max-w-sm sm:max-w-md bg-white h-full shadow-2xl border-l border-slate-100 flex flex-col animate-slide-in">
+            {/* Drawer Header */}
+            <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-emerald-100 text-emerald-800">
+                  <FiShield className="text-sm" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-extrabold text-slate-900">Operator Audit Summary</h3>
+                  <p className="text-[10px] text-slate-500 font-mono">User ID: {selectedUserId}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedUserId(null)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+              >
+                <FiX className="text-base" />
+              </button>
+            </div>
+
+            {/* Drawer Content */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {userProfileLoading ? (
+                <div className="flex flex-col items-center justify-center h-48 gap-2">
+                  <FiRefreshCw className="text-lg text-cyan-600 animate-spin" />
+                  <p className="text-[10px] text-slate-500 font-mono">Fetching operator audit history...</p>
+                </div>
+              ) : userProfile ? (
+                <>
+                  {/* Card 1: User Info */}
+                  <div className="bg-slate-50/60 p-3 rounded-xl border border-slate-100 space-y-2">
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono">User Profile Information</div>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <span className="text-[10px] text-slate-400 block font-mono">Name</span>
+                        <span className="font-bold text-slate-900">{userProfile.name}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block font-mono">Authorized Role</span>
+                        <span className="font-extrabold text-cyan-700 uppercase">{userProfile.role}</span>
+                      </div>
+                      <div className="col-span-2">
+                        <span className="text-[10px] text-slate-400 block font-mono">Email Address</span>
+                        <span className="font-bold text-slate-700 break-all">{userProfile.email}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card 2: Permissions Granted */}
+                  <div className="bg-slate-50/60 p-3 rounded-xl border border-slate-100 space-y-2">
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono">Assigned Operational Permissions</div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {userProfile.permissions && userProfile.permissions.length > 0 ? (
+                        userProfile.permissions.map((p, idx) => (
+                          <span 
+                            key={idx}
+                            className="px-2 py-0.5 rounded-md bg-cyan-50 border border-cyan-100 text-cyan-900 font-bold font-mono text-[9px]"
+                          >
+                            {p}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-xs text-slate-400 font-mono italic">No special authorities assigned</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Activity List: Recent Actions */}
+                  <div className="space-y-2">
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono">Recent Attendance Audit Activity</div>
+                    {userProfile.recentActivities && userProfile.recentActivities.length > 0 ? (
+                      <div className="space-y-2">
+                        {userProfile.recentActivities.map((act, idx) => (
+                          <div key={idx} className="p-2.5 bg-white rounded-lg border border-slate-100 shadow-xs flex gap-2">
+                            <FiActivity className="text-slate-400 text-xs shrink-0 mt-0.5" />
+                            <div className="flex-1 space-y-0.5">
+                              <p className="text-[10.5px] font-bold text-slate-800">{act.description}</p>
+                              <span className="text-[9px] text-slate-400 font-mono block">
+                                {act.timestamp ? act.timestamp.replace("T", " ").substring(0, 16) : "—"}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center text-xs text-slate-400 py-6 border border-dashed border-slate-200 rounded-lg">
+                        No recent attendance operations found for this operator.
+                      </div>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <div className="text-center text-xs text-slate-400 py-12">No profile information available.</div>
+              )}
             </div>
           </div>
         </div>

@@ -13,6 +13,8 @@ import {
   MarkAttendanceRequest,
   AdminAttendanceSummaryResponse,
   DailyAttendanceReportResponse,
+  StudentAttendanceProfile,
+  UserAttendanceProfile,
 } from "@/features/attendance/types"
 import { PageResponse } from "@/types/pagination"
 
@@ -79,12 +81,21 @@ export const attendanceApi = {
   closeSession: (sessionId: string) =>
     apiClient.post<AttendanceSessionDto>(`/api/v1/admin/attendance/sessions/${sessionId}/close`),
 
+  updateSession: (sessionId: string, payload: any) =>
+    apiClient.put<any>(`/api/v1/admin/attendance/sessions/${sessionId}`, payload),
+
   // Admin Overview & Reporting APIs
   getAdminSummary: () =>
     apiClient.get<AdminAttendanceSummaryResponse>("/api/v1/admin/attendance/summary"),
 
   getAttendanceByDate: (date: string) =>
     apiClient.get<DailyAttendanceReportResponse>(`/api/v1/admin/attendance/date/${date}`),
+
+  getStudentAttendanceProfile: (studentId: string) =>
+    apiClient.get<StudentAttendanceProfile>(`/api/v1/admin/attendance/student/${studentId}/profile`),
+
+  getUserAttendanceProfile: (userId: string) =>
+    apiClient.get<UserAttendanceProfile>(`/api/v1/admin/attendance/user/${userId}/profile`),
 
   // Volunteer Gate Scanning APIs
   scanAttendanceQr: (qrToken: string) =>

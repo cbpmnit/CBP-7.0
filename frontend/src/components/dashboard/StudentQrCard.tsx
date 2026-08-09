@@ -45,6 +45,7 @@ export default function StudentQrCard({ qrCode, registrationId, loading }: Stude
       <div className="text-center py-1">
         <div className="p-3 bg-slate-50 rounded-xl inline-block border border-slate-200">
           <img
+            key={qrCode.token}
             src={qrCode.qrImageBase64}
             alt="Attendance QR Code"
             className="w-36 h-36 sm:w-40 sm:h-40 mx-auto"

@@ -73,13 +73,18 @@ public class AdminAttendanceSessionController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<AttendanceSessionResponse>> updateSession(
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('SESSION_EDIT') or hasAuthority('SESSION_MANAGE')")
+    public ResponseEntity<ApiResponse<com.cbp7.attendance.session.dto.SessionUpdateResponse>> updateSession(
             @PathVariable UUID id,
             @Valid @RequestBody UpdateAttendanceSessionRequest request
     ) {
         AttendanceSessionResponse response = sessionService.updateSession(id, request);
-        return ResponseEntity.ok(ApiResponse.success("Attendance session updated successfully", response));
+        com.cbp7.attendance.session.dto.SessionUpdateResponse updateResponse = com.cbp7.attendance.session.dto.SessionUpdateResponse.fromResponse(
+                "Session updated successfully. Attendance validity synchronized.",
+                true,
+                response
+        );
+        return ResponseEntity.ok(ApiResponse.success("Session updated successfully. Attendance validity synchronized.", updateResponse));
     }
 
     @PatchMapping("/{id}/visibility")

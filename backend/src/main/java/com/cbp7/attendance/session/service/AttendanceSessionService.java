@@ -24,6 +24,7 @@ public class AttendanceSessionService {
     private final AttendanceSessionRepository sessionRepository;
     private final AttendanceRecordRepository recordRepository;
     private final AttendanceQrService qrService;
+    private final com.cbp7.attendance.qr.repository.AttendanceQrRepository attendanceQrRepository;
 
     @Transactional
     public AttendanceSessionResponse createSession(CreateAttendanceSessionRequest request, String createdBy) {
@@ -114,6 +115,22 @@ public class AttendanceSessionService {
         }
 
         AttendanceSession updated = sessionRepository.save(session);
+
+        // Update QR validity if timing has changed
+        if (request.endTime() != null || request.sessionDate() != null) {
+            java.time.LocalDateTime newExpiresAt = updated.getEndTime() != null
+                    ? java.time.LocalDateTime.of(updated.getSessionDate(), updated.getEndTime())
+                    : updated.getSessionDate().atTime(23, 59, 59);
+
+            List<com.cbp7.attendance.qr.entity.AttendanceQrCode> qrs = attendanceQrRepository.findAllBySessionId(updated.getId());
+            for (com.cbp7.attendance.qr.entity.AttendanceQrCode qr : qrs) {
+                if (qr.isActive()) {
+                    qr.setExpiresAt(newExpiresAt);
+                    attendanceQrRepository.save(qr);
+                }
+            }
+        }
+
         long count = recordRepository.countBySessionId(updated.getId());
         return AttendanceSessionResponse.fromEntity(updated, count);
     }

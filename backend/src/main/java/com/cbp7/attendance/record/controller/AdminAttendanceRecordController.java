@@ -41,6 +41,24 @@ public class AdminAttendanceRecordController {
         return ResponseEntity.ok(ApiResponse.success("Student attendance summary retrieved successfully", response));
     }
 
+    @GetMapping("/student/{studentId}/profile")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('ATTENDANCE_VIEW')")
+    public ResponseEntity<ApiResponse<com.cbp7.attendance.record.dto.StudentAttendanceProfileResponse>> getStudentAttendanceProfile(
+            @PathVariable String studentId
+    ) {
+        com.cbp7.attendance.record.dto.StudentAttendanceProfileResponse response = attendanceQueryService.getStudentAttendanceProfile(studentId);
+        return ResponseEntity.ok(ApiResponse.success("Student attendance profile retrieved successfully", response));
+    }
+
+    @GetMapping("/user/{userId}/profile")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('ATTENDANCE_VIEW')")
+    public ResponseEntity<ApiResponse<com.cbp7.attendance.record.dto.UserAttendanceProfileResponse>> getUserAttendanceProfile(
+            @PathVariable String userId
+    ) {
+        com.cbp7.attendance.record.dto.UserAttendanceProfileResponse response = attendanceQueryService.getUserAttendanceProfile(userId);
+        return ResponseEntity.ok(ApiResponse.success("User attendance profile retrieved successfully", response));
+    }
+
     @GetMapping("/summary")
     @PreAuthorize("hasRole('ADMIN') or hasAuthority('ATTENDANCE_VIEW')")
     public ResponseEntity<ApiResponse<AdminAttendanceSummaryResponse>> getAdminAttendanceSummary() {

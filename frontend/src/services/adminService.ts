@@ -33,6 +33,7 @@ export const adminService = {
   createSession: (payload: CreateSessionPayload) => apiClient.post<any>("/api/v1/admin/attendance/sessions", payload),
   activateSession: attendanceApi.activateSession,
   closeSession: attendanceApi.closeSession,
+  updateSession: attendanceApi.updateSession,
   generateSessionQr: attendanceApi.generateSessionQr,
   getActiveSessionQr: attendanceApi.getActiveSessionQr,
   getSessionSummary: attendanceApi.getSessionSummary,

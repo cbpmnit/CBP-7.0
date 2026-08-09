@@ -67,6 +67,17 @@ export interface StudentSessionRecordDto {
   status: AttendanceStatus
   markedAt?: string | null
   markedBy?: string | null
+  student?: {
+    id: string
+    name: string
+    studentId: string
+    email: string
+  } | null
+  markedByDetail?: {
+    id: string
+    name: string
+    role: string
+  } | null
 }
 
 export interface SessionQrCodeResponse {
@@ -148,4 +159,42 @@ export interface AttendanceQrResponse {
   token: string
   qrImageBase64: string
   expiresAt: string
+}
+
+export interface SessionAttendanceDetailDto {
+  dayNumber: number
+  title: string
+  status: string
+  markedBy: string
+  markedAt: string
+}
+
+export interface StudentAttendanceProfile {
+  name: string
+  studentId: string
+  email: string
+  phoneNumber: string
+  branch: string
+  year: number
+  registrationDate: string
+  paymentStatus: string
+  certificateStatus: string
+  totalSessions: number
+  presentCount: number
+  absentCount: number
+  attendancePercentage: number
+  attendanceHistory: SessionAttendanceDetailDto[]
+}
+
+export interface UserActivityDto {
+  description: string
+  timestamp: string
+}
+
+export interface UserAttendanceProfile {
+  name: string
+  email: string
+  role: string
+  permissions: string[]
+  recentActivities: UserActivityDto[]
 }

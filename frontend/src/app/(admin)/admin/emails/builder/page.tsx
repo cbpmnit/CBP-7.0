@@ -1,5 +1,5 @@
-import EmailWorkspaceView from "@/features/notifications/components/EmailWorkspaceView"
+import EmailManagement from "@/features/notifications/components/EmailManagement"
 
-export default function AdminEmailBuilderPage() {
-  return <EmailWorkspaceView />
+export default function AdminEmailsBuilderPage() {
+  return <EmailManagement />
 }

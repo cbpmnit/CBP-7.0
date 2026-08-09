@@ -40,6 +40,9 @@ public class AttendanceQueryService {
     private final AttendanceRecordRepository attendanceRecordRepository;
     private final AttendanceSessionRepository sessionRepository;
     private final UserRepository userRepository;
+    private final com.cbp7.cbp.repository.CbpRegistrationRepository cbpRegistrationRepository;
+    private final com.cbp7.payment.repository.PaymentRepository paymentRepository;
+    private final com.cbp7.certificate.repository.CertificateRepository certificateRepository;
 
     @Transactional(readOnly = true)
     public SessionSummaryResponse getSessionSummary(UUID sessionId) {
@@ -101,24 +104,55 @@ public class AttendanceQueryService {
                 .map(r -> {
                     String name = "";
                     String email = "";
+                    String userIdStr = "";
                     Optional<User> userOpt = userRepository.findByStudentId(r.getStudentId());
                     if (userOpt.isPresent()) {
                         User user = userOpt.get();
                         name = user.getName() != null ? user.getName() : "";
                         email = user.getEmail() != null ? user.getEmail() : "";
+                        userIdStr = user.getId() != null ? user.getId().toString() : "";
                     }
+
+                    com.cbp7.attendance.record.dto.StudentInfo studentInfo = new com.cbp7.attendance.record.dto.StudentInfo(
+                            userIdStr, name, r.getStudentId(), email
+                    );
+                    com.cbp7.attendance.record.dto.MarkedByInfo markerDetail = resolveMarkedByInfo(r.getMarkedBy());
+
                     return new StudentSessionRecordDto(
                             r.getStudentId(),
                             name,
                             email,
                             r.getStatus(),
                             r.getMarkedAt(),
-                            r.getMarkedBy()
+                            markerDetail.name(),
+                            studentInfo,
+                            markerDetail
                     );
                 })
                 .toList();
 
         return new PageImpl<>(dtos, pageable, recordsPage.getTotalElements());
+    }
+
+    private com.cbp7.attendance.record.dto.MarkedByInfo resolveMarkedByInfo(String markedBy) {
+        if (markedBy == null || markedBy.isBlank()) {
+            return new com.cbp7.attendance.record.dto.MarkedByInfo("system", "System", "SYSTEM");
+        }
+        if (markedBy.equalsIgnoreCase("system") || markedBy.equalsIgnoreCase("admin") || markedBy.equalsIgnoreCase("volunteer")) {
+            String role = markedBy.equalsIgnoreCase("admin") ? "ROLE_ADMIN" : 
+                         markedBy.equalsIgnoreCase("volunteer") ? "ROLE_VOLUNTEER" : "SYSTEM";
+            String name = markedBy.equalsIgnoreCase("admin") ? "Admin" : 
+                         markedBy.equalsIgnoreCase("volunteer") ? "Volunteer" : "System";
+            return new com.cbp7.attendance.record.dto.MarkedByInfo(markedBy, name, role);
+        }
+        try {
+            UUID userUuid = UUID.fromString(markedBy);
+            return userRepository.findById(userUuid)
+                    .map(u -> new com.cbp7.attendance.record.dto.MarkedByInfo(u.getId().toString(), u.getName(), u.getRole() != null ? u.getRole().name() : "ROLE_VOLUNTEER"))
+                    .orElseGet(() -> new com.cbp7.attendance.record.dto.MarkedByInfo(markedBy, "Unknown User", "ROLE_VOLUNTEER"));
+        } catch (IllegalArgumentException e) {
+            return new com.cbp7.attendance.record.dto.MarkedByInfo(markedBy, markedBy, "ROLE_VOLUNTEER");
+        }
     }
 
     @Transactional(readOnly = true)
@@ -258,6 +292,173 @@ public class AttendanceQueryService {
         }
 
         return com.cbp7.common.util.CsvExportUtil.generateCsv(headers, rows);
+    }
+
+    @Transactional(readOnly = true)
+    public com.cbp7.attendance.record.dto.StudentAttendanceProfileResponse getStudentAttendanceProfile(String studentId) {
+        String cleanStudentId = studentId != null ? studentId.trim().toLowerCase() : "";
+
+        String name = "";
+        String email = "";
+        String phoneNumber = "";
+        String branch = "N/A";
+        Integer year = 1;
+        String registrationDate = "N/A";
+        UUID userId = null;
+
+        Optional<com.cbp7.cbp.entity.CbpRegistration> regOpt = cbpRegistrationRepository.findByUserStudentIdIgnoreCase(cleanStudentId);
+        if (regOpt.isPresent()) {
+            com.cbp7.cbp.entity.CbpRegistration reg = regOpt.get();
+            name = (reg.getFirstName() != null ? reg.getFirstName() : "") + " " + (reg.getLastName() != null ? reg.getLastName() : "");
+            email = reg.getEmail();
+            phoneNumber = reg.getPhoneNumber();
+            branch = reg.getBranch();
+            year = reg.getYear();
+            registrationDate = reg.getCreatedAt() != null ? reg.getCreatedAt().toString() : "N/A";
+            if (reg.getUser() != null) {
+                userId = reg.getUser().getId();
+            }
+        } else {
+            Optional<User> userOpt = userRepository.findByStudentId(cleanStudentId);
+            if (userOpt.isPresent()) {
+                User u = userOpt.get();
+                name = u.getName();
+                email = u.getEmail();
+                phoneNumber = u.getPhoneNumber() != null ? u.getPhoneNumber() : "";
+                userId = u.getId();
+            }
+        }
+
+        String paymentStatus = "PENDING";
+        if (userId != null) {
+            boolean hasPaid = paymentRepository.existsByUserIdAndPaymentStatus(userId, com.cbp7.payment.enums.PaymentStatus.SUCCESS);
+            paymentStatus = hasPaid ? "PAID" : "PENDING";
+        }
+
+        List<AttendanceSession> visibleSessions = sessionRepository.findByVisibilityTrueOrderByDayNumberAsc();
+        long totalSessions = visibleSessions.size();
+        long presentCount = attendanceRecordRepository.countByStudentId(cleanStudentId);
+        long absentCount = Math.max(0, totalSessions - presentCount);
+        double attendancePercentage = totalSessions > 0 ? (presentCount * 100.0 / totalSessions) : 0.0;
+        attendancePercentage = roundToTwoDecimals(attendancePercentage);
+
+        String certificateStatus = "LOCKED";
+        boolean hasCert = certificateRepository.existsByStudentId(cleanStudentId);
+        if (hasCert) {
+            certificateStatus = "ISSUED";
+        } else if (attendancePercentage >= 75.0 && paymentStatus.equals("PAID")) {
+            certificateStatus = "ELIGIBLE";
+        }
+
+        List<com.cbp7.attendance.record.dto.SessionAttendanceDetailDto> history = new ArrayList<>();
+        for (AttendanceSession s : visibleSessions) {
+            Optional<AttendanceRecord> recOpt = attendanceRecordRepository.findBySessionIdAndStudentId(s.getId(), cleanStudentId);
+            if (recOpt.isPresent()) {
+                AttendanceRecord rec = recOpt.get();
+                com.cbp7.attendance.record.dto.MarkedByInfo marker = resolveMarkedByInfo(rec.getMarkedBy());
+                String markerText = marker.name() + " (" + marker.role().replace("ROLE_", "") + ")";
+                history.add(new com.cbp7.attendance.record.dto.SessionAttendanceDetailDto(
+                        s.getDayNumber(),
+                        s.getTitle(),
+                        "PRESENT",
+                        markerText,
+                        rec.getMarkedAt() != null ? rec.getMarkedAt().toString() : ""
+                ));
+            } else {
+                history.add(new com.cbp7.attendance.record.dto.SessionAttendanceDetailDto(
+                        s.getDayNumber(),
+                        s.getTitle(),
+                        "ABSENT",
+                        "-",
+                        "-"
+                ));
+            }
+        }
+
+        return new com.cbp7.attendance.record.dto.StudentAttendanceProfileResponse(
+                name,
+                studentId,
+                email,
+                phoneNumber,
+                branch,
+                year,
+                registrationDate,
+                paymentStatus,
+                certificateStatus,
+                totalSessions,
+                presentCount,
+                absentCount,
+                attendancePercentage,
+                history
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public com.cbp7.attendance.record.dto.UserAttendanceProfileResponse getUserAttendanceProfile(String userId) {
+        String name = "Unknown User";
+        String email = "N/A";
+        String roleStr = "VOLUNTEER";
+        List<String> permissions = new ArrayList<>();
+        List<com.cbp7.attendance.record.dto.UserActivityDto> activities = new ArrayList<>();
+
+        Optional<User> userOpt = Optional.empty();
+        try {
+            UUID userUuid = UUID.fromString(userId);
+            userOpt = userRepository.findById(userUuid);
+        } catch (IllegalArgumentException e) {
+            userOpt = userRepository.findByStudentId(userId);
+        }
+
+        if (userOpt.isPresent()) {
+            User u = userOpt.get();
+            name = u.getName();
+            email = u.getEmail();
+            roleStr = u.getRole() != null ? u.getRole().name().replace("ROLE_", "") : "VOLUNTEER";
+            if (u.getPermissions() != null) {
+                permissions.addAll(u.getPermissions());
+            }
+            if (permissions.isEmpty() && u.getRole() != null) {
+                permissions.add("ATTENDANCE_VIEW");
+                if (u.getRole() == Role.ROLE_ADMIN) {
+                    permissions.add("ATTENDANCE_SCAN");
+                    permissions.add("SESSION_EDIT");
+                }
+            }
+
+            List<AttendanceRecord> records = attendanceRecordRepository.findTop50ByMarkedByOrderByMarkedAtDesc(u.getId().toString());
+            for (AttendanceRecord r : records) {
+                String studentName = r.getStudentId();
+                Optional<User> studOpt = userRepository.findByStudentId(r.getStudentId());
+                if (studOpt.isPresent()) {
+                    studentName = studOpt.get().getName();
+                }
+
+                String sessionTitle = "Session";
+                Optional<AttendanceSession> sessOpt = sessionRepository.findById(r.getSessionId());
+                if (sessOpt.isPresent()) {
+                    sessionTitle = "Day " + sessOpt.get().getDayNumber() + " (" + sessOpt.get().getTitle() + ")";
+                }
+
+                String description = "Marked " + studentName + " (" + r.getStudentId() + ") present in " + sessionTitle;
+                activities.add(new com.cbp7.attendance.record.dto.UserActivityDto(
+                        description,
+                        r.getMarkedAt() != null ? r.getMarkedAt().toString() : ""
+                ));
+            }
+        } else {
+            name = userId;
+            roleStr = userId.equalsIgnoreCase("admin") ? "ADMIN" : "SYSTEM";
+            permissions.add("ATTENDANCE_VIEW");
+            permissions.add("ATTENDANCE_SCAN");
+        }
+
+        return new com.cbp7.attendance.record.dto.UserAttendanceProfileResponse(
+                name,
+                email,
+                roleStr,
+                permissions,
+                activities
+        );
     }
 
     private double roundToTwoDecimals(double value) {

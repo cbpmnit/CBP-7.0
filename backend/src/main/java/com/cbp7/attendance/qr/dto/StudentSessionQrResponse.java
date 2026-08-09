@@ -12,5 +12,8 @@ public record StudentSessionQrResponse(
         String venue,
         String token,
         String qrImageBase64,
-        String expiresAt
+        String expiresAt,
+        String qrCode,
+        String generatedAt,
+        Integer version
 ) {}

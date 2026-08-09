@@ -31,11 +31,20 @@ export default function StudentAttendanceView() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   useEffect(() => {
-    fetchStudentData()
+    fetchStudentData(true)
+
+    // Set up polling to keep QR, tokens, and timings updated in real-time
+    const interval = setInterval(() => {
+      fetchStudentData(false)
+    }, 10000)
+
+    return () => clearInterval(interval)
   }, [])
 
-  const fetchStudentData = async () => {
-    setLoading(true)
+  const fetchStudentData = async (isInitial = true) => {
+    if (isInitial) {
+      setLoading(true)
+    }
     setErrorMessage(null)
     try {
       const [upcomingRes, historyRes, qrRes] = await Promise.allSettled([
@@ -54,11 +63,17 @@ export default function StudentAttendanceView() {
 
       if (qrRes.status === "fulfilled" && qrRes.value) {
         setStudentQr(qrRes.value)
+      } else if (qrRes.status === "fulfilled") {
+        setStudentQr(null)
       }
     } catch (err: any) {
-      setErrorMessage("Unable to load attendance details right now.")
+      if (isInitial) {
+        setErrorMessage("Unable to load attendance details right now.")
+      }
     } finally {
-      setLoading(false)
+      if (isInitial) {
+        setLoading(false)
+      }
     }
   }
 
@@ -108,7 +123,7 @@ export default function StudentAttendanceView() {
             <span>{errorMessage}</span>
           </div>
           <button
-            onClick={fetchStudentData}
+            onClick={() => fetchStudentData(true)}
             className="inline-flex items-center gap-1 font-bold underline hover:text-amber-950 text-xs"
           >
             <FiRefreshCw className="text-[10px]" /> Retry
@@ -176,7 +191,7 @@ export default function StudentAttendanceView() {
       {studentQr ? (
         <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row items-center gap-5">
           <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl shrink-0 text-center">
-            <img src={studentQr.qrImageBase64} alt="Session QR Pass" className="w-36 h-36 mx-auto" />
+            <img key={studentQr.token} src={studentQr.qrImageBase64} alt="Session QR Pass" className="w-36 h-36 mx-auto" />
             <span className="text-[10px] font-bold text-slate-500 mt-1 block uppercase">Entry Pass</span>
           </div>
 

@@ -20,6 +20,8 @@ public interface AttendanceRecordRepository extends JpaRepository<AttendanceReco
     long countBySessionId(UUID sessionId);
     long countBySessionIdAndStatus(UUID sessionId, AttendanceStatus status);
     long countByStudentIdAndStatus(String studentId, AttendanceStatus status);
+    long countByStudentId(String studentId);
+    List<AttendanceRecord> findTop50ByMarkedByOrderByMarkedAtDesc(String markedBy);
 
     Page<AttendanceRecord> findBySessionId(UUID sessionId, Pageable pageable);
     Page<AttendanceRecord> findBySessionIdAndStatus(UUID sessionId, AttendanceStatus status, Pageable pageable);
