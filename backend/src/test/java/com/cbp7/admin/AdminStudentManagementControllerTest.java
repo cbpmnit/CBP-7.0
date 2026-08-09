@@ -7,6 +7,9 @@ import com.cbp7.auth.security.JwtProvider;
 import com.cbp7.cbp.entity.CbpRegistration;
 import com.cbp7.cbp.enums.RegistrationStatus;
 import com.cbp7.cbp.repository.CbpRegistrationRepository;
+import com.cbp7.payment.entity.Payment;
+import com.cbp7.payment.enums.PaymentStatus;
+import com.cbp7.payment.repository.PaymentRepository;
 import com.cbp7.profile.entity.Branch;
 import com.cbp7.profile.entity.Course;
 import com.cbp7.profile.entity.Gender;
@@ -24,6 +27,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
@@ -36,7 +40,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @TestPropertySource(properties = {
     "spring.datasource.hikari.initialization-fail-timeout=-1",
     "spring.flyway.enabled=false",
-    "spring.datasource.hikari.connection-init-sql=CREATE SCHEMA IF NOT EXISTS identity; CREATE SCHEMA IF NOT EXISTS program; CREATE SCHEMA IF NOT EXISTS platform;"
+    "spring.datasource.hikari.connection-init-sql=CREATE SCHEMA IF NOT EXISTS identity; CREATE SCHEMA IF NOT EXISTS program; CREATE SCHEMA IF NOT EXISTS platform; CREATE SCHEMA IF NOT EXISTS finance;"
 })
 class AdminStudentManagementControllerTest {
 
@@ -55,9 +59,13 @@ class AdminStudentManagementControllerTest {
     private CbpRegistrationRepository registrationRepository;
 
     @Autowired
+    private PaymentRepository paymentRepository;
+
+    @Autowired
     private JwtProvider jwtProvider;
 
     private String adminToken;
+    private String studentToken;
 
     @BeforeEach
     void setUp() {
@@ -87,6 +95,8 @@ class AdminStudentManagementControllerTest {
                         .role(Role.ROLE_STUDENT)
                         .enabled(true)
                         .build()));
+
+        studentToken = jwtProvider.generateToken(student);
 
         UserProfile profile = userProfileRepository.findByUser(student)
                 .orElseGet(() -> userProfileRepository.save(UserProfile.builder()
@@ -122,7 +132,17 @@ class AdminStudentManagementControllerTest {
                 .hosteller(false)
                 .registrationStatus(RegistrationStatus.REGISTERED)
                 .build();
-        registrationRepository.save(reg);
+        CbpRegistration savedReg = registrationRepository.save(reg);
+
+        Payment payment = Payment.builder()
+                .userId(student.getId())
+                .registrationId(savedReg.getId())
+                .paymentMode(com.cbp7.payment.enums.PaymentMode.ONLINE)
+                .amount(BigDecimal.valueOf(500))
+                .paymentStatus(PaymentStatus.SUCCESS)
+                .transactionId("TXN_TEST_12345")
+                .build();
+        paymentRepository.save(payment);
     }
 
     @Test
@@ -132,7 +152,36 @@ class AdminStudentManagementControllerTest {
                         .header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.content[0].studentId").value("2024test001"));
+                .andExpect(jsonPath("$.data.content[0].studentId").value("2024test001"))
+                .andExpect(jsonPath("$.data.content[0].name").value("Alice Sharma"))
+                .andExpect(jsonPath("$.data.content[0].email").value("alice@mnit.ac.in"))
+                .andExpect(jsonPath("$.data.content[0].paymentStatus").value("SUCCESS"))
+                .andExpect(jsonPath("$.data.totalElements").isNumber());
+    }
+
+    @Test
+    void testGetStudentsPagination() throws Exception {
+        mockMvc.perform(get("/api/v1/admin/students")
+                        .param("page", "0")
+                        .param("size", "10")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.content").isArray())
+                .andExpect(jsonPath("$.data.pageable.pageSize").value(10))
+                .andExpect(jsonPath("$.data.totalElements").isNumber());
+    }
+
+    @Test
+    void testUnauthorizedUserCannotAccessStudentsEndpoint() throws Exception {
+        // Unauthenticated request
+        mockMvc.perform(get("/api/v1/admin/students"))
+                .andExpect(status().isUnauthorized());
+
+        // Forbidden request with Student role token
+        mockMvc.perform(get("/api/v1/admin/students")
+                        .header("Authorization", "Bearer " + studentToken))
+                .andExpect(status().isForbidden());
     }
 
     @Test

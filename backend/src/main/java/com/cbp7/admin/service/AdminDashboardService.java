@@ -3,6 +3,9 @@ package com.cbp7.admin.service;
 import com.cbp7.admin.dto.AdminDashboardSummaryResponse;
 import com.cbp7.admin.dto.AdminPaymentOverviewResponse;
 import com.cbp7.admin.dto.AdminStudentDetailResponse;
+import com.cbp7.auth.entity.Role;
+import com.cbp7.auth.entity.User;
+import com.cbp7.auth.repository.UserRepository;
 import com.cbp7.cbp.entity.CbpRegistration;
 import com.cbp7.cbp.enums.RegistrationStatus;
 import com.cbp7.cbp.repository.CbpRegistrationRepository;
@@ -25,6 +28,7 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class AdminDashboardService {
 
+    private final UserRepository userRepository;
     private final CbpRegistrationRepository cbpRegistrationRepository;
     private final PaymentRepository paymentRepository;
     private final AttendanceRecordRepository attendanceRecordRepository;
@@ -32,13 +36,21 @@ public class AdminDashboardService {
     private final CertificateRepository certificateRepository;
 
     public AdminDashboardSummaryResponse getSummary() {
+        List<User> studentUsers = userRepository.findAll().stream()
+                .filter(u -> u.hasRole(Role.ROLE_STUDENT) && !u.hasRole(Role.ROLE_ADMIN) && Boolean.TRUE.equals(u.getEnabled()))
+                .toList();
+
         List<CbpRegistration> registrations = cbpRegistrationRepository.findAll();
-        long totalStudents = registrations.size();
+        long totalStudents = Math.max(studentUsers.size(), registrations.size());
         long registeredStudents = totalStudents;
 
-        long paidStudents = registrations.stream()
-                .filter(r -> r.getRegistrationStatus() == RegistrationStatus.REGISTERED
-                        || paymentRepository.existsByRegistrationIdAndPaymentStatus(r.getId(), PaymentStatus.SUCCESS))
+        long paidStudents = studentUsers.stream()
+                .filter(u -> {
+                    boolean byReg = registrations.stream().anyMatch(r ->
+                            (r.getUser() != null && u.getId().equals(r.getUser().getId()) || (u.getStudentId() != null && u.getStudentId().equalsIgnoreCase(r.getStudentId())))
+                                    && (r.getRegistrationStatus() == RegistrationStatus.REGISTERED || paymentRepository.existsByRegistrationIdAndPaymentStatus(r.getId(), PaymentStatus.SUCCESS)));
+                    return byReg || paymentRepository.existsByUserIdAndPaymentStatus(u.getId(), PaymentStatus.SUCCESS);
+                })
                 .count();
 
         long todayAttendance = attendanceRecordRepository.count();

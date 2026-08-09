@@ -28,6 +28,20 @@ public class AdminVolunteerController {
         return ResponseEntity.ok(ApiResponse.success("Volunteers directory retrieved successfully", response));
     }
 
+    @GetMapping("/invitations")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<List<VolunteerInvitationResponse>>> getPendingInvitations() {
+        List<VolunteerInvitationResponse> response = volunteerInvitationService.getPendingInvitations();
+        return ResponseEntity.ok(ApiResponse.success("Pending volunteer invitations retrieved successfully", response));
+    }
+
+    @GetMapping("/invitations/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<VolunteerInvitationResponse>> getInvitationById(@PathVariable UUID id) {
+        VolunteerInvitationResponse response = volunteerInvitationService.getInvitationById(id);
+        return ResponseEntity.ok(ApiResponse.success("Invitation details retrieved successfully", response));
+    }
+
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<VolunteerDetailResponse>> getVolunteerById(@PathVariable String id) {
@@ -37,24 +51,53 @@ public class AdminVolunteerController {
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<VolunteerInvitationResponse>> createVolunteer(
+    public ResponseEntity<ApiResponse<VolunteerInviteCheckResponse>> createVolunteer(
             @AuthenticationPrincipal User adminUser,
             @Valid @RequestBody InviteVolunteerRequest request
     ) {
         String adminId = adminUser != null ? adminUser.getStudentId() : "admin";
-        VolunteerInvitationResponse response = volunteerInvitationService.inviteVolunteer(request, adminId);
-        return ResponseEntity.ok(ApiResponse.success("Volunteer invitation created and sent successfully", response));
+        VolunteerInviteCheckResponse response = volunteerInvitationService.inviteVolunteer(request, adminId);
+        return ResponseEntity.ok(ApiResponse.success("Volunteer invite check processed successfully", response));
     }
 
     @PostMapping("/invite")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<VolunteerInvitationResponse>> inviteVolunteer(
+    public ResponseEntity<ApiResponse<VolunteerInviteCheckResponse>> inviteVolunteer(
             @AuthenticationPrincipal User adminUser,
             @Valid @RequestBody InviteVolunteerRequest request
     ) {
         String adminId = adminUser != null ? adminUser.getStudentId() : "admin";
-        VolunteerInvitationResponse response = volunteerInvitationService.inviteVolunteer(request, adminId);
-        return ResponseEntity.ok(ApiResponse.success("Volunteer invitation sent successfully", response));
+        VolunteerInviteCheckResponse response = volunteerInvitationService.inviteVolunteer(request, adminId);
+        return ResponseEntity.ok(ApiResponse.success("Volunteer invite check processed successfully", response));
+    }
+
+    @PostMapping("/{userId}/grant-access")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<VolunteerDetailResponse>> grantVolunteerAccess(
+            @AuthenticationPrincipal User adminUser,
+            @PathVariable String userId,
+            @RequestBody GrantVolunteerAccessRequest request
+    ) {
+        String adminId = adminUser != null ? adminUser.getStudentId() : "admin";
+        GrantVolunteerAccessRequest finalRequest = new GrantVolunteerAccessRequest(
+                userId,
+                request.name(),
+                request.permissions(),
+                request.assignedSessions()
+        );
+        VolunteerDetailResponse response = volunteerInvitationService.grantVolunteerAccess(finalRequest, adminId);
+        return ResponseEntity.ok(ApiResponse.success("Volunteer access granted successfully to user", response));
+    }
+
+    @PostMapping("/grant-access")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<VolunteerDetailResponse>> grantVolunteerAccessDirect(
+            @AuthenticationPrincipal User adminUser,
+            @Valid @RequestBody GrantVolunteerAccessRequest request
+    ) {
+        String adminId = adminUser != null ? adminUser.getStudentId() : "admin";
+        VolunteerDetailResponse response = volunteerInvitationService.grantVolunteerAccess(request, adminId);
+        return ResponseEntity.ok(ApiResponse.success("Volunteer access granted successfully", response));
     }
 
     @PutMapping("/{id}/permissions")
@@ -65,6 +108,28 @@ public class AdminVolunteerController {
     ) {
         VolunteerDetailResponse response = volunteerInvitationService.updateVolunteerPermissions(id, request);
         return ResponseEntity.ok(ApiResponse.success("Volunteer permission scopes updated successfully", response));
+    }
+
+    @PostMapping("/invitations/{id}/resend")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<VolunteerInvitationResponse>> resendInvitationDirect(
+            @AuthenticationPrincipal User adminUser,
+            @PathVariable UUID id
+    ) {
+        String adminId = adminUser != null ? adminUser.getStudentId() : "admin";
+        VolunteerInvitationResponse response = volunteerInvitationService.resendInvitation(id, adminId);
+        return ResponseEntity.ok(ApiResponse.success("Volunteer invitation resent successfully", response));
+    }
+
+    @PostMapping("/invitations/{id}/revoke")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<String>> revokeInvitation(
+            @AuthenticationPrincipal User adminUser,
+            @PathVariable UUID id
+    ) {
+        String adminId = adminUser != null ? adminUser.getStudentId() : "admin";
+        volunteerInvitationService.revokeInvitation(id, adminId);
+        return ResponseEntity.ok(ApiResponse.success("Volunteer invitation revoked successfully", "Invitation revoked"));
     }
 
     @PostMapping("/{invitationId}/resend")

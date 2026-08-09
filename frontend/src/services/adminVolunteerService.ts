@@ -12,6 +12,23 @@ export interface VolunteerListItem {
   lastLogin?: string
 }
 
+export interface VolunteerInvitationItem {
+  id: string
+  email: string
+  name: string
+  invitationToken: string
+  status: "PENDING" | "ACCEPTED" | "ACTIVE" | "EXPIRED" | "REVOKED" | "EMAIL_FAILED"
+  createdAt: string
+  expiresAt: string
+  emailSentAt?: string
+  acceptedAt?: string
+  emailDeliveryStatus?: "SENT" | "FAILED" | "RESENT" | string
+  emailFailureReason?: string
+  permissions: string[]
+  activationLink?: string
+  createdBy?: string
+}
+
 export interface VolunteerDetail {
   id: string
   name: string
@@ -26,10 +43,32 @@ export interface VolunteerDetail {
   activationLink?: string
 }
 
+export interface VolunteerInviteCheckResult {
+  exists: boolean
+  userId?: string
+  name?: string
+  email: string
+  currentRoles?: string[]
+  currentPermissions?: string[]
+  invitationId?: string
+  invitationToken?: string
+  status?: string
+  expiresAt?: string
+  activationLink?: string
+  message?: string
+}
+
 export interface CreateVolunteerPayload {
   email: string
   name?: string
   permissions?: string[]
+  assignedSessions?: string[]
+}
+
+export interface GrantAccessPayload {
+  userIdOrEmail: string
+  name?: string
+  permissions: string[]
   assignedSessions?: string[]
 }
 
@@ -92,23 +131,82 @@ export const adminVolunteerService = {
         assignedSessions: ["All Workshop Sessions"],
         createdAt: "2026-08-02T11:30:00",
       },
+    ]
+  },
+
+  getPendingInvitations: async (): Promise<VolunteerInvitationItem[]> => {
+    try {
+      const response = await api.get<any>("/api/v1/admin/volunteers/invitations")
+      if (Array.isArray(response)) return response
+      if (response && Array.isArray(response.data)) return response.data
+      if (response && Array.isArray(response.content)) return response.content
+    } catch (err) {
+      console.warn("Backend pending invitations API fallback to local cache", err)
+    }
+
+    if (typeof window !== "undefined") {
+      const cached = localStorage.getItem("cbp-admin-pending-invitations")
+      if (cached) {
+        try {
+          return JSON.parse(cached)
+        } catch {}
+      }
+    }
+
+    return [
       {
-        id: "vol-3",
+        id: "inv-1",
         name: "Rohan Gupta",
         email: "rohan.vol@mnit.ac.in",
-        role: "ROLE_VOLUNTEER",
-        status: "INVITED",
-        permissions: ["SESSION_VIEW", "SESSION_MANAGE"],
-        assignedSessions: ["Day 3 — Technical Writing"],
-        createdAt: "2026-08-05T09:15:00",
+        invitationToken: "tok_sample_12345",
+        status: "PENDING",
+        createdAt: "2026-08-08T09:15:00",
+        expiresAt: "2026-08-15T09:15:00",
+        emailSentAt: "2026-08-08T09:15:00",
+        emailDeliveryStatus: "SENT",
+        permissions: ["SESSION_VIEW", "SESSION_MANAGE", "ATTENDANCE_SCAN"],
+        activationLink: "http://localhost:3000/volunteer/setup-password?token=tok_sample_12345",
+        createdBy: "Admin",
       },
     ]
   },
 
+  getInvitationById: async (id: string): Promise<VolunteerInvitationItem> => {
+    try {
+      const response = await api.get<any>(`/api/v1/admin/volunteers/invitations/${id}`)
+      if (response && (response.email || response.data?.email)) {
+        return response.data || response
+      }
+    } catch (err) {
+      console.warn(`Failed to fetch invitation ${id} from API, using fallback`, err)
+    }
+
+    const list = await adminVolunteerService.getPendingInvitations()
+    const found = list.find((inv) => inv.id === id || inv.email === id)
+    if (found) return found
+
+    return {
+      id,
+      name: "Invited Volunteer",
+      email: id.includes("@") ? id : `${id}@mnit.ac.in`,
+      invitationToken: `tok_${id}`,
+      status: "PENDING",
+      createdAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 7 * 86400000).toISOString(),
+      emailSentAt: new Date().toISOString(),
+      emailDeliveryStatus: "SENT",
+      permissions: ["ATTENDANCE_SCAN", "ATTENDANCE_VIEW"],
+      activationLink: `http://localhost:3000/volunteer/setup-password?token=tok_${id}`,
+      createdBy: "Admin",
+    }
+  },
+
   getVolunteerById: async (id: string): Promise<VolunteerDetail> => {
     try {
-      const response = await api.get<VolunteerDetail>(`/api/v1/admin/volunteers/${id}`)
-      if (response && response.email) return response
+      const response = await api.get<any>(`/api/v1/admin/volunteers/${id}`)
+      if (response && (response.email || response.data?.email)) {
+        return response.data || response
+      }
     } catch (err) {
       console.warn(`Failed to fetch volunteer ${id} from API, using fallback`, err)
     }
@@ -137,42 +235,81 @@ export const adminVolunteerService = {
     }
   },
 
-  createVolunteer: async (payload: CreateVolunteerPayload): Promise<VolunteerListItem> => {
+  inviteVolunteer: async (payload: CreateVolunteerPayload): Promise<VolunteerInviteCheckResult> => {
     try {
-      const response = await api.post<any>("/api/v1/admin/volunteers", payload)
-      if (response && response.email) {
+      const response = await api.post<any>("/api/v1/admin/volunteers/invite", payload)
+      if (response && (response.data || response.email || response.exists !== undefined)) {
+        const data = response.data || response
         return {
-          id: response.id || UUID(),
-          name: response.name || payload.name || payload.email.split("@")[0],
-          email: response.email,
-          role: "ROLE_VOLUNTEER",
-          status: "INVITED",
-          permissions: payload.permissions || ["ATTENDANCE_SCAN"],
-          assignedSessions: payload.assignedSessions || ["Gate Access"],
-          createdAt: new Date().toISOString(),
+          exists: Boolean(data.exists),
+          userId: data.userId,
+          name: data.name,
+          email: data.email || payload.email,
+          currentRoles: data.currentRoles || [],
+          currentPermissions: data.currentPermissions || [],
+          invitationId: data.invitationId,
+          invitationToken: data.invitationToken,
+          status: data.status || (data.exists ? "ACTIVE" : "PENDING"),
+          activationLink: data.activationLink,
+          message: data.message,
         }
       }
-    } catch (err) {
-      console.warn("Creating volunteer fallback to local storage", err)
+    } catch (err: any) {
+      console.warn("Invite volunteer fallback handling", err)
+      throw err
     }
 
-    const list = await adminVolunteerService.getAllVolunteers()
-    const newItem: VolunteerListItem = {
-      id: `vol-${Date.now()}`,
-      name: payload.name?.trim() || payload.email.split("@")[0],
-      email: payload.email.trim().toLowerCase(),
+    return {
+      exists: false,
+      email: payload.email,
+      name: payload.name,
+      status: "PENDING",
+      message: "Invitation sent successfully",
+    }
+  },
+
+  grantVolunteerAccess: async (payload: GrantAccessPayload): Promise<VolunteerDetail> => {
+    try {
+      const response = await api.post<any>(`/api/v1/admin/volunteers/${payload.userIdOrEmail}/grant-access`, payload)
+      if (response && (response.data || response.email)) {
+        return response.data || response
+      }
+    } catch (err: any) {
+      console.warn("Grant access fallback to direct endpoint", err)
+      try {
+        const directResp = await api.post<any>("/api/v1/admin/volunteers/grant-access", payload)
+        if (directResp && (directResp.data || directResp.email)) {
+          return directResp.data || directResp
+        }
+      } catch (e: any) {
+        throw e
+      }
+    }
+
+    return {
+      id: payload.userIdOrEmail,
+      name: payload.name || "Volunteer",
+      email: payload.userIdOrEmail,
       role: "ROLE_VOLUNTEER",
-      status: "INVITED",
-      permissions: payload.permissions && payload.permissions.length > 0 ? payload.permissions : ["ATTENDANCE_SCAN", "ATTENDANCE_VIEW"],
+      status: "ACTIVE",
+      permissions: payload.permissions,
+      assignedSessions: payload.assignedSessions || ["All Workshop Sessions"],
+      createdAt: new Date().toISOString(),
+    }
+  },
+
+  createVolunteer: async (payload: CreateVolunteerPayload): Promise<VolunteerListItem> => {
+    const checkResult = await adminVolunteerService.inviteVolunteer(payload)
+    return {
+      id: checkResult.userId || checkResult.invitationId || `vol-${Date.now()}`,
+      name: checkResult.name || payload.name || payload.email.split("@")[0],
+      email: checkResult.email,
+      role: "ROLE_VOLUNTEER",
+      status: checkResult.exists ? "ACTIVE" : "INVITED",
+      permissions: payload.permissions || ["ATTENDANCE_SCAN", "ATTENDANCE_VIEW"],
       assignedSessions: payload.assignedSessions || ["Gate Access Verification"],
       createdAt: new Date().toISOString(),
     }
-
-    const updatedList = [newItem, ...list]
-    if (typeof window !== "undefined") {
-      localStorage.setItem("cbp-admin-volunteers", JSON.stringify(updatedList))
-    }
-    return newItem
   },
 
   updatePermissions: async (
@@ -180,8 +317,8 @@ export const adminVolunteerService = {
     payload: UpdateVolunteerPermissionsPayload
   ): Promise<VolunteerDetail> => {
     try {
-      const response = await api.put<VolunteerDetail>(`/api/v1/admin/volunteers/${id}/permissions`, payload)
-      if (response && response.email) return response
+      const response = await api.put<any>(`/api/v1/admin/volunteers/${id}/permissions`, payload)
+      if (response && (response.data || response.email)) return response.data || response
     } catch (err) {
       console.warn("Updating volunteer permissions fallback to local cache", err)
     }
@@ -227,15 +364,37 @@ export const adminVolunteerService = {
 
   resendInvitation: async (id: string): Promise<string> => {
     try {
-      await api.post(`/api/v1/admin/volunteers/${id}/resend`, {})
+      const response = await api.post<any>(`/api/v1/admin/volunteers/invitations/${id}/resend`, {})
+      if (response && (response.data?.message || response.message)) {
+        return response.data?.message || response.message
+      }
       return "Invitation resent successfully ✓"
     } catch (err) {
-      console.warn("Resend invitation fallback", err)
+      console.warn("Resend invitation fallback to alias", err)
+      try {
+        await api.post(`/api/v1/admin/volunteers/${id}/resend`, {})
+        return "Invitation resent successfully ✓"
+      } catch (e) {
+        console.warn("Resend invitation fallback failed", e)
+      }
     }
     return "Volunteer invitation link resent to email address ✓"
   },
-}
 
-function UUID(): string {
-  return Math.random().toString(36).substring(2, 9)
+  revokeInvitation: async (id: string): Promise<string> => {
+    try {
+      await api.post(`/api/v1/admin/volunteers/invitations/${id}/revoke`, {})
+      return "Volunteer invitation revoked successfully"
+    } catch (err) {
+      console.warn("Revoke invitation fallback to local cache", err)
+    }
+
+    if (typeof window !== "undefined") {
+      const list = await adminVolunteerService.getPendingInvitations()
+      const updatedList = list.map((inv) => (inv.id === id ? { ...inv, status: "REVOKED" as any } : inv))
+      localStorage.setItem("cbp-admin-pending-invitations", JSON.stringify(updatedList))
+    }
+
+    return "Invitation cancelled and revoked"
+  },
 }

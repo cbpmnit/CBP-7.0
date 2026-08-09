@@ -60,6 +60,17 @@ public class User extends BaseEntity implements java.security.Principal {
     @Column(nullable = false)
     private Role role;
 
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(
+        name = "user_roles",
+        schema = "identity",
+        joinColumns = @JoinColumn(name = "user_id")
+    )
+    @Column(name = "role")
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private Set<Role> roles = new HashSet<>();
+
     @Column(nullable = false)
     private Boolean enabled;
 
@@ -72,6 +83,31 @@ public class User extends BaseEntity implements java.security.Principal {
     @Column(name = "permission")
     @Builder.Default
     private Set<String> permissions = new HashSet<>();
+
+    public boolean hasRole(Role role) {
+        return this.role == role || (this.roles != null && this.roles.contains(role));
+    }
+
+    public void addRole(Role role) {
+        if (this.roles == null) {
+            this.roles = new HashSet<>();
+        }
+        this.roles.add(role);
+        if (this.role == null) {
+            this.role = role;
+        }
+    }
+
+    public void removeRole(Role role) {
+        if (this.roles != null) {
+            this.roles.remove(role);
+        }
+        if (this.role == role) {
+            if (this.roles != null && !this.roles.isEmpty()) {
+                this.role = this.roles.iterator().next();
+            }
+        }
+    }
 
     @PrePersist
     protected void onCreate() {
@@ -88,6 +124,14 @@ public class User extends BaseEntity implements java.security.Principal {
         if (this.authProvider == null) {
             this.authProvider = AuthProvider.LOCAL;
         }
+        if (this.roles == null) {
+            this.roles = new HashSet<>();
+        }
+        if (this.role != null) {
+            this.roles.add(this.role);
+        } else if (!this.roles.isEmpty()) {
+            this.role = this.roles.iterator().next();
+        }
         if (this.permissions == null) {
             this.permissions = new HashSet<>();
         }
@@ -101,6 +145,12 @@ public class User extends BaseEntity implements java.security.Principal {
         }
         if (this.email != null) {
             this.email = this.email.toLowerCase().trim();
+        }
+        if (this.roles == null) {
+            this.roles = new HashSet<>();
+        }
+        if (this.role != null) {
+            this.roles.add(this.role);
         }
     }
 }

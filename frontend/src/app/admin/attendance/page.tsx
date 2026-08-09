@@ -4,7 +4,7 @@ import Link from "next/link"
 import AdminAttendanceView from "@/components/attendance/AdminAttendanceView"
 import SidebarNavigation from "@/components/dashboard/SidebarNavigation"
 import PageTransition from "@/components/animations/PageTransition"
-import { FiArrowLeft } from "react-icons/fi"
+import { FiArrowLeft, FiCode } from "react-icons/fi"
 
 export default function AdminAttendancePage() {
   return (
@@ -21,9 +21,17 @@ export default function AdminAttendancePage() {
             >
               <FiArrowLeft /> Admin Dashboard
             </Link>
-            <span className="text-[11px] font-bold text-cyan-800 bg-cyan-50 px-3.5 py-1 rounded-full border border-cyan-200 uppercase tracking-wider">
-              Admin Attendance & Gate Management
-            </span>
+            <div className="flex items-center gap-2">
+              <Link
+                href="/admin/sessions"
+                className="inline-flex items-center gap-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 px-4 py-2 text-xs font-bold uppercase tracking-wider shadow-sm transition"
+              >
+                <FiCode className="text-cyan-700" /> Projector QR
+              </Link>
+              <span className="text-[11px] font-bold text-cyan-800 bg-cyan-50 px-3.5 py-1 rounded-full border border-cyan-200 uppercase tracking-wider">
+                Admin Attendance & Gate Management
+              </span>
+            </div>
           </div>
 
           <AdminAttendanceView />

@@ -1,12 +1,14 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
   FiGrid,
   FiUser,
   FiUsers,
+  FiUserCheck,
+  FiCalendar,
   FiCamera,
   FiCreditCard,
   FiAward,
@@ -31,11 +33,13 @@ export const STUDENT_NAV_ITEMS: NavItem[] = [
 
 export const ADMIN_NAV_ITEMS: NavItem[] = [
   { id: "admin-dashboard", label: "Dashboard", href: "/admin/dashboard", icon: <FiGrid /> },
-  { id: "admin-students", label: "Students", href: "/admin/students", icon: <FiUsers /> },
-  { id: "admin-volunteers", label: "Volunteers", href: "/admin/volunteers", icon: <FiUsers /> },
-  { id: "admin-attendance", label: "Attendance", href: "/admin/attendance", icon: <FiCamera /> },
-  { id: "admin-notifications", label: "Email Templates", href: "/admin/notifications", icon: <FiMail /> },
-  { id: "admin-certificates", label: "Certificates", href: "/certificate", icon: <FiAward /> },
+  { id: "admin-students", label: "Student Management", href: "/admin/students", icon: <FiUsers /> },
+  { id: "admin-volunteers", label: "Volunteer Management", href: "/admin/volunteers", icon: <FiUserCheck /> },
+  { id: "admin-sessions", label: "Session Management", href: "/admin/sessions", icon: <FiCalendar /> },
+  { id: "admin-attendance", label: "Attendance Management", href: "/admin/attendance", icon: <FiCamera /> },
+  { id: "admin-payments", label: "Payment Management", href: "/admin/payments", icon: <FiCreditCard /> },
+  { id: "admin-certificates", label: "Certificate Management", href: "/admin/certificates", icon: <FiAward /> },
+  { id: "admin-emails", label: "Email Management", href: "/admin/emails", icon: <FiMail /> },
 ]
 
 export const VOLUNTEER_NAV_ITEMS: NavItem[] = [
@@ -48,9 +52,7 @@ interface SidebarNavigationProps {
   allowedPermissions?: string[]
 }
 
-export default function SidebarNavigation({
-  allowedPermissions,
-}: SidebarNavigationProps) {
+function SidebarNavContent({ allowedPermissions }: SidebarNavigationProps) {
   const pathname = usePathname()
   const [hideDock, setHideDock] = useState(false)
 
@@ -110,7 +112,16 @@ export default function SidebarNavigation({
     >
       <nav className="space-y-2 py-1">
         {visibleNavItems.map((item) => {
-          const isActive = pathname === item.href || (pathname === "/" && item.href === "/dashboard")
+          const isActive = (() => {
+            if (item.href === "/admin/dashboard") {
+              return pathname === "/admin" || pathname === "/admin/dashboard"
+            }
+            if (item.href === "/dashboard") {
+              return pathname === "/dashboard" || pathname === "/"
+            }
+            return pathname === item.href || (pathname.startsWith(item.href) && item.href !== "/admin")
+          })()
+
           return (
             <div key={item.id} className="relative group flex justify-center">
               <Link
@@ -133,5 +144,13 @@ export default function SidebarNavigation({
         })}
       </nav>
     </aside>
+  )
+}
+
+export default function SidebarNavigation(props: SidebarNavigationProps) {
+  return (
+    <Suspense fallback={null}>
+      <SidebarNavContent {...props} />
+    </Suspense>
   )
 }

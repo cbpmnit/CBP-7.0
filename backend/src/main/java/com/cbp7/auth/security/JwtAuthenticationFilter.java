@@ -65,7 +65,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 userOpt.ifPresent(user -> {
                     if (Boolean.TRUE.equals(user.getEnabled())) {
                         List<SimpleGrantedAuthority> authorities = new ArrayList<>();
-                        authorities.add(new SimpleGrantedAuthority(user.getRole().name()));
+                        if (user.getRoles() != null && !user.getRoles().isEmpty()) {
+                            for (com.cbp7.auth.entity.Role r : user.getRoles()) {
+                                authorities.add(new SimpleGrantedAuthority(r.name()));
+                            }
+                        } else if (user.getRole() != null) {
+                            authorities.add(new SimpleGrantedAuthority(user.getRole().name()));
+                        }
                         if (user.getPermissions() != null) {
                             for (String perm : user.getPermissions()) {
                                 if (perm != null && !perm.isBlank()) {

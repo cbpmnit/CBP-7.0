@@ -19,4 +19,6 @@ public interface VolunteerInvitationRepository extends JpaRepository<VolunteerIn
     boolean existsByEmailIgnoreCaseAndStatus(String email, VolunteerInvitationStatus status);
 
     List<VolunteerInvitation> findAllByOrderByCreatedAtDesc();
+
+    List<VolunteerInvitation> findByStatusOrderByCreatedAtDesc(VolunteerInvitationStatus status);
 }

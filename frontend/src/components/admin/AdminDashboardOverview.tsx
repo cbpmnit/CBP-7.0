@@ -19,11 +19,7 @@ import {
   FiUserPlus,
 } from "react-icons/fi"
 
-interface AdminDashboardOverviewProps {
-  onNavigateTab?: (tab: string) => void
-}
-
-export default function AdminDashboardOverview({ onNavigateTab }: AdminDashboardOverviewProps) {
+export default function AdminDashboardOverview() {
   const [summary, setSummary] = useState<AdminDashboardSummaryDto | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -90,7 +86,7 @@ export default function AdminDashboardOverview({ onNavigateTab }: AdminDashboard
       icon: <FiUserCheck className="text-blue-700" />,
       bgIcon: "bg-blue-50 border-blue-200",
       accent: "text-blue-700",
-      tab: "students",
+      href: "/admin/students",
     },
     {
       title: "Payment Completed",
@@ -99,7 +95,7 @@ export default function AdminDashboardOverview({ onNavigateTab }: AdminDashboard
       icon: <FiCreditCard className="text-emerald-700" />,
       bgIcon: "bg-emerald-50 border-emerald-200",
       accent: "text-emerald-700",
-      tab: "payments",
+      href: "/admin/payments",
     },
     {
       title: "Payment Pending",
@@ -108,7 +104,7 @@ export default function AdminDashboardOverview({ onNavigateTab }: AdminDashboard
       icon: <FiClock className="text-amber-700" />,
       bgIcon: "bg-amber-50 border-amber-200",
       accent: "text-amber-700",
-      tab: "payments",
+      href: "/admin/payments",
     },
     {
       title: "Today's Attendance",
@@ -117,7 +113,7 @@ export default function AdminDashboardOverview({ onNavigateTab }: AdminDashboard
       icon: <FiCheckSquare className="text-cyan-700" />,
       bgIcon: "bg-cyan-50 border-cyan-200",
       accent: "text-cyan-700",
-      tab: "attendance",
+      href: "/admin/attendance",
     },
     {
       title: "Certificates Issued",
@@ -126,7 +122,7 @@ export default function AdminDashboardOverview({ onNavigateTab }: AdminDashboard
       icon: <FiAward className="text-purple-700" />,
       bgIcon: "bg-purple-50 border-purple-200",
       accent: "text-purple-700",
-      tab: "certificates",
+      href: "/admin/certificates",
     },
   ]
 
@@ -138,7 +134,7 @@ export default function AdminDashboardOverview({ onNavigateTab }: AdminDashboard
       iconBg: "bg-blue-50 border-blue-200",
       ctaText: "Open Student Directory",
       isPrimary: true,
-      onClick: () => onNavigateTab && onNavigateTab("students"),
+      href: "/admin/students",
     },
     {
       title: "Volunteer Management",
@@ -151,21 +147,21 @@ export default function AdminDashboardOverview({ onNavigateTab }: AdminDashboard
     },
     {
       title: "Session Management",
-      description: "Schedule workshop days, configure session venues, and set start/end timings.",
+      description: "Schedule workshop days, configure session venues, and project dynamic QR passes.",
       icon: <FiCalendar className="text-cyan-700 text-lg" />,
       iconBg: "bg-cyan-50 border-cyan-200",
       ctaText: "Manage Sessions",
       isPrimary: false,
-      onClick: () => onNavigateTab && onNavigateTab("sessions"),
+      href: "/admin/sessions",
     },
     {
       title: "Attendance Management",
-      description: "Generate unique student passcodes and monitor live auditorium gate scanner logs.",
+      description: "Monitor live auditorium gate scanner logs, verify entry passes, and check stats.",
       icon: <FiCamera className="text-blue-700 text-lg" />,
       iconBg: "bg-blue-50 border-blue-200",
       ctaText: "Session Passes & Gate",
       isPrimary: false,
-      onClick: () => onNavigateTab && onNavigateTab("attendance"),
+      href: "/admin/attendance",
     },
     {
       title: "Payment Management",
@@ -174,42 +170,52 @@ export default function AdminDashboardOverview({ onNavigateTab }: AdminDashboard
       iconBg: "bg-emerald-50 border-emerald-200",
       ctaText: "Review Payments",
       isPrimary: false,
-      onClick: () => onNavigateTab && onNavigateTab("payments"),
+      href: "/admin/payments",
     },
     {
-      title: "Certificates",
+      title: "Certificate Management",
       description: "Issue cryptographic completion credentials to students meeting 75% attendance.",
       icon: <FiAward className="text-purple-700 text-lg" />,
       iconBg: "bg-purple-50 border-purple-200",
       ctaText: "Process Certificates",
       isPrimary: false,
-      onClick: () => onNavigateTab && onNavigateTab("certificates"),
+      href: "/admin/certificates",
+    },
+    {
+      title: "Email Management",
+      description: "Configure automated templates for QR passes, payment receipts, and certificate emails.",
+      icon: <FiMail className="text-cyan-700 text-lg" />,
+      iconBg: "bg-cyan-50 border-cyan-200",
+      ctaText: "Manage Templates",
+      isPrimary: false,
+      href: "/admin/emails",
     },
   ]
 
   return (
     <div className="space-y-6">
-      {/* 1. Metric Overview Summary Cards (Exact 5 Requested Live KPI Metrics) */}
+      {/* 1. Metric Overview Summary Cards (All link to canonical module pages) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {statCards.map((card) => (
-          <div
+          <Link
             key={card.title}
-            onClick={() => onNavigateTab && onNavigateTab(card.tab)}
-            className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:border-cyan-300 hover:shadow-md transition cursor-pointer flex flex-col justify-between"
+            href={card.href}
+            className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:border-cyan-300 hover:shadow-md transition flex flex-col justify-between group"
           >
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">{card.title}</p>
                 <h3 className={`text-2xl font-extrabold mt-1 ${card.accent}`}>{card.value}</h3>
               </div>
-              <div className={`h-10 w-10 rounded-xl border flex items-center justify-center text-lg shrink-0 ${card.bgIcon}`}>
+              <div className={`h-10 w-10 rounded-xl border flex items-center justify-center text-lg shrink-0 transition group-hover:scale-105 ${card.bgIcon}`}>
                 {card.icon}
               </div>
             </div>
-            <p className="text-[11px] text-slate-500 font-medium mt-3 border-t border-slate-100 pt-2">
-              {card.subtext}
+            <p className="text-[11px] text-slate-500 font-medium mt-3 border-t border-slate-100 pt-2 flex items-center justify-between">
+              <span>{card.subtext}</span>
+              <FiArrowRight className="text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" />
             </p>
-          </div>
+          </Link>
         ))}
       </div>
 
@@ -243,31 +249,17 @@ export default function AdminDashboardOverview({ onNavigateTab }: AdminDashboard
                 <p className="text-xs text-slate-600 leading-relaxed mt-1">{action.description}</p>
               </div>
 
-              {action.href ? (
-                <Link
-                  href={action.href}
-                  className={`w-full py-2.5 px-3 rounded-xl text-xs font-bold uppercase tracking-wider transition inline-flex items-center justify-center gap-1.5 shadow-sm ${
-                    action.isPrimary
-                      ? "bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white shadow-cyan-600/20"
-                      : "bg-cyan-50 hover:bg-cyan-100 text-cyan-800 border border-cyan-200"
-                  }`}
-                >
-                  <span>{action.ctaText}</span>
-                  <FiArrowRight />
-                </Link>
-              ) : (
-                <button
-                  onClick={action.onClick}
-                  className={`w-full py-2.5 px-3 rounded-xl text-xs font-bold uppercase tracking-wider transition inline-flex items-center justify-center gap-1.5 shadow-sm ${
-                    action.isPrimary
-                      ? "bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white shadow-cyan-600/20"
-                      : "bg-cyan-50 hover:bg-cyan-100 text-cyan-800 border border-cyan-200"
-                  }`}
-                >
-                  <span>{action.ctaText}</span>
-                  <FiArrowRight />
-                </button>
-              )}
+              <Link
+                href={action.href}
+                className={`w-full py-2.5 px-3 rounded-xl text-xs font-bold uppercase tracking-wider transition inline-flex items-center justify-center gap-1.5 shadow-sm ${
+                  action.isPrimary
+                    ? "bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white shadow-cyan-600/20"
+                    : "bg-cyan-50 hover:bg-cyan-100 text-cyan-800 border border-cyan-200"
+                }`}
+              >
+                <span>{action.ctaText}</span>
+                <FiArrowRight />
+              </Link>
             </div>
           ))}
         </div>

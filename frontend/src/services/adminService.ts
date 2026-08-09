@@ -60,10 +60,13 @@ export const adminService = {
   getDashboardSummary: () =>
     api.get<AdminDashboardSummaryDto>("/api/v1/admin/dashboard/summary"),
 
-  getStudents: (search?: string) => {
+  getStudents: async (search?: string, page = 0, size = 50) => {
     const params = new URLSearchParams()
     if (search && search.trim()) params.append("search", search.trim())
-    return api.get<AdminStudentDetailDto[]>(`/api/v1/admin/students?${params.toString()}`)
+    params.append("page", page.toString())
+    params.append("size", size.toString())
+    const res = await api.get<any>(`/api/v1/admin/students?${params.toString()}`)
+    return Array.isArray(res) ? res : res?.content || []
   },
 
   getPaymentOverview: () =>

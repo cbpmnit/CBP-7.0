@@ -18,4 +18,8 @@ public record InviteVolunteerRequest(
     public InviteVolunteerRequest(String email, String name) {
         this(email, name, Set.of("ATTENDANCE_SCAN", "ATTENDANCE_VIEW"), Set.of());
     }
+
+    public InviteVolunteerRequest(String email, String name, Set<String> permissions) {
+        this(email, name, permissions, Set.of());
+    }
 }

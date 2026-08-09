@@ -49,6 +49,19 @@ public class VolunteerInvitation {
     @Column(name = "created_by", nullable = false)
     private String createdBy;
 
+    @Column(name = "email_sent_at")
+    private LocalDateTime emailSentAt;
+
+    @Column(name = "accepted_at")
+    private LocalDateTime acceptedAt;
+
+    @Column(name = "email_delivery_status")
+    @Builder.Default
+    private String emailDeliveryStatus = "SENT";
+
+    @Column(name = "email_failure_reason")
+    private String emailFailureReason;
+
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(
             name = "volunteer_invitation_permissions",
@@ -76,7 +89,13 @@ public class VolunteerInvitation {
             this.status = VolunteerInvitationStatus.PENDING;
         }
         if (this.expiresAt == null) {
-            this.expiresAt = LocalDateTime.now().plusHours(24);
+            this.expiresAt = LocalDateTime.now().plusDays(7);
+        }
+        if (this.emailSentAt == null) {
+            this.emailSentAt = LocalDateTime.now();
+        }
+        if (this.emailDeliveryStatus == null) {
+            this.emailDeliveryStatus = "SENT";
         }
         if (this.permissions == null) {
             this.permissions = new HashSet<>();

@@ -99,9 +99,19 @@ export interface ColumnPreferences {
   showRegistration: boolean
 }
 
+export interface GetStudentsParams {
+  search?: string
+  registrationStatus?: string
+  paymentStatus?: string
+  attendanceStatus?: string
+  profileStatus?: string
+  page?: number
+  size?: number
+}
+
 export const adminStudentService = {
   getStudents: (
-    search?: string,
+    paramsOrSearch?: GetStudentsParams | string,
     registrationStatus?: string,
     paymentStatus?: string,
     attendanceStatus?: string,
@@ -109,14 +119,40 @@ export const adminStudentService = {
     page = 0,
     size = 20
   ) => {
+    let s = ""
+    let reg = "ALL"
+    let pay = "ALL"
+    let att = "ALL"
+    let prof = "ALL"
+    let p = 0
+    let sz = 20
+
+    if (typeof paramsOrSearch === "object" && paramsOrSearch !== null) {
+      s = paramsOrSearch.search || ""
+      reg = paramsOrSearch.registrationStatus || "ALL"
+      pay = paramsOrSearch.paymentStatus || "ALL"
+      att = paramsOrSearch.attendanceStatus || "ALL"
+      prof = paramsOrSearch.profileStatus || "ALL"
+      p = paramsOrSearch.page ?? 0
+      sz = paramsOrSearch.size ?? 20
+    } else {
+      s = paramsOrSearch || ""
+      reg = registrationStatus || "ALL"
+      pay = paymentStatus || "ALL"
+      att = attendanceStatus || "ALL"
+      prof = profileStatus || "ALL"
+      p = page
+      sz = size
+    }
+
     const params = new URLSearchParams()
-    if (search && search.trim()) params.append("search", search.trim())
-    if (registrationStatus && registrationStatus !== "ALL") params.append("registrationStatus", registrationStatus)
-    if (paymentStatus && paymentStatus !== "ALL") params.append("paymentStatus", paymentStatus)
-    if (attendanceStatus && attendanceStatus !== "ALL") params.append("attendanceStatus", attendanceStatus)
-    if (profileStatus && profileStatus !== "ALL") params.append("profileStatus", profileStatus)
-    params.append("page", page.toString())
-    params.append("size", size.toString())
+    if (s && s.trim()) params.append("search", s.trim())
+    if (reg && reg !== "ALL") params.append("registrationStatus", reg)
+    if (pay && pay !== "ALL") params.append("paymentStatus", pay)
+    if (att && att !== "ALL") params.append("attendanceStatus", att)
+    if (prof && prof !== "ALL") params.append("profileStatus", prof)
+    params.append("page", p.toString())
+    params.append("size", sz.toString())
 
     return api.get<PageResponse<AdminStudentListItem>>(`/api/v1/admin/students?${params.toString()}`)
   },
@@ -144,11 +180,29 @@ export const adminStudentService = {
     a.remove()
   },
 
-  exportStudentsCsv: async (paymentStatus?: string, registrationStatus?: string, search?: string) => {
+  exportStudentsCsv: async (
+    paramsOrPayment?: { paymentStatus?: string; registrationStatus?: string; search?: string; attendanceStatus?: string; profileStatus?: string } | string,
+    registrationStatus?: string,
+    search?: string
+  ) => {
+    let pay = "ALL"
+    let reg = "ALL"
+    let s = ""
+
+    if (typeof paramsOrPayment === "object" && paramsOrPayment !== null) {
+      pay = paramsOrPayment.paymentStatus || "ALL"
+      reg = paramsOrPayment.registrationStatus || "ALL"
+      s = paramsOrPayment.search || ""
+    } else {
+      pay = paramsOrPayment || "ALL"
+      reg = registrationStatus || "ALL"
+      s = search || ""
+    }
+
     const params = new URLSearchParams()
-    if (paymentStatus && paymentStatus !== "ALL") params.append("paymentStatus", paymentStatus)
-    if (registrationStatus && registrationStatus !== "ALL") params.append("registrationStatus", registrationStatus)
-    if (search && search.trim()) params.append("search", search.trim())
+    if (pay && pay !== "ALL") params.append("paymentStatus", pay)
+    if (reg && reg !== "ALL") params.append("registrationStatus", reg)
+    if (s && s.trim()) params.append("search", s.trim())
 
     const response = await fetch(`/api/v1/admin/students/export?${params.toString()}`, {
       headers: {
@@ -160,7 +214,7 @@ export const adminStudentService = {
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement("a")
     a.href = url
-    a.download = "CBP7_Students_Export.csv"
+    a.download = `CBP_7_Students_Directory_${new Date().toISOString().split("T")[0]}.csv`
     document.body.appendChild(a)
     a.click()
     a.remove()
