@@ -84,11 +84,13 @@ export function useEmailTemplates() {
         setTemplates(
           DEFAULT_PRESETS.map((p, idx) => ({
             id: `preset-${idx + 1}`,
-            templateName: p.templateName,
+            name: p.templateName || "Preset Template",
+            templateName: p.templateName || "Preset Template",
             subject: p.subject,
-            body: p.body,
-            notificationType: p.notificationType,
-            variables: p.variables,
+            content: p.body || "",
+            body: p.body || "",
+            notificationType: p.notificationType || "ATTENDANCE_QR_GENERATED",
+            variables: p.variables || [],
             active: true,
           }))
         )
@@ -97,11 +99,13 @@ export function useEmailTemplates() {
       setTemplates(
         DEFAULT_PRESETS.map((p, idx) => ({
           id: `preset-${idx + 1}`,
-          templateName: p.templateName,
+          name: p.templateName || "Preset Template",
+          templateName: p.templateName || "Preset Template",
           subject: p.subject,
-          body: p.body,
-          notificationType: p.notificationType,
-          variables: p.variables,
+          content: p.body || "",
+          body: p.body || "",
+          notificationType: p.notificationType || "ATTENDANCE_QR_GENERATED",
+          variables: p.variables || [],
           active: true,
         }))
       )
@@ -129,14 +133,20 @@ export function useEmailTemplates() {
 
   const handleOpenEdit = (t: NotificationTemplateResponse) => {
     setEditId(t.id)
+    const vars = Array.isArray(t.variables)
+      ? t.variables
+      : typeof t.variables === "string"
+      ? (t.variables as string).split(",")
+      : []
+
     setFormData({
-      templateName: t.templateName,
+      templateName: t.templateName || t.name || "",
       subject: t.subject,
-      body: t.body,
+      body: t.body || t.content || "",
       notificationType: t.notificationType,
-      variables: t.variables || [],
+      variables: vars,
     })
-    setVariablesInput((t.variables || []).join(", "))
+    setVariablesInput(vars.join(", "))
     setModalOpen(true)
   }
 
@@ -184,12 +194,25 @@ export function useEmailTemplates() {
     } catch {
       setTemplates((prev) => {
         if (editId) {
-          return prev.map((t) => (t.id === editId ? { ...t, ...payload } : t))
+          return prev.map((t) =>
+            t.id === editId
+              ? {
+                  ...t,
+                  ...payload,
+                  templateName: payload.templateName || t.templateName || "Email Template",
+                  body: payload.body || t.body || "",
+                }
+              : t
+          )
         }
         return [
           {
             id: `temp-${Date.now()}`,
             ...payload,
+            name: payload.templateName || "Email Template",
+            templateName: payload.templateName || "Email Template",
+            body: payload.body || "",
+            notificationType: payload.notificationType || "ATTENDANCE_QR_GENERATED",
             active: true,
           },
           ...prev,

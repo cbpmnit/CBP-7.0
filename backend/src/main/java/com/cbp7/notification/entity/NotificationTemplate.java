@@ -6,13 +6,14 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
-import jakarta.persistence.UniqueConstraint;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(
@@ -41,6 +42,9 @@ public class NotificationTemplate extends BaseEntity {
     @Column(name = "type")
     private NotificationType type;
 
+    @Column(name = "event_type")
+    private String eventType;
+
     @Column
     private String subject;
 
@@ -49,6 +53,15 @@ public class NotificationTemplate extends BaseEntity {
 
     @Column(columnDefinition = "TEXT")
     private String variables;
+
+    @Column(name = "design_json", columnDefinition = "TEXT")
+    private String designJson;
+
+    @Column(name = "status")
+    private String status;
+
+    @Column(name = "published_at")
+    private LocalDateTime publishedAt;
 
     @Column(name = "created_by", nullable = false)
     private String createdBy;

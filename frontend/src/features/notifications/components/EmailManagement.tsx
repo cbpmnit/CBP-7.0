@@ -1,148 +1,326 @@
 "use client"
 
-import React from "react"
+import React, { useState } from "react"
+import { useRouter } from "next/navigation"
 import PageTransition from "@/components/animations/PageTransition"
 import PermissionGuard from "@/components/auth/PermissionGuard"
-import { useEmailTemplates, NOTIFICATION_TYPES } from "../hooks/useEmailTemplates"
+import { useEmailTemplates } from "../hooks/useEmailTemplates"
 import { PageHeader } from "@/components/ui/PageHeader"
-import { StatusBadge } from "@/components/ui/StatusBadge"
+import EmailPreviewModal from "./EmailPreviewModal"
+import TestEmailModal from "./TestEmailModal"
+import { NotificationTemplateResponse } from "../types"
+import { emailTemplateApi } from "../services/notificationApi"
 import {
-  FiBell,
+  FiMail,
   FiPlus,
-  FiEdit,
+  FiEdit3,
   FiTrash2,
   FiEye,
   FiCopy,
-  FiCheck,
-  FiX,
+  FiSend,
+  FiCode,
+  FiArchive,
+  FiCheckCircle,
+  FiChevronDown,
+  FiChevronUp,
 } from "react-icons/fi"
 
+const EVENT_TYPE_LABELS: Record<string, string> = {
+  ATTENDANCE_QR_GENERATED: "Attendance QR Pass",
+  PAYMENT_SUCCESS: "Payment Confirmation",
+  REGISTRATION_SUCCESS: "Registration Welcome",
+  CERTIFICATE_ISSUED: "Certificate Issued",
+  SESSION_REMINDER: "Session Reminder",
+}
+
 export default function EmailManagement() {
+  const router = useRouter()
   const {
     loading,
     templates,
     message,
-    modalOpen,
-    setModalOpen,
-    editId,
-    saveLoading,
-    formData,
-    setFormData,
-    variablesInput,
-    setVariablesInput,
-    previewTemplate,
-    setPreviewTemplate,
-    copiedPreview,
-    setCopiedPreview,
-    activeStatusMap,
-    handleOpenCreate,
-    handleOpenEdit,
     handleDelete,
-    handleToggleStatus,
-    handleSubmit,
-    renderMockBody,
+    reload,
   } = useEmailTemplates()
+
+  // Expanded variables per card
+  const [expandedVariables, setExpandedVariables] = useState<Record<string, boolean>>({})
+
+  // Live Preview Modal state
+  const [previewOpen, setPreviewOpen] = useState(false)
+  const [selectedPreviewTemplate, setSelectedPreviewTemplate] = useState<NotificationTemplateResponse | null>(null)
+
+  // Test Email Modal state
+  const [testEmailOpen, setTestEmailOpen] = useState(false)
+  const [testEmailTemplate, setTestEmailTemplate] = useState<NotificationTemplateResponse | null>(null)
+
+  const [toastMessage, setToastMessage] = useState<string | null>(null)
+
+  const handleOpenCreateBuilder = () => {
+    router.push("/admin/emails/builder")
+  }
+
+  const handleOpenEditBuilder = (t: NotificationTemplateResponse) => {
+    router.push(`/admin/emails/builder?id=${t.id}`)
+  }
+
+  const handleOpenPreview = (t: NotificationTemplateResponse) => {
+    setSelectedPreviewTemplate(t)
+    setPreviewOpen(true)
+  }
+
+  const handleOpenTestEmail = (t: NotificationTemplateResponse) => {
+    setTestEmailTemplate(t)
+    setTestEmailOpen(true)
+  }
+
+  const handlePublishTemplate = async (id: string) => {
+    try {
+      await emailTemplateApi.publishTemplate(id)
+      setToastMessage("Email template published live successfully!")
+      setTimeout(() => setToastMessage(null), 3000)
+      await reload()
+    } catch {
+      await reload()
+    }
+  }
+
+  const handleArchiveTemplate = async (id: string) => {
+    try {
+      await emailTemplateApi.archiveTemplate(id)
+      setToastMessage("Email template archived.")
+      setTimeout(() => setToastMessage(null), 3000)
+      await reload()
+    } catch {
+      await reload()
+    }
+  }
+
+  const handleDuplicateTemplate = async (t: NotificationTemplateResponse) => {
+    try {
+      await emailTemplateApi.duplicateTemplate(t.id)
+      setToastMessage("Email template duplicated as draft!")
+      setTimeout(() => setToastMessage(null), 3000)
+      await reload()
+    } catch {
+      router.push(`/admin/emails/builder?id=${t.id}&duplicate=true`)
+    }
+  }
+
+  const toggleVariableExpansion = (templateId: string) => {
+    setExpandedVariables((prev) => ({
+      ...prev,
+      [templateId]: !prev[templateId],
+    }))
+  }
 
   return (
     <PageTransition>
       <PermissionGuard requiredPermission="EMAIL_SEND">
-        <div className="space-y-4">
+        <div className="space-y-5">
           {/* Header */}
           <PageHeader
-            title="Email Templates"
+            title="Email Template Management"
             count={templates.length}
             countLabel="templates"
-            subtitle="Automated system email notifications, QR gate passes, payment receipts, and certificates"
+            subtitle="Manage automated operational email templates, draft/publish lifecycle, and recipient dispatch tests"
             actions={
               <button
-                onClick={handleOpenCreate}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-700 text-white px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider shadow-2xs transition shrink-0 cursor-pointer"
+                onClick={handleOpenCreateBuilder}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 text-xs font-bold uppercase tracking-wider shadow-sm transition shrink-0 cursor-pointer"
               >
-                <FiPlus className="text-xs" /> Create Template
+                <FiPlus className="text-sm" /> Create Email Template
               </button>
             }
           />
 
-          {message && (
-            <div className="p-3 rounded-lg border bg-emerald-50 border-emerald-200 text-emerald-950 text-xs font-bold">
-              {message}
+          {(message || toastMessage) && (
+            <div className="p-3.5 rounded-xl border bg-emerald-50 border-emerald-200 text-emerald-950 text-xs font-bold flex items-center gap-2 animate-in fade-in">
+              <FiCheckCircle className="text-emerald-600 shrink-0 text-base" />
+              <span>{toastMessage || message}</span>
             </div>
           )}
 
-          {/* Templates Grid */}
+          {/* Templates Grid (2-3 cards per row on desktop, 1 on mobile) */}
           {loading ? (
-            <div className="grid gap-3 sm:grid-cols-2">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="bg-white rounded-xl p-4 border border-slate-200 animate-pulse shadow-2xs">
-                  <div className="h-4 w-32 bg-slate-100 rounded mb-2" />
-                  <div className="h-3 w-48 bg-slate-100 rounded mb-3" />
-                  <div className="h-12 bg-slate-50 rounded" />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="bg-white rounded-2xl p-5 border border-slate-200 animate-pulse shadow-xs space-y-3">
+                  <div className="flex justify-between items-center">
+                    <div className="h-4 w-28 bg-slate-100 rounded-md" />
+                    <div className="h-4 w-16 bg-slate-100 rounded-md" />
+                  </div>
+                  <div className="h-5 w-44 bg-slate-200 rounded-md" />
+                  <div className="h-3 w-56 bg-slate-100 rounded-md" />
+                  <div className="h-10 bg-slate-50 rounded-xl" />
                 </div>
               ))}
             </div>
           ) : templates.length === 0 ? (
-            <div className="bg-white rounded-xl p-8 border border-slate-200 text-center shadow-2xs">
-              <FiBell className="mx-auto text-2xl text-slate-400 mb-2" />
-              <h3 className="text-xs font-bold text-slate-900 mb-1">No Notification Templates Found</h3>
-              <p className="text-[11px] text-slate-500 mb-4">Click &apos;Create Template&apos; to configure system notifications.</p>
+            <div className="bg-white rounded-2xl p-12 border border-slate-200 text-center shadow-xs space-y-4 max-w-md mx-auto my-8">
+              <div className="h-12 w-12 rounded-2xl bg-cyan-50 text-cyan-700 flex items-center justify-center mx-auto text-2xl">
+                <FiMail />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-sm font-extrabold uppercase text-slate-900">No Email Templates Found</h3>
+                <p className="text-xs text-slate-500">
+                  Launch the GrapesJS Email Builder to create automated operational templates.
+                </p>
+              </div>
+              <button
+                onClick={handleOpenCreateBuilder}
+                className="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold uppercase tracking-wider shadow-sm transition inline-flex items-center gap-1.5 cursor-pointer"
+              >
+                <FiPlus /> Create Email Template
+              </button>
             </div>
           ) : (
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4.5">
               {templates.map((t) => {
-                const isActive = activeStatusMap[t.id] ?? true
+                const status = (t.status as any) || "DRAFT"
+                const eventTypeKey = t.eventType || t.notificationType || "ATTENDANCE_QR_GENERATED"
+                const eventTypeLabel = EVENT_TYPE_LABELS[eventTypeKey] || eventTypeKey
+
+                const rawVars =
+                  t.variablesUsed ||
+                  (Array.isArray(t.variables)
+                    ? t.variables
+                    : typeof t.variables === "string"
+                    ? (t.variables as string).split(",")
+                    : ["studentName", "studentId", "sessionName"])
+
+                const variables = rawVars.filter((v: string) => v && v.trim().length > 0)
+                const isExpanded = Boolean(expandedVariables[t.id])
+                const visibleVars = isExpanded ? variables : variables.slice(0, 3)
+                const hiddenCount = variables.length - 3
+
                 return (
                   <div
                     key={t.id}
-                    className="bg-white rounded-xl p-4 border border-slate-200 shadow-2xs flex flex-col justify-between space-y-3 hover:border-slate-300 transition"
+                    className="bg-white rounded-2xl p-4.5 border border-slate-200 shadow-xs flex flex-col justify-between space-y-3.5 hover:border-slate-300 hover:shadow-md transition group"
                   >
-                    <div>
-                      <div className="flex items-center justify-between gap-2 mb-1.5">
-                        <span className="text-[10px] font-mono font-bold uppercase tracking-wider bg-cyan-50 text-cyan-800 border border-cyan-200 px-2 py-0.2 rounded truncate">
-                          {t.notificationType || t.templateName}
+                    {/* 1. Header: Event Type Badge + Status */}
+                    <div className="space-y-2.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[10px] font-bold uppercase tracking-wider bg-cyan-50 text-cyan-800 border border-cyan-200/80 px-2.5 py-1 rounded-lg truncate">
+                          {eventTypeLabel}
                         </span>
 
-                        <button
-                          onClick={() => handleToggleStatus(t.id)}
-                          className="cursor-pointer"
+                        <span
+                          className={`text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md border ${
+                            status === "PUBLISHED"
+                              ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                              : status === "ARCHIVED"
+                              ? "bg-rose-50 text-rose-800 border-rose-200"
+                              : "bg-amber-50 text-amber-800 border-amber-200"
+                          }`}
                         >
-                          <StatusBadge status={isActive ? "ACTIVE" : "DISABLED"} />
-                        </button>
+                          {status}
+                        </span>
                       </div>
 
-                      <h2 className="text-xs font-bold text-slate-900 truncate">
-                        {t.subject || t.templateName}
-                      </h2>
-                      <p className="text-[11px] text-slate-500 font-mono mt-0.5 truncate">
-                        Template ID: {t.templateName}
-                      </p>
+                      {/* 2. Template Identity */}
+                      <div>
+                        <h2 className="text-sm font-bold text-slate-900 group-hover:text-cyan-700 transition truncate">
+                          {t.templateName || t.name}
+                        </h2>
+                        <p className="text-xs text-slate-500 font-mono truncate mt-0.5">
+                          Subject: &quot;{t.subject}&quot;
+                        </p>
+                      </div>
 
-                      <div className="mt-2 p-2.5 bg-slate-50 border border-slate-100 rounded-lg text-xs text-slate-600 line-clamp-3 font-mono">
-                        {t.body}
+                      {/* 3. Variables Used (Collapsed to 3-4 with +X more expander) */}
+                      <div className="p-2.5 bg-slate-50/80 rounded-xl border border-slate-100 space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">
+                            <FiCode className="text-cyan-700" /> Variables Used:
+                          </span>
+
+                          {hiddenCount > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => toggleVariableExpansion(t.id)}
+                              className="text-[10px] font-bold text-cyan-700 hover:underline inline-flex items-center gap-0.5 cursor-pointer"
+                            >
+                              {isExpanded ? (
+                                <>
+                                  Show less <FiChevronUp />
+                                </>
+                              ) : (
+                                <>
+                                  +{hiddenCount} more <FiChevronDown />
+                                </>
+                              )}
+                            </button>
+                          )}
+                        </div>
+
+                        <div className="flex flex-wrap gap-1">
+                          {visibleVars.map((v: string) => (
+                            <span
+                              key={v}
+                              className="text-[9px] font-mono font-bold bg-white text-slate-700 border border-slate-200 px-1.5 py-0.5 rounded-md shadow-2xs"
+                            >
+                              {"{{" + v.trim() + "}}"}
+                            </span>
+                          ))}
+                        </div>
                       </div>
                     </div>
 
-                    <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between gap-2">
-                      <button
-                        onClick={() => setPreviewTemplate(t)}
-                        className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-cyan-700 cursor-pointer"
-                      >
-                        <FiEye className="text-xs" /> Preview
-                      </button>
-
-                      <div className="flex items-center gap-1">
+                    {/* 4. Action Bar (Primary Publish CTA + Secondary Preview/Test/Edit + Tertiary) */}
+                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
                         <button
-                          onClick={() => handleOpenEdit(t)}
-                          className="p-1 text-slate-500 hover:text-cyan-700 rounded hover:bg-slate-50 transition cursor-pointer"
-                          title="Edit template"
+                          type="button"
+                          onClick={() => handleOpenPreview(t)}
+                          className="inline-flex items-center gap-1 text-xs font-bold text-slate-600 hover:text-cyan-700 transition cursor-pointer"
                         >
-                          <FiEdit className="text-xs" />
+                          <FiEye className="text-xs" /> Preview
                         </button>
                         <button
-                          onClick={() => handleDelete(t.id)}
-                          className="p-1 text-slate-400 hover:text-rose-600 rounded hover:bg-slate-50 transition cursor-pointer"
-                          title="Delete template"
+                          type="button"
+                          onClick={() => handleOpenTestEmail(t)}
+                          className="inline-flex items-center gap-1 text-xs font-bold text-purple-700 hover:text-purple-800 transition cursor-pointer"
                         >
-                          <FiTrash2 className="text-xs" />
+                          <FiSend className="text-xs" /> Send Test
+                        </button>
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        {status === "DRAFT" && (
+                          <button
+                            type="button"
+                            onClick={() => handlePublishTemplate(t.id)}
+                            className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-bold uppercase tracking-wider transition shadow-2xs cursor-pointer"
+                            title="Publish Template Live"
+                          >
+                            Publish
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEditBuilder(t)}
+                          className="p-1.5 text-slate-600 hover:text-cyan-700 rounded-lg hover:bg-slate-100 transition cursor-pointer"
+                          title="Edit in Template Builder"
+                        >
+                          <FiEdit3 className="text-xs" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDuplicateTemplate(t)}
+                          className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition cursor-pointer"
+                          title="Duplicate Template"
+                        >
+                          <FiCopy className="text-xs" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleArchiveTemplate(t.id)}
+                          className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-slate-100 transition cursor-pointer"
+                          title="Archive Template"
+                        >
+                          <FiArchive className="text-xs" />
                         </button>
                       </div>
                     </div>
@@ -151,160 +329,39 @@ export default function EmailManagement() {
               })}
             </div>
           )}
-
-          {/* Create/Edit Modal */}
-          {modalOpen && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/50 backdrop-blur-xs">
-              <div className="bg-white rounded-2xl p-6 max-w-lg w-full shadow-2xl border border-slate-200 space-y-4 max-h-[90vh] overflow-y-auto">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                  <h3 className="text-sm font-extrabold text-slate-900">
-                    {editId ? "Edit Email Template" : "New Email Template"}
-                  </h3>
-                  <button
-                    onClick={() => setModalOpen(false)}
-                    className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
-                  >
-                    <FiX />
-                  </button>
-                </div>
-
-                <form onSubmit={handleSubmit} className="space-y-3 text-xs">
-                  <div>
-                    <label className="block font-bold text-slate-700 mb-1">Notification Type</label>
-                    <select
-                      value={formData.notificationType}
-                      onChange={(e) => setFormData({ ...formData, notificationType: e.target.value })}
-                      className="w-full px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 font-semibold text-slate-900 focus:bg-white focus:outline-none focus:border-cyan-600"
-                    >
-                      {NOTIFICATION_TYPES.map((type) => (
-                        <option key={type} value={type}>
-                          {type}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block font-bold text-slate-700 mb-1">Template Name</label>
-                    <input
-                      type="text"
-                      value={formData.templateName}
-                      onChange={(e) => setFormData({ ...formData, templateName: e.target.value })}
-                      placeholder="e.g. Attendance QR Pass Email"
-                      className="w-full px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 font-semibold text-slate-900 focus:bg-white focus:outline-none focus:border-cyan-600"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block font-bold text-slate-700 mb-1">Subject</label>
-                    <input
-                      type="text"
-                      value={formData.subject}
-                      onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                      placeholder="e.g. Your CBP 7.0 Gate Pass for {{sessionName}}"
-                      className="w-full px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 font-semibold text-slate-900 focus:bg-white focus:outline-none focus:border-cyan-600"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block font-bold text-slate-700 mb-1">Email Body</label>
-                    <textarea
-                      rows={4}
-                      value={formData.body}
-                      onChange={(e) => setFormData({ ...formData, body: e.target.value })}
-                      placeholder="e.g. Dear {{studentName}}, your attendance pass for {{sessionName}} is ready."
-                      className="w-full px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 font-mono font-semibold text-slate-900 focus:bg-white focus:outline-none focus:border-cyan-600"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block font-bold text-slate-700 mb-1">Dynamic Variables (comma separated)</label>
-                    <input
-                      type="text"
-                      value={variablesInput}
-                      onChange={(e) => setVariablesInput(e.target.value)}
-                      placeholder="e.g. studentName, studentId, amount, transactionId"
-                      className="w-full px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 font-mono font-semibold text-slate-900 focus:bg-white focus:outline-none focus:border-cyan-600"
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
-                    <button
-                      type="button"
-                      onClick={() => setModalOpen(false)}
-                      className="px-3.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold cursor-pointer"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={saveLoading}
-                      className="px-4 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-700 text-white font-bold disabled:opacity-50 cursor-pointer shadow-2xs"
-                    >
-                      {saveLoading ? "Saving..." : "Save Template"}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
-
-          {/* Preview Modal */}
-          {previewTemplate && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/50 backdrop-blur-xs">
-              <div className="bg-white rounded-2xl p-6 max-w-lg w-full shadow-2xl border border-slate-200 space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                  <h3 className="text-sm font-extrabold text-slate-900">
-                    Template Live Preview
-                  </h3>
-                  <button
-                    onClick={() => setPreviewTemplate(null)}
-                    className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
-                  >
-                    <FiX />
-                  </button>
-                </div>
-
-                <div className="space-y-3 text-xs">
-                  <div>
-                    <span className="font-bold text-slate-500">Subject:</span>
-                    <p className="font-bold text-slate-900 mt-0.5">{previewTemplate.subject}</p>
-                  </div>
-
-                  <div>
-                    <span className="font-bold text-slate-500">Sample Rendered Message:</span>
-                    <div className="mt-1 p-3 bg-slate-50 border border-slate-200 rounded-lg font-mono text-slate-700 whitespace-pre-wrap">
-                      {renderMockBody(previewTemplate.body)}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-end gap-2 pt-2">
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(renderMockBody(previewTemplate.body))
-                      setCopiedPreview(true)
-                      setTimeout(() => setCopiedPreview(false), 2000)
-                    }}
-                    className="px-3.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold inline-flex items-center gap-1 text-xs cursor-pointer"
-                  >
-                    {copiedPreview ? <FiCheck className="text-emerald-600" /> : <FiCopy />}
-                    <span>{copiedPreview ? "Copied!" : "Copy Text"}</span>
-                  </button>
-                  <button
-                    onClick={() => setPreviewTemplate(null)}
-                    className="px-3.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs cursor-pointer shadow-2xs"
-                  >
-                    Close Preview
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
+
+        {/* Live Preview Modal */}
+        {selectedPreviewTemplate && (
+          <EmailPreviewModal
+            isOpen={previewOpen}
+            onClose={() => {
+              setPreviewOpen(false)
+              setSelectedPreviewTemplate(null)
+            }}
+            templateName={selectedPreviewTemplate.templateName || selectedPreviewTemplate.name || "Email Template"}
+            subject={selectedPreviewTemplate.subject}
+            htmlContent={
+              selectedPreviewTemplate.htmlContent ||
+              selectedPreviewTemplate.content ||
+              selectedPreviewTemplate.body ||
+              "<p>Email Content</p>"
+            }
+          />
+        )}
+
+        {/* Send Test Email Modal with Student Registry Picker */}
+        {testEmailTemplate && (
+          <TestEmailModal
+            isOpen={testEmailOpen}
+            onClose={() => {
+              setTestEmailOpen(false)
+              setTestEmailTemplate(null)
+            }}
+            templateId={testEmailTemplate.id}
+            templateName={testEmailTemplate.templateName || testEmailTemplate.name || "Email Template"}
+          />
+        )}
       </PermissionGuard>
     </PageTransition>
   )

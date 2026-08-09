@@ -6,12 +6,16 @@ import com.cbp7.notification.entity.NotificationType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 @Repository
 public interface NotificationTemplateRepository extends JpaRepository<NotificationTemplate, UUID> {
     Optional<NotificationTemplate> findByTypeAndChannel(NotificationType type, NotificationChannel channel);
+    Optional<NotificationTemplate> findByTypeAndChannelAndStatus(NotificationType type, NotificationChannel channel, String status);
+    Optional<NotificationTemplate> findByEventTypeAndChannelAndStatus(String eventType, NotificationChannel channel, String status);
+    List<NotificationTemplate> findByStatus(String status);
     boolean existsByName(String name);
     boolean existsByTypeAndChannel(NotificationType type, NotificationChannel channel);
 }

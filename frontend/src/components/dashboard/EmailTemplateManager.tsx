@@ -69,14 +69,15 @@ export default function EmailTemplateManager() {
 
   const handleOpenEdit = (t: NotificationTemplateResponse) => {
     setEditId(t.id)
+    const vars = Array.isArray(t.variables) ? t.variables : typeof t.variables === "string" ? (t.variables as string).split(",") : []
     setFormData({
-      templateName: t.templateName,
+      templateName: t.templateName || t.name || "",
       subject: t.subject,
-      body: t.body,
-      notificationType: t.notificationType,
-      variables: t.variables || [],
+      body: t.body || t.content || "",
+      notificationType: t.notificationType || "",
+      variables: vars,
     })
-    setVariablesInput((t.variables || []).join(", "))
+    setVariablesInput(vars.join(", "))
     setModalOpen(true)
   }
 
