@@ -156,7 +156,7 @@ public class PhonePePaymentInitiationTest {
                 .andExpect(jsonPath("$.data.paymentId", notNullValue()))
                 .andExpect(jsonPath("$.data.transactionId", notNullValue()))
                 .andExpect(jsonPath("$.data.redirectUrl", equalTo("https://phonepe-payment-url")))
-                .andExpect(jsonPath("$.data.paymentStatus", equalTo(PaymentStatus.PENDING.name())))
+                .andExpect(jsonPath("$.data.paymentStatus", equalTo(PaymentStatus.INITIATED.name())))
                 .andReturn();
 
         printResponse("INITIATE PHONEPE PAYMENT RESPONSE", result);

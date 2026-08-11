@@ -29,16 +29,37 @@ public class PaymentStatusScheduler {
     public void reconcilePendingPayments() {
         log.info("Starting background payment reconciliation scheduler...");
         
-        int thresholdMinutes = phonePeConfig.getReconciliationMinutes();
-        LocalDateTime thresholdTime = LocalDateTime.now().minusMinutes(thresholdMinutes);
-
-        List<Payment> pendingPayments = paymentRepository.findAllByPaymentStatusAndCreatedAtBefore(
-                PaymentStatus.PENDING, thresholdTime
+        List<PaymentStatus> activeStatuses = List.of(
+                PaymentStatus.PENDING,
+                PaymentStatus.INITIATED,
+                PaymentStatus.PROCESSING,
+                PaymentStatus.UNDER_VERIFICATION
         );
 
-        log.info("Found {} pending payments older than {} minutes for reconciliation.", pendingPayments.size(), thresholdMinutes);
+        List<Payment> activePayments = paymentRepository.findAllByPaymentStatusIn(activeStatuses);
+        
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime maxAgeCutoff = now.minusHours(phonePeConfig.getReconciliationMaxAgeHours());
+        
+        List<Payment> toReconcile = activePayments.stream()
+                .filter(p -> p.getCreatedAt() != null && p.getUpdatedAt() != null)
+                .filter(p -> p.getCreatedAt().isAfter(maxAgeCutoff))
+                .filter(p -> {
+                    long ageInMinutes = java.time.Duration.between(p.getCreatedAt(), now).toMinutes();
+                    long minutesSinceLastUpdate = java.time.Duration.between(p.getUpdatedAt(), now).toMinutes();
+                    
+                    // Always check very new payments (age < 15 mins) on every run to capture recent checkout updates
+                    if (ageInMinutes < phonePeConfig.getReconciliationMinutes()) {
+                        return true;
+                    }
+                    // For older active payments, apply backoff check (only check if last check was >= 5 mins ago)
+                    return minutesSinceLastUpdate >= 5;
+                })
+                .toList();
 
-        for (Payment payment : pendingPayments) {
+        log.info("Found {} active payments matching reconciliation criteria.", toReconcile.size());
+
+        for (Payment payment : toReconcile) {
             log.info("Payment reconciliation started");
             log.info("Transaction ID: {}", payment.getTransactionId());
             log.info("Previous status: {}", payment.getPaymentStatus());

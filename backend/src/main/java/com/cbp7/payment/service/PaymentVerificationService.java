@@ -60,7 +60,7 @@ public class PaymentVerificationService {
             updatePaymentStatus(payment, PaymentStatus.FAILED);
             log.info("Payment transaction {} verified as FAILED.", transactionId);
         } else {
-            // Leave as PENDING
+            // Leave as PENDING or set status accordingly
             log.info("Payment transaction {} is still PENDING at gateway.", transactionId);
         }
 
@@ -73,6 +73,8 @@ public class PaymentVerificationService {
         if (currentStatus == newStatus) {
             return;
         }
+
+        log.info("PHONEPE_PAYMENT_UPDATED\noldStatus={}\nnewStatus={}", currentStatus, newStatus);
 
         // Validate state transitions (Idempotency and safety checks)
         if (currentStatus == PaymentStatus.SUCCESS && newStatus != PaymentStatus.REFUNDED) {
@@ -157,6 +159,7 @@ public class PaymentVerificationService {
         String merchantOrderId = callbackResponse.getPayload().getOrderId();
         String state = callbackResponse.getPayload().getState();
 
+        log.info("PHONEPE_WEBHOOK_RECEIVED\ntransactionId={}\nstate={}", merchantOrderId, state);
         log.info("Processing callback for Order ID: {}, State: {}", merchantOrderId, state);
 
         // Find payment with pessimistic write lock to prevent concurrency race conditions

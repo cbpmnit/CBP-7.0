@@ -42,6 +42,8 @@ public class PhonePeConfig {
 
     private int reconciliationMinutes = 15;
 
+    private int reconciliationMaxAgeHours = 24;
+
     @Override
     public String toString() {
         return "PhonePeConfig{" +
@@ -55,6 +57,7 @@ public class PhonePeConfig {
                 ", callbackUsername='" + callbackUsername + '\'' +
                 ", callbackPassword='[PROTECTED]'" +
                 ", reconciliationMinutes=" + reconciliationMinutes +
+                ", reconciliationMaxAgeHours=" + reconciliationMaxAgeHours +
                 '}';
     }
 }

@@ -25,4 +25,5 @@ public interface PaymentRepository extends JpaRepository<Payment, UUID> {
     Optional<Payment> findByTransactionIdWithLock(String transactionId);
 
     List<Payment> findAllByPaymentStatusAndCreatedAtBefore(PaymentStatus paymentStatus, LocalDateTime thresholdTime);
+    List<Payment> findAllByPaymentStatusIn(List<PaymentStatus> statuses);
 }

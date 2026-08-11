@@ -36,8 +36,10 @@ class PaymentStatusSchedulerTest {
                 .transactionId("CBP_TXN_SCHEDULER_TEST")
                 .paymentStatus(PaymentStatus.PENDING)
                 .build();
+        mockPayment.setCreatedAt(LocalDateTime.now().minusMinutes(2));
+        mockPayment.setUpdatedAt(LocalDateTime.now().minusMinutes(2));
 
-        when(paymentRepository.findAllByPaymentStatusAndCreatedAtBefore(eq(PaymentStatus.PENDING), any(LocalDateTime.class)))
+        when(paymentRepository.findAllByPaymentStatusIn(anyList()))
                 .thenReturn(Collections.singletonList(mockPayment));
 
         paymentStatusScheduler.reconcilePendingPayments();
