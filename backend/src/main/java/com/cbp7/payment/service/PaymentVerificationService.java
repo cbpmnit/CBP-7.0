@@ -1,10 +1,14 @@
 package com.cbp7.payment.service;
 
+import com.cbp7.auth.entity.User;
+import com.cbp7.auth.repository.UserRepository;
 import com.cbp7.cbp.entity.CbpRegistration;
 import com.cbp7.cbp.enums.RegistrationStatus;
 import com.cbp7.cbp.repository.CbpRegistrationRepository;
 import com.cbp7.common.exception.PhonePeBadRequestException;
 import com.cbp7.common.exception.ResourceNotFoundException;
+import com.cbp7.notification.event.NotificationEventPublisher;
+import com.cbp7.notification.event.PaymentSuccessfulEvent;
 import com.cbp7.payment.config.PhonePeConfig;
 import com.cbp7.payment.dto.PhonePeStatusResponse;
 import com.cbp7.payment.entity.Payment;
@@ -28,6 +32,8 @@ public class PaymentVerificationService {
     private final PaymentGateway paymentGateway;
     private final StandardCheckoutClient standardCheckoutClient;
     private final PhonePeConfig phonePeConfig;
+    private final UserRepository userRepository;
+    private final NotificationEventPublisher notificationEventPublisher;
 
     @Transactional
     public Payment verifyPaymentStatus(String transactionId) {
@@ -46,14 +52,12 @@ public class PaymentVerificationService {
         // Update status based on response
         String code = statusResponse.code();
         String state = statusResponse.state();
-        boolean success = statusResponse.success();
 
         if ("PAYMENT_SUCCESS".equals(code) || "COMPLETED".equalsIgnoreCase(state)) {
-            completeSuccessfulPayment(payment);
+            updatePaymentStatus(payment, PaymentStatus.SUCCESS);
             log.info("Payment transaction {} verified successfully as SUCCESS.", transactionId);
         } else if ("FAILED".equalsIgnoreCase(state) || "PAYMENT_ERROR".equals(code)) {
-            payment.setPaymentStatus(PaymentStatus.FAILED);
-            paymentRepository.save(payment);
+            updatePaymentStatus(payment, PaymentStatus.FAILED);
             log.info("Payment transaction {} verified as FAILED.", transactionId);
         } else {
             // Leave as PENDING
@@ -64,7 +68,37 @@ public class PaymentVerificationService {
     }
 
     @Transactional
+    public void updatePaymentStatus(Payment payment, PaymentStatus newStatus) {
+        PaymentStatus currentStatus = payment.getPaymentStatus();
+        if (currentStatus == newStatus) {
+            return;
+        }
+
+        // Validate state transitions (Idempotency and safety checks)
+        if (currentStatus == PaymentStatus.SUCCESS && newStatus != PaymentStatus.REFUNDED) {
+            log.warn("Attempt to downgrade payment transaction {} from SUCCESS to {}", payment.getTransactionId(), newStatus);
+            return;
+        }
+        if (currentStatus == PaymentStatus.REFUNDED) {
+            log.warn("Attempt to transition payment transaction {} from REFUNDED to {}", payment.getTransactionId(), newStatus);
+            return;
+        }
+
+        log.info("Updating payment transaction {} status from {} to {}", payment.getTransactionId(), currentStatus, newStatus);
+        
+        if (newStatus == PaymentStatus.SUCCESS) {
+            completeSuccessfulPayment(payment);
+        } else {
+            payment.setPaymentStatus(newStatus);
+            paymentRepository.save(payment);
+        }
+    }
+
+    @Transactional
     public void completeSuccessfulPayment(Payment payment) {
+        if (payment.getPaymentStatus() == PaymentStatus.SUCCESS) {
+            return;
+        }
         payment.setPaymentStatus(PaymentStatus.SUCCESS);
         paymentRepository.save(payment);
 
@@ -73,6 +107,24 @@ public class PaymentVerificationService {
                 .orElseThrow(() -> new ResourceNotFoundException("CBP registration not found for ID: " + payment.getRegistrationId()));
         registration.setRegistrationStatus(RegistrationStatus.REGISTERED);
         cbpRegistrationRepository.save(registration);
+
+        // Load User details to publish PaymentSuccessfulEvent
+        try {
+            User user = userRepository.findById(payment.getUserId())
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found for ID: " + payment.getUserId()));
+
+            PaymentSuccessfulEvent event = new PaymentSuccessfulEvent(
+                    user.getStudentId(),
+                    user.getEmail(),
+                    user.getName(),
+                    payment.getId().toString(),
+                    payment.getAmount().toString()
+            );
+            notificationEventPublisher.publish(event);
+            log.info("Published PaymentSuccessfulEvent for payment transaction: {}", payment.getTransactionId());
+        } catch (Exception e) {
+            log.error("Failed to publish PaymentSuccessfulEvent for payment transaction {}: {}", payment.getTransactionId(), e.getMessage());
+        }
     }
 
     @Transactional
@@ -111,24 +163,16 @@ public class PaymentVerificationService {
         Payment payment = paymentRepository.findByTransactionIdWithLock(merchantOrderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Payment record not found for transaction: " + merchantOrderId));
 
-        // Idempotency: If already SUCCESS, do not update again
-        if (payment.getPaymentStatus() == PaymentStatus.SUCCESS) {
-            log.info("Payment for transaction {} is already SUCCESS. Skipping callback processing.", merchantOrderId);
-            return;
-        }
-
-        // Update payment status based on state
+        // Update status based on state
         if ("COMPLETED".equalsIgnoreCase(state)) {
-            completeSuccessfulPayment(payment);
+            updatePaymentStatus(payment, PaymentStatus.SUCCESS);
             log.info("Payment transaction {} updated as SUCCESS via webhook callback.", merchantOrderId);
         } else if ("FAILED".equalsIgnoreCase(state)) {
-            payment.setPaymentStatus(PaymentStatus.FAILED);
-            paymentRepository.save(payment);
+            updatePaymentStatus(payment, PaymentStatus.FAILED);
             log.info("Payment transaction {} updated as FAILED via webhook callback.", merchantOrderId);
         } else {
             // Keep status PENDING
-            payment.setPaymentStatus(PaymentStatus.PENDING);
-            paymentRepository.save(payment);
+            updatePaymentStatus(payment, PaymentStatus.PENDING);
             log.info("Payment transaction {} remains PENDING via webhook callback.", merchantOrderId);
         }
     }

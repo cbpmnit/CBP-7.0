@@ -23,12 +23,17 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.cbp7.payment.service.PaymentVerificationService;
+import com.cbp7.payment.dto.PaymentStatusResponse;
+import com.cbp7.payment.entity.Payment;
+
 @RestController
 @RequestMapping({"/api/v1/admin", "/api/admin"})
 @RequiredArgsConstructor
 public class AdminStudentManagementController {
 
     private final AdminStudentManagementService studentManagementService;
+    private final PaymentVerificationService paymentVerificationService;
 
     @GetMapping("/students")
     @PreAuthorize("hasRole('ADMIN') or hasAuthority('STUDENT_VIEW')")
@@ -120,5 +125,22 @@ public class AdminStudentManagementController {
         String adminId = adminUser != null ? adminUser.getStudentId() : "admin";
         AdminPreferencesDto response = studentManagementService.saveAdminPreferences(adminId, dto);
         return ResponseEntity.ok(ApiResponse.success("Admin UI preferences saved successfully", response));
+    }
+
+    @PostMapping("/payments/{transactionId}/verify")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<PaymentStatusResponse>> verifyPaymentManually(
+            @PathVariable String transactionId
+    ) {
+        Payment verifiedPayment = paymentVerificationService.verifyPaymentStatus(transactionId);
+        PaymentStatusResponse response = new PaymentStatusResponse(
+                verifiedPayment.getTransactionId(),
+                verifiedPayment.getPaymentStatus(),
+                verifiedPayment.getAmount(),
+                verifiedPayment.getUpdatedAt(),
+                verifiedPayment.getRegistrationId(),
+                verifiedPayment.getCreatedAt()
+        );
+        return ResponseEntity.ok(ApiResponse.success("Payment status verified and reconciled manually", response));
     }
 }

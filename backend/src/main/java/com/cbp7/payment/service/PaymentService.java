@@ -100,16 +100,19 @@ public class PaymentService {
             throw new PaymentAlreadyExistsException("Payment already completed.");
         }
 
-        // Reuse existing PENDING or FAILED payment, or create new one
+        // Reuse existing pending/initiated/processing/failed payment, or create new one
         Payment payment = payments.stream()
-                .filter(p -> p.getPaymentStatus() == PaymentStatus.PENDING || p.getPaymentStatus() == PaymentStatus.FAILED)
+                .filter(p -> p.getPaymentStatus() == PaymentStatus.PENDING 
+                        || p.getPaymentStatus() == PaymentStatus.INITIATED 
+                        || p.getPaymentStatus() == PaymentStatus.PROCESSING 
+                        || p.getPaymentStatus() == PaymentStatus.FAILED)
                 .findFirst()
                 .orElseGet(() -> {
                     Payment newPayment = Payment.builder()
                             .registrationId(registration.getId())
                             .userId(user.getId())
                             .paymentMode(PaymentMode.ONLINE)
-                            .paymentStatus(PaymentStatus.PENDING)
+                            .paymentStatus(PaymentStatus.INITIATED)
                             .amount(registrationFeeService.getRegistrationFee())
                             .build();
                     return paymentRepository.save(newPayment);
@@ -119,7 +122,7 @@ public class PaymentService {
         String newTxnId = "CBP_TXN_" + UUID.randomUUID().toString().replace("-", "");
         payment.setTransactionId(newTxnId);
         payment.setPaymentMode(PaymentMode.ONLINE);
-        payment.setPaymentStatus(PaymentStatus.PENDING);
+        payment.setPaymentStatus(PaymentStatus.INITIATED);
         
         Payment savedPayment = paymentRepository.saveAndFlush(payment);
 
@@ -180,7 +183,10 @@ public class PaymentService {
         return new PaymentStatusResponse(
                 verifiedPayment.getTransactionId(),
                 verifiedPayment.getPaymentStatus(),
-                verifiedPayment.getAmount()
+                verifiedPayment.getAmount(),
+                verifiedPayment.getUpdatedAt(),
+                verifiedPayment.getRegistrationId(),
+                verifiedPayment.getCreatedAt()
         );
     }
 

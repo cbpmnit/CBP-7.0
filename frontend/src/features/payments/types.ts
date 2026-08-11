@@ -4,7 +4,7 @@ export interface PaymentDetailResponse {
   registrationId: string
   studentId: string
   amount: number
-  paymentStatus: "SUCCESS" | "PENDING" | "FAILED" | "UNDER_VERIFICATION"
+  paymentStatus: "SUCCESS" | "PENDING" | "FAILED" | "UNDER_VERIFICATION" | "INITIATED" | "PROCESSING" | "CANCELLED" | "REFUNDED"
   paymentMode?: string
   createdAt: string
 }
@@ -13,7 +13,7 @@ export interface PaymentResponse {
   id: string
   transactionId: string
   amount: number
-  paymentStatus: "SUCCESS" | "PENDING" | "FAILED" | "UNDER_VERIFICATION"
+  paymentStatus: "SUCCESS" | "PENDING" | "FAILED" | "UNDER_VERIFICATION" | "INITIATED" | "PROCESSING" | "CANCELLED" | "REFUNDED"
   createdAt: string
 }
 
@@ -25,6 +25,10 @@ export interface PhonePePaymentResponse {
 
 export interface PaymentStatusResponse {
   transactionId: string
-  paymentStatus: "SUCCESS" | "PENDING" | "FAILED" | "UNDER_VERIFICATION"
+  paymentStatus: "SUCCESS" | "PENDING" | "FAILED" | "UNDER_VERIFICATION" | "INITIATED" | "PROCESSING" | "CANCELLED" | "REFUNDED"
+  amount: number
+  updatedAt: string
+  registrationId: string
+  createdAt: string
   message?: string
 }

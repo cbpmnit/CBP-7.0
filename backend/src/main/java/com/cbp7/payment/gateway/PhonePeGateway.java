@@ -43,10 +43,11 @@ public class PhonePeGateway implements PaymentGateway {
                     .merchantOrderId(payment.getTransactionId())
                     .amount(amountInPaise)
                     .redirectUrl(finalRedirectUrl)
+                    .callbackUrl(phonePeConfig.getCallbackUrl())
                     .metaInfo(metaInfo)
                     .build();
 
-            log.info("Sending payment initiation request to PhonePe Standard Checkout for Transaction ID: {}", payment.getTransactionId());
+            log.info("Sending payment initiation request to PhonePe Standard Checkout for Transaction ID: {} with callback URL: {}", payment.getTransactionId(), phonePeConfig.getCallbackUrl());
             log.info("PhonePe environment: {}, clientId: {}", phonePeConfig.getEnvironment(), maskClientId(phonePeConfig.getClientId()));
 
             StandardCheckoutPayResponse payResponse = standardCheckoutClient.pay(payRequest);
