@@ -122,13 +122,13 @@ export default function StudentPaymentPortal() {
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2 text-xs mb-6">
-                  <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+                  <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 min-w-0 overflow-hidden">
                     <span className="text-slate-500 font-medium block mb-0.5">Transaction ID:</span>
-                    <span className="font-mono text-cyan-800 font-bold">{formatTxnId(payment.transactionId)}</span>
+                    <span className="font-mono text-cyan-800 font-bold break-all block">{formatTxnId(payment.transactionId)}</span>
                   </div>
-                  <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+                  <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 min-w-0 overflow-hidden">
                     <span className="text-slate-500 font-medium block mb-0.5">Registration ID:</span>
-                    <span className="font-mono text-cyan-800 font-bold">{payment.registrationId}</span>
+                    <span className="font-mono text-cyan-800 font-bold break-all block">{payment.registrationId}</span>
                   </div>
                   <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
                     <span className="text-slate-500 font-medium block mb-0.5">Payment Mode:</span>

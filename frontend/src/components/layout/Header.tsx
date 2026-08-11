@@ -80,7 +80,7 @@ function HeaderComponent() {
           <div className="flex items-center justify-between">
             {/* Brand Logo */}
             <Link href="/" className="flex items-center gap-2 sm:gap-3 group">
-              <div className="relative h-9 w-32 sm:h-11 sm:w-44 shrink-0 transition duration-300 group-hover:scale-105">
+              <div className="relative h-8 w-28 sm:h-11 sm:w-44 shrink-0 transition duration-300 group-hover:scale-105">
                 <div
                   className="h-full w-full"
                   style={{

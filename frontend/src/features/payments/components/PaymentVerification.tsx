@@ -254,16 +254,16 @@ export default function PaymentVerification() {
 
           {/* Payment Details Card */}
           <div className="bg-slate-50 border border-slate-150 rounded-2xl p-4 text-xs space-y-3 font-medium">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
               <span className="text-slate-500">Transaction ID:</span>
-              <div className="flex items-center gap-1">
-                <span className="font-mono text-slate-900 font-bold">
-                  {transactionId ? truncateTxId(transactionId) : "—"}
+              <div className="flex items-center gap-1 min-w-0">
+                <span className="font-mono text-slate-900 font-bold break-all">
+                  {transactionId || "—"}
                 </span>
                 {transactionId && (
                   <button
                     onClick={() => handleCopy(transactionId)}
-                    className="p-1 text-slate-400 hover:text-slate-600 transition"
+                    className="p-1 text-slate-400 hover:text-slate-600 transition shrink-0"
                     title="Copy Transaction ID"
                   >
                     {copied ? <FiCheck className="text-emerald-600" /> : <FiCopy />}
@@ -272,19 +272,19 @@ export default function PaymentVerification() {
               </div>
             </div>
             
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
               <span className="text-slate-500">Registration ID:</span>
-              <span className="font-mono text-slate-900 font-bold">
-                {paymentDetails?.registrationId ? paymentDetails.registrationId.slice(0, 8) + "..." : "—"}
+              <span className="font-mono text-slate-900 font-bold break-all">
+                {paymentDetails?.registrationId || "—"}
               </span>
             </div>
 
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
               <span className="text-slate-500">Payment Mode:</span>
               <span className="font-bold text-slate-850 uppercase">Online Gateway</span>
             </div>
 
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
               <span className="text-slate-500">Payment Date:</span>
               <span className="font-mono text-slate-900">
                 {paymentDetails ? formatDate(paymentDetails.createdAt) : "—"}

@@ -9,9 +9,10 @@ import com.cbp7.notification.event.StudentRegisteredEvent;
 import com.cbp7.notification.service.EmailNotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.event.TransactionalEventListener;
+import org.springframework.transaction.event.TransactionPhase;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -24,7 +25,7 @@ public class NotificationEventListener {
     private final EmailNotificationService emailNotificationService;
 
     @Async("notificationAsyncExecutor")
-    @org.springframework.transaction.event.TransactionalEventListener(phase = org.springframework.transaction.event.TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     public void handleStudentRegistered(StudentRegisteredEvent event) {
         log.info("Received StudentRegisteredEvent for studentId: {}", event.studentId());
         try {
@@ -45,7 +46,7 @@ public class NotificationEventListener {
     }
 
     @Async("notificationAsyncExecutor")
-    @EventListener
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     public void handlePaymentSuccessful(PaymentSuccessfulEvent event) {
         log.info("Received PaymentSuccessfulEvent for paymentId: {}", event.paymentId());
         try {
@@ -67,7 +68,7 @@ public class NotificationEventListener {
     }
 
     @Async("notificationAsyncExecutor")
-    @EventListener
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     public void handleCertificateGenerated(CertificateGeneratedEvent event) {
         log.info("Received CertificateGeneratedEvent for studentId: {}", event.studentId());
         try {
@@ -88,7 +89,7 @@ public class NotificationEventListener {
     }
 
     @Async("notificationAsyncExecutor")
-    @EventListener
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     public void handleAttendanceQrGenerated(AttendanceQrGeneratedEvent event) {
         log.info("Received AttendanceQrGeneratedEvent for studentId: {}", event.studentId());
         try {

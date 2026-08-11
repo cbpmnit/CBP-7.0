@@ -24,12 +24,14 @@ export default function StudentSummary({ name, studentId, profile }: StudentSumm
       <div className="flex items-center gap-4 min-w-0">
         <ProfileAvatar name={fullName} size="lg" />
         <div className="min-w-0">
-          <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight truncate">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight break-words">
             Welcome, {firstName}
           </h1>
-          <p className="text-xs sm:text-sm font-semibold text-slate-600 mt-0.5 truncate">
-            {courseName} in {branchName} &middot; <span className="font-mono text-cyan-800 font-bold">{safeText(studentId)}</span>
-          </p>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-1.5 text-xs sm:text-sm font-semibold text-slate-600 mt-1">
+            <span>{courseName} in {branchName}</span>
+            <span className="hidden sm:inline text-slate-400">&middot;</span>
+            <span className="font-mono text-cyan-800 font-bold break-all">{safeText(studentId)}</span>
+          </div>
         </div>
       </div>
 
