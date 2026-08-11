@@ -107,9 +107,18 @@ export function useStudents() {
   const handlePrintPdf = async (studentId: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation()
     try {
-      await studentApi.downloadStudentPdf(studentId)
+      const blob = await studentApi.downloadStudentPdf(studentId)
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `CBP_Profile_${studentId}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
     } catch (err) {
       console.error("PDF download failed", err)
+      alert("Failed to generate and download student profile PDF. Please try again.")
     }
   }
 

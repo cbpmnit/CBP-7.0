@@ -96,6 +96,7 @@ public class SecurityConfig {
                         ).permitAll()
                         .requestMatchers("/api/v1/admin/volunteers/**", "/api/admin/volunteers/**").hasRole("ADMIN")
                         .requestMatchers("/api/v1/admin/**", "/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/actuator/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2

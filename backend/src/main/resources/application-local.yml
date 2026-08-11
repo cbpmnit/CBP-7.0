@@ -12,6 +12,7 @@ logging:
     root: INFO
 
     # Your application logs
+    org.springframework.context.support: DEBUG
     com.cbp7: INFO
 
     # Spring framework

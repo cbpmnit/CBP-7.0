@@ -14,6 +14,7 @@ import {
   FiAward,
   FiMail,
   FiSliders,
+  FiActivity,
 } from "react-icons/fi"
 
 export interface NavItem {
@@ -34,6 +35,7 @@ export const ALL_ADMIN_NAV_ITEMS: NavItem[] = [
   { id: "admin-payments", label: "Payments", href: "/admin/payments", icon: <FiCreditCard />, permission: "PAYMENT_VIEW" },
   { id: "admin-certificates", label: "Certificates", href: "/admin/certificates", icon: <FiAward />, permission: "CERTIFICATE_VIEW" },
   { id: "admin-emails", label: "Notification Templates", href: "/admin/emails", icon: <FiMail />, permission: "EMAIL_SEND" },
+  { id: "admin-monitoring", label: "System Health", href: "/admin/monitoring", icon: <FiActivity />, permission: "ADMIN_ONLY" },
 ]
 
 export const STUDENT_NAV_ITEMS: NavItem[] = [

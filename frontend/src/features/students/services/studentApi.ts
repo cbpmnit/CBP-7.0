@@ -123,7 +123,7 @@ export const studentApi = {
   downloadStudentPdf: async (studentId: string): Promise<Blob> => {
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:9900"
     const token = typeof window !== "undefined" ? (localStorage.getItem("cbp-token") || "") : ""
-    const response = await fetch(`${API_BASE_URL}/api/v1/admin/students/${studentId}/pdf`, {
+    const response = await fetch(`${API_BASE_URL}/api/v1/admin/students/${studentId}/profile/pdf`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
