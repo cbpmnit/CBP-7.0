@@ -4,7 +4,7 @@ import com.cbp7.common.exception.ResourceNotFoundException;
 import com.cbp7.platform.notification.dto.request.CreateEmailBlockRequest;
 import com.cbp7.platform.notification.dto.response.EmailBlockDto;
 import com.cbp7.platform.notification.entity.EmailBlock;
-import com.cbp7.platform.notification.mapper.NotificationMapper;
+import com.cbp7.platform.notification.NotificationMapper;
 import com.cbp7.platform.notification.repository.EmailBlockRepository;
 import com.cbp7.platform.notification.service.EmailBlockService;
 import lombok.RequiredArgsConstructor;

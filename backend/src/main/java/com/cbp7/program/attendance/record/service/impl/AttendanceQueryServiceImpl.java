@@ -1,6 +1,6 @@
 package com.cbp7.program.attendance.record.service.impl;
 
-import com.cbp7.program.attendance.record.calculator.AttendanceCalculator;
+import com.cbp7.program.attendance.record.AttendanceCalculator;
 import com.cbp7.program.attendance.record.dto.common.*;
 import com.cbp7.program.attendance.record.dto.response.*;
 import com.cbp7.program.attendance.record.entity.AttendanceRecord;
@@ -8,7 +8,7 @@ import com.cbp7.program.attendance.record.entity.AttendanceStatus;
 import com.cbp7.program.attendance.record.helper.AttendanceCsvExporter;
 import com.cbp7.program.attendance.record.helper.AttendanceMarkerResolver;
 import com.cbp7.program.attendance.record.helper.AttendanceProfileAggregator;
-import com.cbp7.program.attendance.record.mapper.AttendanceMapper;
+import com.cbp7.program.attendance.record.AttendanceMapper;
 import com.cbp7.program.attendance.record.repository.AttendanceRecordRepository;
 import com.cbp7.program.attendance.record.service.AttendanceQueryService;
 import com.cbp7.program.attendance.session.dto.response.SessionSummaryResponse;

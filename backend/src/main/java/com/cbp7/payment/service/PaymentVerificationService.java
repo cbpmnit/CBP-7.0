@@ -1,7 +1,7 @@
 package com.cbp7.payment.service;
 
 import com.cbp7.payment.entity.Payment;
-import com.cbp7.payment.enums.PaymentStatus;
+import com.cbp7.payment.entity.PaymentStatus;
 
 public interface PaymentVerificationService {
     Payment verifyPaymentStatus(String transactionId);

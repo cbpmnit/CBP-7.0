@@ -2,9 +2,9 @@ package com.cbp7.platform.admin.service.impl;
 
 import com.cbp7.platform.admin.dto.response.AdminOperationsOverviewResponse;
 import com.cbp7.platform.admin.helper.AdminOperationsReadinessEvaluator;
-import com.cbp7.platform.admin.mapper.AdminMapper;
+import com.cbp7.platform.admin.AdminMapper;
 import com.cbp7.platform.admin.service.AdminOperationsService;
-import com.cbp7.program.attendance.record.calculator.AttendanceCalculator;
+import com.cbp7.program.attendance.record.AttendanceCalculator;
 import com.cbp7.program.attendance.record.entity.AttendanceStatus;
 import com.cbp7.program.attendance.record.repository.AttendanceRecordRepository;
 import com.cbp7.program.attendance.session.entity.AttendanceSession;
@@ -13,13 +13,13 @@ import com.cbp7.program.attendance.session.repository.AttendanceSessionRepositor
 import com.cbp7.identity.auth.entity.Role;
 import com.cbp7.identity.auth.repository.UserRepository;
 import com.cbp7.program.registration.entity.CbpRegistration;
-import com.cbp7.program.registration.enums.RegistrationStatus;
+import com.cbp7.program.registration.entity.RegistrationStatus;
 import com.cbp7.program.registration.repository.CbpRegistrationRepository;
 import com.cbp7.program.certificate.entity.Certificate;
 import com.cbp7.program.certificate.entity.CertificateStatus;
 import com.cbp7.program.certificate.repository.CertificateRepository;
 import com.cbp7.payment.entity.Payment;
-import com.cbp7.payment.enums.PaymentStatus;
+import com.cbp7.payment.entity.PaymentStatus;
 import com.cbp7.payment.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

@@ -2,7 +2,7 @@ package com.cbp7.program.registration;
 
 import com.cbp7.identity.auth.entity.Role;
 import com.cbp7.identity.auth.entity.User;
-import com.cbp7.program.registration.validation.CbpRegistrationValidator;
+import com.cbp7.program.registration.CbpRegistrationValidator;
 import com.cbp7.common.exception.ForbiddenException;
 import com.cbp7.common.exception.ProfileIncompleteException;
 import com.cbp7.common.exception.RegistrationAlreadyExistsException;

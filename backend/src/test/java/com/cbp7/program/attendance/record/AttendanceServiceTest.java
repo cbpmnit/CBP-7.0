@@ -12,7 +12,7 @@ import com.cbp7.program.attendance.session.entity.SessionStatus;
 import com.cbp7.program.attendance.session.repository.AttendanceSessionRepository;
 import com.cbp7.common.exception.DuplicateResourceException;
 import com.cbp7.common.exception.ResourceNotFoundException;
-import com.cbp7.platform.notification.event.NotificationEventPublisher;
+import com.cbp7.platform.notification.events.NotificationEventPublisher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

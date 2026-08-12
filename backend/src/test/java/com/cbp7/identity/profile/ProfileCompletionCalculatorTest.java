@@ -1,7 +1,7 @@
 package com.cbp7.identity.profile;
 
 import com.cbp7.identity.auth.entity.User;
-import com.cbp7.identity.profile.engine.ProfileCompletionCalculator;
+import com.cbp7.identity.profile.ProfileCompletionCalculator;
 import com.cbp7.identity.profile.entity.Branch;
 import com.cbp7.identity.profile.entity.Course;
 import com.cbp7.identity.profile.entity.Gender;

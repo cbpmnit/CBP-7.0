@@ -41,9 +41,9 @@ class ProfileServiceTest {
         profileService = new com.cbp7.identity.profile.service.impl.ProfileServiceImpl(
                 userProfileRepository,
                 profileCompletionRepository,
-                new com.cbp7.identity.profile.validation.ProfileValidator(),
-                new com.cbp7.identity.profile.mapper.ProfileMapper(),
-                new com.cbp7.identity.profile.engine.ProfileCompletionCalculator()
+                new com.cbp7.identity.profile.ProfileValidator(),
+                new com.cbp7.identity.profile.ProfileMapper(),
+                new com.cbp7.identity.profile.ProfileCompletionCalculator()
         );
 
         testUser = User.builder()

@@ -1,10 +1,10 @@
 package com.cbp7.platform.admin.student.helper;
 
 import com.cbp7.platform.admin.student.dto.response.AdminStudentListItemResponse;
-import com.cbp7.platform.admin.student.mapper.AdminStudentMapper;
+import com.cbp7.platform.admin.student.AdminStudentMapper;
 import com.cbp7.platform.admin.student.resolver.StudentIdentityResolver;
 import com.cbp7.platform.admin.student.resolver.StudentPaymentStatusResolver;
-import com.cbp7.program.attendance.record.calculator.AttendanceCalculator;
+import com.cbp7.program.attendance.record.AttendanceCalculator;
 import com.cbp7.program.attendance.record.entity.AttendanceStatus;
 import com.cbp7.program.attendance.record.repository.AttendanceRecordRepository;
 import com.cbp7.program.attendance.session.repository.AttendanceSessionRepository;

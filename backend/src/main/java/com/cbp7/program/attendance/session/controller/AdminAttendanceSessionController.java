@@ -13,7 +13,7 @@ import com.cbp7.program.attendance.session.dto.response.AttendanceSessionRespons
 import com.cbp7.program.attendance.session.dto.response.SessionSummaryResponse;
 import com.cbp7.program.attendance.session.dto.response.SessionUpdateResponse;
 import com.cbp7.program.attendance.session.entity.AttendanceSession;
-import com.cbp7.program.attendance.session.mapper.AttendanceSessionMapper;
+import com.cbp7.program.attendance.session.AttendanceSessionMapper;
 import com.cbp7.program.attendance.session.service.AttendanceSessionService;
 import com.cbp7.identity.auth.entity.User;
 import com.cbp7.common.response.ApiResponse;

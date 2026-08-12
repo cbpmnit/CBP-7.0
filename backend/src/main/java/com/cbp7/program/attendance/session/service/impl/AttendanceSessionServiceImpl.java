@@ -9,7 +9,7 @@ import com.cbp7.program.attendance.session.dto.request.UpdateAttendanceSessionRe
 import com.cbp7.program.attendance.session.dto.response.AttendanceSessionResponse;
 import com.cbp7.program.attendance.session.entity.AttendanceSession;
 import com.cbp7.program.attendance.session.entity.SessionStatus;
-import com.cbp7.program.attendance.session.mapper.AttendanceSessionMapper;
+import com.cbp7.program.attendance.session.AttendanceSessionMapper;
 import com.cbp7.program.attendance.session.repository.AttendanceSessionRepository;
 import com.cbp7.program.attendance.session.service.AttendanceSessionService;
 import com.cbp7.common.exception.DuplicateResourceException;

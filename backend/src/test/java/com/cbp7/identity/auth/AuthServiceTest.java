@@ -7,14 +7,14 @@ import com.cbp7.identity.auth.dto.response.LoginResponse;
 import com.cbp7.identity.auth.dto.response.UserResponse;
 import com.cbp7.identity.auth.entity.Role;
 import com.cbp7.identity.auth.entity.User;
-import com.cbp7.identity.auth.identity.UserIdentityResolver;
+import com.cbp7.identity.auth.UserIdentityResolver;
 import com.cbp7.identity.auth.repository.UserRepository;
 import com.cbp7.identity.auth.security.JwtProvider;
 import com.cbp7.identity.auth.service.AuthService;
 import com.cbp7.common.exception.DuplicateResourceException;
 import com.cbp7.common.exception.InvalidCredentialsException;
 import com.cbp7.common.exception.UnauthorizedException;
-import com.cbp7.platform.notification.event.NotificationEventPublisher;
+import com.cbp7.platform.notification.events.NotificationEventPublisher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -49,8 +49,8 @@ class AuthServiceTest {
                 passwordEncoder,
                 jwtProvider,
                 notificationEventPublisher,
-                new com.cbp7.identity.auth.validation.AuthValidator(),
-                new com.cbp7.identity.auth.mapper.AuthMapper()
+                new com.cbp7.identity.auth.AuthValidator(),
+                new com.cbp7.identity.auth.AuthMapper()
         );
     }
 

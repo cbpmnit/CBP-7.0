@@ -5,7 +5,7 @@ import com.cbp7.identity.auth.entity.User;
 import com.cbp7.program.registration.dto.response.CbpRegistrationDetailResponse;
 import com.cbp7.program.registration.dto.response.CbpRegistrationResponse;
 import com.cbp7.program.registration.entity.CbpRegistration;
-import com.cbp7.program.registration.enums.RegistrationStatus;
+import com.cbp7.program.registration.entity.RegistrationStatus;
 import com.cbp7.program.registration.repository.CbpRegistrationRepository;
 import com.cbp7.program.registration.service.CbpRegistrationService;
 import com.cbp7.common.exception.ForbiddenException;
@@ -58,8 +58,8 @@ class CbpRegistrationServiceTest {
                 userProfileRepository,
                 profileCompletionRepository,
                 profileService,
-                new com.cbp7.program.registration.validation.CbpRegistrationValidator(),
-                new com.cbp7.program.registration.mapper.CbpRegistrationMapper()
+                new com.cbp7.program.registration.CbpRegistrationValidator(),
+                new com.cbp7.program.registration.CbpRegistrationMapper()
         );
 
         studentUser = User.builder()

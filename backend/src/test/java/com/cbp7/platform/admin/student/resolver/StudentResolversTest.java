@@ -2,9 +2,9 @@ package com.cbp7.platform.admin.student.resolver;
 
 import com.cbp7.identity.auth.entity.User;
 import com.cbp7.program.registration.entity.CbpRegistration;
-import com.cbp7.program.registration.enums.RegistrationStatus;
+import com.cbp7.program.registration.entity.RegistrationStatus;
 import com.cbp7.payment.entity.Payment;
-import com.cbp7.payment.enums.PaymentStatus;
+import com.cbp7.payment.entity.PaymentStatus;
 import com.cbp7.identity.profile.entity.Branch;
 import com.cbp7.identity.profile.entity.Course;
 import com.cbp7.identity.profile.entity.UserProfile;

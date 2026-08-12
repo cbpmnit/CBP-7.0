@@ -1,6 +1,6 @@
 package com.cbp7.payment.dto.request;
 
-import com.cbp7.payment.enums.PaymentMode;
+import com.cbp7.payment.entity.PaymentMode;
 import jakarta.validation.constraints.NotNull;
 
 public record CreatePaymentRequest(

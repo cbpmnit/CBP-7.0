@@ -7,8 +7,8 @@ import com.cbp7.common.exception.PaymentAlreadyExistsException;
 import com.cbp7.common.exception.PhonePeBadRequestException;
 import com.cbp7.common.exception.UnauthorizedException;
 import com.cbp7.payment.entity.Payment;
-import com.cbp7.payment.enums.PaymentStatus;
-import com.cbp7.payment.validation.PaymentValidator;
+import com.cbp7.payment.entity.PaymentStatus;
+import com.cbp7.payment.PaymentValidator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

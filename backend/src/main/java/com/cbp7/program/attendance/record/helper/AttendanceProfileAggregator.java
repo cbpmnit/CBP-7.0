@@ -1,6 +1,6 @@
 package com.cbp7.program.attendance.record.helper;
 
-import com.cbp7.program.attendance.record.calculator.AttendanceCalculator;
+import com.cbp7.program.attendance.record.AttendanceCalculator;
 import com.cbp7.program.attendance.record.dto.common.MarkedByInfo;
 import com.cbp7.program.attendance.record.dto.common.SessionAttendanceDetailDto;
 import com.cbp7.program.attendance.record.dto.common.UserActivityDto;
@@ -16,7 +16,7 @@ import com.cbp7.identity.auth.repository.UserRepository;
 import com.cbp7.program.registration.entity.CbpRegistration;
 import com.cbp7.program.registration.repository.CbpRegistrationRepository;
 import com.cbp7.program.certificate.repository.CertificateRepository;
-import com.cbp7.payment.enums.PaymentStatus;
+import com.cbp7.payment.entity.PaymentStatus;
 import com.cbp7.payment.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;

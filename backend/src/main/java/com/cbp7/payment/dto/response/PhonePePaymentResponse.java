@@ -1,6 +1,6 @@
 package com.cbp7.payment.dto.response;
 
-import com.cbp7.payment.enums.PaymentStatus;
+import com.cbp7.payment.entity.PaymentStatus;
 
 import java.util.UUID;
 

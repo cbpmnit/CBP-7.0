@@ -1,7 +1,7 @@
 package com.cbp7.program.registration.dto.response;
 
 import com.cbp7.program.registration.dto.common.ProfileSnapshotDto;
-import com.cbp7.program.registration.enums.RegistrationStatus;
+import com.cbp7.program.registration.entity.RegistrationStatus;
 
 import java.time.LocalDateTime;
 

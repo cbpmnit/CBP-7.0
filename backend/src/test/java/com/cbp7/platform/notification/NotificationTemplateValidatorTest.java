@@ -3,7 +3,7 @@ package com.cbp7.platform.notification;
 import com.cbp7.platform.notification.dto.request.CreateNotificationTemplateRequest;
 import com.cbp7.platform.notification.entity.NotificationChannel;
 import com.cbp7.platform.notification.entity.NotificationType;
-import com.cbp7.platform.notification.validation.NotificationTemplateValidator;
+import com.cbp7.platform.notification.NotificationTemplateValidator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

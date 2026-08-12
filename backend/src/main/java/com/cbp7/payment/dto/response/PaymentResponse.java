@@ -1,7 +1,7 @@
 package com.cbp7.payment.dto.response;
 
-import com.cbp7.payment.enums.PaymentMode;
-import com.cbp7.payment.enums.PaymentStatus;
+import com.cbp7.payment.entity.PaymentMode;
+import com.cbp7.payment.entity.PaymentStatus;
 
 import java.math.BigDecimal;
 import java.util.UUID;

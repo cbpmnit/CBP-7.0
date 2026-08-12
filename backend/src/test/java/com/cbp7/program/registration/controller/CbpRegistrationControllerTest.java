@@ -5,7 +5,7 @@ import com.cbp7.identity.auth.dto.request.RegisterRequest;
 import com.cbp7.identity.auth.entity.Role;
 import com.cbp7.identity.auth.entity.User;
 import com.cbp7.identity.auth.repository.UserRepository;
-import com.cbp7.program.registration.enums.RegistrationStatus;
+import com.cbp7.program.registration.entity.RegistrationStatus;
 import com.cbp7.program.registration.repository.CbpRegistrationRepository;
 import com.cbp7.identity.profile.dto.request.CreateProfileRequest;
 import com.cbp7.identity.profile.dto.request.UpdateProfileRequest;

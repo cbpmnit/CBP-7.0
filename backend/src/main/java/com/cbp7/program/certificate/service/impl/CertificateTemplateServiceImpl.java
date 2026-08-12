@@ -3,7 +3,7 @@ package com.cbp7.program.certificate.service.impl;
 import com.cbp7.program.certificate.dto.common.CertificateTemplateDto;
 import com.cbp7.program.certificate.dto.request.SaveCertificateTemplateRequest;
 import com.cbp7.program.certificate.entity.CertificateTemplate;
-import com.cbp7.program.certificate.mapper.CertificateMapper;
+import com.cbp7.program.certificate.CertificateMapper;
 import com.cbp7.program.certificate.repository.CertificateTemplateRepository;
 import com.cbp7.program.certificate.service.CertificateTemplateService;
 import com.cbp7.common.exception.ResourceNotFoundException;

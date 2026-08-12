@@ -2,7 +2,7 @@ package com.cbp7.program.certificate;
 
 import com.cbp7.identity.auth.entity.Role;
 import com.cbp7.identity.auth.entity.User;
-import com.cbp7.program.certificate.validation.CertificateValidator;
+import com.cbp7.program.certificate.CertificateValidator;
 import com.cbp7.common.exception.ForbiddenException;
 import com.cbp7.common.exception.UnauthorizedException;
 import org.junit.jupiter.api.BeforeEach;

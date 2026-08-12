@@ -36,7 +36,7 @@ public class AdminStudentManagementController {
 
     private final AdminStudentManagementService studentManagementService;
     private final PaymentVerificationService paymentVerificationService;
-    private final com.cbp7.payment.mapper.PaymentMapper paymentMapper;
+    private final com.cbp7.payment.PaymentMapper paymentMapper;
 
     @GetMapping("/students")
     @PreAuthorize("hasRole('ADMIN') or hasAuthority('STUDENT_VIEW')")

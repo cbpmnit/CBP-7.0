@@ -2,7 +2,7 @@ package com.cbp7.program.registration.entity;
 
 import com.cbp7.identity.auth.entity.BaseEntity;
 import com.cbp7.identity.auth.entity.User;
-import com.cbp7.program.registration.enums.RegistrationStatus;
+import com.cbp7.program.registration.entity.RegistrationStatus;
 import com.cbp7.identity.profile.entity.UserProfile;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

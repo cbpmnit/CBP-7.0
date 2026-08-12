@@ -4,7 +4,7 @@ import com.cbp7.identity.auth.dto.request.LoginRequest;
 import com.cbp7.identity.auth.dto.request.RegisterRequest;
 import com.cbp7.identity.auth.entity.AuthProvider;
 import com.cbp7.identity.auth.entity.User;
-import com.cbp7.identity.auth.validation.AuthValidator;
+import com.cbp7.identity.auth.AuthValidator;
 import com.cbp7.common.exception.DuplicateResourceException;
 import com.cbp7.common.exception.ForbiddenException;
 import com.cbp7.common.exception.InvalidCredentialsException;

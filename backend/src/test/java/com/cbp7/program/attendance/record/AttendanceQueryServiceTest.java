@@ -11,7 +11,7 @@ import com.cbp7.program.attendance.record.service.AttendanceService;
 import com.cbp7.program.attendance.session.entity.AttendanceSession;
 import com.cbp7.program.attendance.session.entity.SessionStatus;
 import com.cbp7.program.attendance.session.repository.AttendanceSessionRepository;
-import com.cbp7.platform.notification.event.NotificationEventPublisher;
+import com.cbp7.platform.notification.events.NotificationEventPublisher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

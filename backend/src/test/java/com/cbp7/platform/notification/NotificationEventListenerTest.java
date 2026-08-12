@@ -1,14 +1,14 @@
 package com.cbp7.platform.notification;
 
-import com.cbp7.program.attendance.qr.event.AttendanceQrGeneratedEvent;
+import com.cbp7.program.attendance.qr.events.AttendanceQrGeneratedEvent;
 import com.cbp7.platform.notification.email.EmailSender;
 import com.cbp7.platform.notification.entity.NotificationChannel;
 import com.cbp7.platform.notification.entity.NotificationTemplate;
 import com.cbp7.platform.notification.entity.NotificationType;
-import com.cbp7.platform.notification.event.CertificateGeneratedEvent;
-import com.cbp7.platform.notification.event.NotificationEventPublisher;
-import com.cbp7.platform.notification.event.PaymentSuccessfulEvent;
-import com.cbp7.platform.notification.event.StudentRegisteredEvent;
+import com.cbp7.platform.notification.events.CertificateGeneratedEvent;
+import com.cbp7.platform.notification.events.NotificationEventPublisher;
+import com.cbp7.platform.notification.events.PaymentSuccessfulEvent;
+import com.cbp7.platform.notification.events.StudentRegisteredEvent;
 import com.cbp7.platform.notification.repository.NotificationTemplateRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

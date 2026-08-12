@@ -3,7 +3,7 @@ package com.cbp7.platform.volunteer;
 import com.cbp7.common.exception.InvalidCredentialsException;
 import com.cbp7.platform.volunteer.entity.VolunteerInvitation;
 import com.cbp7.platform.volunteer.entity.VolunteerInvitationStatus;
-import com.cbp7.platform.volunteer.validation.VolunteerValidator;
+import com.cbp7.platform.volunteer.VolunteerValidator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

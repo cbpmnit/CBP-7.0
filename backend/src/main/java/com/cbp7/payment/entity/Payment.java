@@ -1,8 +1,8 @@
 package com.cbp7.payment.entity;
 
 import com.cbp7.identity.auth.entity.BaseEntity;
-import com.cbp7.payment.enums.PaymentMode;
-import com.cbp7.payment.enums.PaymentStatus;
+import com.cbp7.payment.entity.PaymentMode;
+import com.cbp7.payment.entity.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

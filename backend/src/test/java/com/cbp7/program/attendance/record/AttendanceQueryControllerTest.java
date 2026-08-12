@@ -12,7 +12,7 @@ import com.cbp7.identity.auth.entity.Role;
 import com.cbp7.identity.auth.entity.User;
 import com.cbp7.identity.auth.repository.UserRepository;
 import com.cbp7.identity.auth.security.JwtProvider;
-import com.cbp7.platform.notification.event.NotificationEventPublisher;
+import com.cbp7.platform.notification.events.NotificationEventPublisher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
