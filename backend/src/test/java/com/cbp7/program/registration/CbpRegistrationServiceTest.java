@@ -13,14 +13,12 @@ import com.cbp7.common.exception.ProfileIncompleteException;
 import com.cbp7.common.exception.RegistrationAlreadyExistsException;
 import com.cbp7.common.exception.ResourceNotFoundException;
 import com.cbp7.common.exception.UnauthorizedException;
+import com.cbp7.identity.profile.ProfileEligibilityValidator;
 import com.cbp7.identity.profile.entity.Branch;
 import com.cbp7.identity.profile.entity.Course;
 import com.cbp7.identity.profile.entity.Gender;
-import com.cbp7.identity.profile.entity.ProfileCompletion;
 import com.cbp7.identity.profile.entity.UserProfile;
-import com.cbp7.identity.profile.repository.ProfileCompletionRepository;
 import com.cbp7.identity.profile.repository.UserProfileRepository;
-import com.cbp7.identity.profile.service.ProfileService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -38,27 +36,19 @@ class CbpRegistrationServiceTest {
 
     private CbpRegistrationRepository cbpRegistrationRepository;
     private UserProfileRepository userProfileRepository;
-    private ProfileCompletionRepository profileCompletionRepository;
     private CbpRegistrationService cbpRegistrationService;
-
     private User studentUser;
     private User adminUser;
-    private ProfileService profileService;
     private UserProfile completedProfile;
-    private ProfileCompletion completedStatus;
 
     @BeforeEach
     void setUp() {
         cbpRegistrationRepository = mock(CbpRegistrationRepository.class);
         userProfileRepository = mock(UserProfileRepository.class);
-        profileCompletionRepository = mock(ProfileCompletionRepository.class);
-        profileService = mock(ProfileService.class);
         cbpRegistrationService = new com.cbp7.program.registration.service.impl.CbpRegistrationServiceImpl(
                 cbpRegistrationRepository,
                 userProfileRepository,
-                profileCompletionRepository,
-                profileService,
-                new com.cbp7.program.registration.CbpRegistrationValidator(),
+                new com.cbp7.program.registration.CbpRegistrationValidator(new ProfileEligibilityValidator()),
                 new com.cbp7.program.registration.CbpRegistrationMapper()
         );
 
@@ -98,20 +88,12 @@ class CbpRegistrationServiceTest {
                 .city("Jaipur")
                 .state("Rajasthan")
                 .build();
-
-        completedStatus = ProfileCompletion.builder()
-                .user(studentUser)
-                .profileCompleted(true)
-                .completionPercentage(100)
-                .lastCompletedStep("PROFILE_COMPLETE")
-                .build();
     }
 
     @Test
     void registerStudent_Success() {
         when(cbpRegistrationRepository.existsByUserStudentIdIgnoreCase(studentUser.getStudentId())).thenReturn(false);
         when(userProfileRepository.findByUserStudentIdIgnoreCase(studentUser.getStudentId())).thenReturn(Optional.of(completedProfile));
-        when(profileCompletionRepository.findByUserStudentIdIgnoreCase(studentUser.getStudentId())).thenReturn(Optional.of(completedStatus));
         when(cbpRegistrationRepository.count()).thenReturn(0L);
         when(cbpRegistrationRepository.save(any(CbpRegistration.class))).thenAnswer(i -> i.getArgument(0));
 
@@ -154,15 +136,12 @@ class CbpRegistrationServiceTest {
 
     @Test
     void registerStudent_ProfileIncomplete_ThrowsException() {
-        ProfileCompletion incomplete = ProfileCompletion.builder()
-                .user(studentUser)
-                .profileCompleted(false)
-                .completionPercentage(60)
+        UserProfile incomplete = UserProfile.builder()
+                .firstName("Parv")
                 .build();
 
         when(cbpRegistrationRepository.existsByUserStudentIdIgnoreCase(studentUser.getStudentId())).thenReturn(false);
-        when(userProfileRepository.findByUserStudentIdIgnoreCase(studentUser.getStudentId())).thenReturn(Optional.of(completedProfile));
-        when(profileCompletionRepository.findByUserStudentIdIgnoreCase(studentUser.getStudentId())).thenReturn(Optional.of(incomplete));
+        when(userProfileRepository.findByUserStudentIdIgnoreCase(studentUser.getStudentId())).thenReturn(Optional.of(incomplete));
 
         assertThrows(ProfileIncompleteException.class, () -> cbpRegistrationService.registerStudent(studentUser));
     }
@@ -204,9 +183,10 @@ class CbpRegistrationServiceTest {
 
         assertNotNull(response);
         assertEquals("CBP7000001", response.registrationId());
+        assertEquals("2023ucp1234", response.studentId());
+        assertEquals("Parv", response.firstName());
+        assertEquals("Agrawal", response.lastName());
         assertEquals(RegistrationStatus.PAYMENT_PENDING, response.registrationStatus());
-        assertEquals("2023ucp1234", response.profile().studentId());
-        assertEquals("Parv", response.profile().firstName());
     }
 
     @Test

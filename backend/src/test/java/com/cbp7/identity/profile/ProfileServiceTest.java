@@ -34,16 +34,29 @@ class ProfileServiceTest {
     private ProfileService profileService;
     private User testUser;
 
+    private com.cbp7.identity.auth.repository.UserRepository userRepository;
+    private com.cbp7.program.registration.repository.CbpRegistrationRepository cbpRegistrationRepository;
+
     @BeforeEach
     void setUp() {
         userProfileRepository = mock(UserProfileRepository.class);
         profileCompletionRepository = mock(ProfileCompletionRepository.class);
+        userRepository = mock(com.cbp7.identity.auth.repository.UserRepository.class);
+        cbpRegistrationRepository = mock(com.cbp7.program.registration.repository.CbpRegistrationRepository.class);
+        com.cbp7.identity.profile.ProfileEligibilityValidator eligibilityValidator = new com.cbp7.identity.profile.ProfileEligibilityValidator();
+        com.cbp7.identity.profile.ProfileCompletionCalculator calculator = new com.cbp7.identity.profile.ProfileCompletionCalculator(eligibilityValidator);
+
+        org.mockito.Mockito.when(userRepository.save(org.mockito.ArgumentMatchers.any())).thenAnswer(invocation -> invocation.getArgument(0));
+
         profileService = new com.cbp7.identity.profile.service.impl.ProfileServiceImpl(
                 userProfileRepository,
                 profileCompletionRepository,
+                userRepository,
+                cbpRegistrationRepository,
                 new com.cbp7.identity.profile.ProfileValidator(),
                 new com.cbp7.identity.profile.ProfileMapper(),
-                new com.cbp7.identity.profile.ProfileCompletionCalculator()
+                calculator,
+                eligibilityValidator
         );
 
         testUser = User.builder()
@@ -228,8 +241,8 @@ class ProfileServiceTest {
     }
 
     @Test
-    void completion_CalculatePercentage_Partial() {
-        UserProfile partialProfile = UserProfile.builder()
+    void completion_CalculatePercentage_MandatoryOnly() {
+        UserProfile mandatoryOnlyProfile = UserProfile.builder()
                 .user(testUser)
                 .firstName("Parv")
                 .lastName("Agrawal")
@@ -243,9 +256,23 @@ class ProfileServiceTest {
                 .hosteller(false)
                 .build();
 
-        ProfileCompletion completion = profileService.calculateAndBuildCompletion(testUser, partialProfile);
+        ProfileCompletion completion = profileService.calculateAndBuildCompletion(testUser, mandatoryOnlyProfile);
 
-        assertTrue(completion.getCompletionPercentage() > 0 && completion.getCompletionPercentage() < 100);
+        assertTrue(completion.getProfileCompleted());
+        assertEquals("PROFILE_COMPLETE", completion.getLastCompletedStep());
+    }
+
+    @Test
+    void completion_MissingMandatoryField_ReturnsIncomplete() {
+        UserProfile incompleteProfile = UserProfile.builder()
+                .user(testUser)
+                .firstName("Parv")
+                .lastName("Agrawal")
+                .build();
+
+        ProfileCompletion completion = profileService.calculateAndBuildCompletion(testUser, incompleteProfile);
+
         assertFalse(completion.getProfileCompleted());
+        assertEquals("INCOMPLETE", completion.getLastCompletedStep());
     }
 }

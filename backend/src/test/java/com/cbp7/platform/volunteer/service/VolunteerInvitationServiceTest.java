@@ -5,7 +5,7 @@ import com.cbp7.identity.auth.entity.User;
 import com.cbp7.identity.auth.repository.UserRepository;
 import com.cbp7.common.config.FrontendProperties;
 import com.cbp7.common.exception.InvalidCredentialsException;
-import com.cbp7.platform.notification.email.EmailSender;
+import com.cbp7.platform.notification.service.EmailNotificationService;
 import com.cbp7.platform.volunteer.dto.request.*;
 import com.cbp7.platform.volunteer.dto.response.*;
 import com.cbp7.platform.volunteer.entity.VolunteerInvitation;
@@ -51,7 +51,7 @@ class VolunteerInvitationServiceTest {
     private PasswordEncoder passwordEncoder;
 
     @Mock
-    private EmailSender emailSender;
+    private EmailNotificationService emailNotificationService;
 
     @Mock
     private FrontendProperties frontendProperties;
@@ -66,7 +66,7 @@ class VolunteerInvitationServiceTest {
         lenient().when(frontendProperties.buildUrl(anyString())).thenAnswer(i -> "http://localhost:3000" + i.getArgument(0));
         lenient().when(frontendProperties.getUrl()).thenReturn("http://localhost:3000");
 
-        VolunteerEmailHelper emailHelper = new VolunteerEmailHelper(emailSender, frontendProperties);
+        VolunteerEmailHelper emailHelper = new VolunteerEmailHelper(emailNotificationService, frontendProperties);
         VolunteerValidator validator = new VolunteerValidator();
         VolunteerMapper mapper = new VolunteerMapper(frontendProperties);
         VolunteerIdentityResolver identityResolver = new VolunteerIdentityResolver(userRepository, invitationRepository);
@@ -106,7 +106,7 @@ class VolunteerInvitationServiceTest {
         assertThat(response.status()).isEqualTo(VolunteerInvitationStatus.PENDING);
         assertThat(response.invitationToken()).isNotEmpty();
 
-        verify(emailSender, times(1)).sendEmail(eq("volunteer@mnit.ac.in"), anyString(), anyString());
+        verify(emailNotificationService, times(1)).sendEventEmail(eq("VOLUNTEER_INVITATION"), eq("volunteer@mnit.ac.in"), anyMap());
     }
 
     @Test
@@ -137,7 +137,7 @@ class VolunteerInvitationServiceTest {
         assertThat(existingUser.getRoles()).contains(Role.ROLE_VOLUNTEER);
         assertThat(existingUser.getPermissions()).contains("ATTENDANCE_SCAN", "ATTENDANCE_VIEW", "STUDENT_VIEW");
 
-        verify(emailSender, times(1)).sendEmail(eq("volunteer@mnit.ac.in"), contains("Volunteer Access Granted"), anyString());
+        verify(emailNotificationService, times(1)).sendEventEmail(eq("VOLUNTEER_ASSIGNED"), eq("volunteer@mnit.ac.in"), anyMap());
     }
 
     @Test
@@ -170,7 +170,7 @@ class VolunteerInvitationServiceTest {
         assertThat(studentUser.getRoles()).contains(Role.ROLE_VOLUNTEER);
         assertThat(studentUser.getPermissions()).contains("ATTENDANCE_SCAN", "STUDENT_VIEW");
 
-        verify(emailSender, times(1)).sendEmail(eq("volunteer@mnit.ac.in"), contains("Volunteer Access Granted"), anyString());
+        verify(emailNotificationService, times(1)).sendEventEmail(eq("VOLUNTEER_ASSIGNED"), eq("volunteer@mnit.ac.in"), anyMap());
     }
 
     @Test

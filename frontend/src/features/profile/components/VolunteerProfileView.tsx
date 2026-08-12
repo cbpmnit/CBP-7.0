@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect } from "react"
 import Link from "next/link"
+import { useAppDispatch } from "@/store/hooks"
+import { updateUserIdentity } from "@/store/slices/authSlice"
 import {
   volunteerProfileService,
   VolunteerProfileDto,
@@ -44,6 +46,7 @@ const YEARS = [
 ]
 
 export default function VolunteerProfileView() {
+  const dispatch = useAppDispatch()
   const [loading, setLoading] = useState(true)
   const [saveLoading, setSaveLoading] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
@@ -127,6 +130,7 @@ export default function VolunteerProfileView() {
 
       const updated = await volunteerProfileService.updateProfile(updatePayload)
       setFormData(updated)
+      dispatch(updateUserIdentity({ name: updated.fullName, phoneNumber: updated.phoneNumber }))
       setIsEditing(false)
       setMessage("Volunteer profile details saved successfully ✓")
     } catch (err: any) {

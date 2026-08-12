@@ -150,7 +150,7 @@ function LoginFormContent() {
       } else {
         try {
           const completion: any = await profileService.getCompletion()
-          if (completion && completion.completed && completion.completionPercentage === 100) {
+          if (completion && (completion.completed || completion.registrationEligible || completion.profileStatus === "COMPLETED")) {
             redirectPath = "/dashboard"
           } else {
             redirectPath = "/profile"

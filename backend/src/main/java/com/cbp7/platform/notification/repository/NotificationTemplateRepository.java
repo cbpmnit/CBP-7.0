@@ -12,8 +12,12 @@ import java.util.UUID;
 public interface NotificationTemplateRepository extends JpaRepository<NotificationTemplate, UUID> {
     Optional<NotificationTemplate> findByTypeAndChannel(NotificationType type, NotificationChannel channel);
     Optional<NotificationTemplate> findByTypeAndChannelAndStatus(NotificationType type, NotificationChannel channel, String status);
+    Optional<NotificationTemplate> findFirstByTypeAndChannelAndStatus(NotificationType type, NotificationChannel channel, String status);
     Optional<NotificationTemplate> findByEventTypeAndChannelAndStatus(String eventType, NotificationChannel channel, String status);
+    Optional<NotificationTemplate> findFirstByEventTypeAndChannelAndStatus(String eventType, NotificationChannel channel, String status);
+    List<NotificationTemplate> findByEventTypeAndChannel(String eventType, NotificationChannel channel);
     List<NotificationTemplate> findByStatus(String status);
+    long countByStatus(String status);
     boolean existsByName(String name);
     boolean existsByTypeAndChannel(NotificationType type, NotificationChannel channel);
 }

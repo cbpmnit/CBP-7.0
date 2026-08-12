@@ -118,6 +118,35 @@ export const authSlice = createSlice({
       }
     },
 
+    updateUserIdentity: (
+      state,
+      action: PayloadAction<{
+        name?: string
+        studentId?: string
+        email?: string
+        phoneNumber?: string
+      }>
+    ) => {
+      if (action.payload.name) {
+        state.name = action.payload.name
+        if (typeof window !== "undefined") {
+          localStorage.setItem("cbp-name", action.payload.name)
+        }
+      }
+      if (action.payload.studentId) {
+        state.studentId = action.payload.studentId
+        if (typeof window !== "undefined") {
+          localStorage.setItem("cbp-studentId", action.payload.studentId)
+        }
+      }
+      if (action.payload.email) {
+        state.email = action.payload.email
+        if (typeof window !== "undefined") {
+          localStorage.setItem("cbp-email", action.payload.email)
+        }
+      }
+    },
+
     restoreAuth: (
       state,
       action: PayloadAction<{
@@ -188,6 +217,7 @@ export const authSlice = createSlice({
 export const {
   loginSuccess,
   syncUserPermissions,
+  updateUserIdentity,
   restoreAuth,
   setValidatingSession,
   logout,

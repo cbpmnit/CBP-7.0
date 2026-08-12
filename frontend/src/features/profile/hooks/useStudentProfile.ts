@@ -1,17 +1,26 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
+import { useAppDispatch, useAppSelector } from "@/store/hooks"
+import { updateUserIdentity } from "@/store/slices/authSlice"
+import { validateAndSyncSession } from "@/features/auth/services/authSync"
 import { profileApi } from "../services/profileApi"
 import { UserProfileRequest } from "../types"
 import { ApiError } from "@/utils/api"
 
 export function useStudentProfile() {
+  const dispatch = useAppDispatch()
+  const auth = useAppSelector((state) => state.auth)
+
   const [loading, setLoading] = useState(true)
   const [saveLoading, setSaveLoading] = useState(false)
   const [hasProfile, setHasProfile] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [isComplete, setIsComplete] = useState(false)
-  const [completionPct, setCompletionPct] = useState(0)
+  const [registrationEligible, setRegistrationEligible] = useState(false)
+  const [profileStatus, setProfileStatus] = useState<"COMPLETED" | "INCOMPLETE">("INCOMPLETE")
+  const [missingRequiredFields, setMissingRequiredFields] = useState<string[]>([])
+  const [missingOptionalFields, setMissingOptionalFields] = useState<string[]>([])
 
   const [openSections, setOpenSections] = useState({
     identity: true,
@@ -43,6 +52,7 @@ export function useStudentProfile() {
 
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [message, setMessage] = useState<string | null>(null)
+  const hasInitializedRef = useRef(false)
 
   const fetchProfileData = useCallback(async () => {
     setLoading(true)
@@ -53,45 +63,78 @@ export function useStudentProfile() {
       ])
 
       let profileExists = false
-      let completed = false
-      let percentage = 0
+      let eligible = false
 
       if (compData.status === "fulfilled" && compData.value) {
-        completed = Boolean(compData.value.completed)
-        percentage = compData.value.completionPercentage || 0
-        setIsComplete(completed)
-        setCompletionPct(percentage)
+        const val = compData.value
+        eligible = Boolean(val.registrationEligible || val.completed || val.profileStatus === "COMPLETED")
+        setRegistrationEligible(eligible)
+        setIsComplete(eligible)
+        setProfileStatus(eligible ? "COMPLETED" : "INCOMPLETE")
+        setMissingRequiredFields(val.missingRequiredFields || val.missingMandatoryFields || [])
+        setMissingOptionalFields(val.missingOptionalFields || [])
       }
 
       if (profData.status === "fulfilled" && profData.value) {
         profileExists = true
         setHasProfile(true)
         const data = profData.value
-        setFormData({
-          firstName: data.firstName || "",
-          middleName: data.middleName || "",
-          lastName: data.lastName || "",
-          profilePhotoUrl: data.profilePhotoUrl || "",
-          gender: data.gender || "MALE",
-          dateOfBirth: data.dateOfBirth || "",
-          phoneNumber: data.phoneNumber || "",
-          sameAsWhatsapp: data.sameAsWhatsapp !== undefined ? Boolean(data.sameAsWhatsapp) : true,
-          whatsappNumber: data.whatsappNumber || "",
-          institute: data.institute || "MNIT Jaipur",
-          course: data.course || "BTECH",
-          branch: data.branch || "COMPUTER_SCIENCE_ENGINEERING",
-          year: data.year || 1,
-          section: data.section || "",
-          hosteller: Boolean(data.hosteller),
-          roomNumber: data.roomNumber || "",
-          city: data.city || "",
-          state: data.state || "",
-        })
+
+        // If not user-edited yet, initialize from profile data
+        if (!hasInitializedRef.current) {
+          setFormData({
+            firstName: data.firstName || "",
+            middleName: data.middleName || "",
+            lastName: data.lastName || "",
+            profilePhotoUrl: data.profilePhotoUrl || "",
+            gender: data.gender || "MALE",
+            dateOfBirth: data.dateOfBirth || "",
+            phoneNumber: data.phoneNumber || "",
+            sameAsWhatsapp: data.sameAsWhatsapp !== undefined ? Boolean(data.sameAsWhatsapp) : true,
+            whatsappNumber: data.whatsappNumber || "",
+            institute: data.institute || "MNIT Jaipur",
+            course: data.course || "BTECH",
+            branch: data.branch || "COMPUTER_SCIENCE_ENGINEERING",
+            year: data.year || 1,
+            section: data.section || "",
+            hosteller: Boolean(data.hosteller),
+            roomNumber: data.roomNumber || "",
+            city: data.city || "",
+            state: data.state || "",
+          })
+          hasInitializedRef.current = true
+        }
+
+        // Synchronize Redux identity with verified profile name if available
+        const verifiedFullName = [data.firstName, data.middleName, data.lastName].filter(Boolean).join(" ").trim()
+        if (verifiedFullName && verifiedFullName !== auth.name) {
+          dispatch(updateUserIdentity({ name: verifiedFullName, phoneNumber: data.phoneNumber }))
+        }
       } else {
         setHasProfile(false)
+
+        // AUTO-PREFILL: Fallback to existing User entity / registration identity
+        if (!hasInitializedRef.current) {
+          const rawName = (auth.name || (typeof window !== "undefined" && localStorage.getItem("cbp-name")) || "").trim()
+          let prefilledFirst = ""
+          let prefilledLast = ""
+
+          if (rawName) {
+            const parts = rawName.split(/\s+/)
+            prefilledFirst = parts[0] || ""
+            prefilledLast = parts.length > 1 ? parts.slice(1).join(" ") : ""
+          }
+
+          setFormData((prev) => ({
+            ...prev,
+            firstName: prefilledFirst,
+            lastName: prefilledLast,
+          }))
+          hasInitializedRef.current = true
+        }
       }
 
-      if (!profileExists || !completed || percentage < 100) {
+      if (!profileExists || !eligible) {
         setIsEditing(true)
       } else {
         setIsEditing(false)
@@ -102,7 +145,7 @@ export function useStudentProfile() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [auth.name, dispatch])
 
   useEffect(() => {
     fetchProfileData()
@@ -210,9 +253,25 @@ export function useStudentProfile() {
         await profileApi.createProfile(payload)
       }
 
+      // Compute synchronized full name
+      const newFullName = [formData.firstName, formData.middleName, formData.lastName]
+        .filter(Boolean)
+        .join(" ")
+        .trim()
+
+      // Immediately synchronize global Redux auth state & localStorage
+      dispatch(updateUserIdentity({ name: newFullName, phoneNumber: formData.phoneNumber }))
+      if (typeof window !== "undefined") {
+        localStorage.setItem("cbp-name", newFullName)
+      }
+
+      // Background sync with backend session
+      validateAndSyncSession()
+
       setMessage("Profile saved successfully!")
       setHasProfile(true)
       setIsEditing(false)
+      hasInitializedRef.current = false
       await fetchProfileData()
     } catch (err) {
       if (err instanceof ApiError) {
@@ -235,7 +294,10 @@ export function useStudentProfile() {
     isEditing,
     setIsEditing,
     isComplete,
-    completionPct,
+    registrationEligible,
+    profileStatus,
+    missingRequiredFields,
+    missingOptionalFields,
     openSections,
     formData,
     setFormData,

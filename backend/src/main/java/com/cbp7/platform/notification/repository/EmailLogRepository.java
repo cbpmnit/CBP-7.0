@@ -12,4 +12,5 @@ public interface EmailLogRepository extends JpaRepository<EmailLog, UUID> {
     Page<EmailLog> findAllByOrderBySentAtDesc(Pageable pageable);
     List<EmailLog> findByOperationId(UUID operationId);
     List<EmailLog> findByStatus(String status);
+    long countByStatus(String status);
 }

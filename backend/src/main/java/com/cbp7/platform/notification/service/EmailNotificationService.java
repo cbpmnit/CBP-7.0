@@ -9,5 +9,6 @@ import java.util.UUID;
 public interface EmailNotificationService {
     void sendTemplateEmail(UUID templateId, String recipient, Map<String, String> variables);
     void sendTemplateEmailByType(NotificationType type, String recipient, Map<String, String> variables);
+    void sendEventEmail(String eventType, String recipient, Map<String, String> variables);
     boolean sendTestEmail(SendTestEmailRequest request);
 }

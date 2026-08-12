@@ -1,7 +1,6 @@
 package com.cbp7.identity.profile;
 
 import com.cbp7.identity.auth.entity.User;
-import com.cbp7.identity.profile.ProfileCompletionCalculator;
 import com.cbp7.identity.profile.entity.Branch;
 import com.cbp7.identity.profile.entity.Course;
 import com.cbp7.identity.profile.entity.Gender;
@@ -17,11 +16,13 @@ import static org.junit.jupiter.api.Assertions.*;
 class ProfileCompletionCalculatorTest {
 
     private ProfileCompletionCalculator calculator;
+    private ProfileEligibilityValidator eligibilityValidator;
     private User testUser;
 
     @BeforeEach
     void setUp() {
-        calculator = new ProfileCompletionCalculator();
+        eligibilityValidator = new ProfileEligibilityValidator();
+        calculator = new ProfileCompletionCalculator(eligibilityValidator);
         testUser = User.builder().studentId("2024test").email("test@mnit.ac.in").build();
     }
 
@@ -35,7 +36,7 @@ class ProfileCompletionCalculatorTest {
     }
 
     @Test
-    void calculateAndBuildCompletion_FullProfileHosteller_Returns100() {
+    void calculateAndBuildCompletion_MandatoryOnly_EligibleAndCompleted() {
         UserProfile profile = UserProfile.builder()
                 .firstName("Parv")
                 .lastName("Agrawal")
@@ -46,9 +47,33 @@ class ProfileCompletionCalculatorTest {
                 .course(Course.BTECH)
                 .branch(Branch.COMPUTER_SCIENCE_ENGINEERING)
                 .year(3)
+                .hosteller(false)
+                .build();
+
+        ProfileCompletion result = calculator.calculateAndBuildCompletion(testUser, profile);
+        assertTrue(result.getProfileCompleted());
+        assertTrue(eligibilityValidator.canRegister(profile));
+        assertEquals("PROFILE_COMPLETE", result.getLastCompletedStep());
+    }
+
+    @Test
+    void calculateAndBuildCompletion_FullProfileHosteller_Returns100() {
+        UserProfile profile = UserProfile.builder()
+                .firstName("Parv")
+                .middleName("Kumar")
+                .lastName("Agrawal")
+                .gender(Gender.MALE)
+                .dateOfBirth(LocalDate.of(2002, 5, 15))
+                .phoneNumber("9876543210")
+                .sameAsWhatsapp(true)
+                .institute("MNIT Jaipur")
+                .course(Course.BTECH)
+                .branch(Branch.COMPUTER_SCIENCE_ENGINEERING)
+                .year(3)
                 .section("A")
                 .city("Jaipur")
                 .state("Rajasthan")
+                .profilePhotoUrl("https://example.com/photo.jpg")
                 .hosteller(true)
                 .roomNumber("H-101")
                 .build();
@@ -63,10 +88,12 @@ class ProfileCompletionCalculatorTest {
     void calculateAndBuildCompletion_FullProfileDayScholar_Returns100() {
         UserProfile profile = UserProfile.builder()
                 .firstName("Parv")
+                .middleName("Kumar")
                 .lastName("Agrawal")
                 .gender(Gender.MALE)
                 .dateOfBirth(LocalDate.of(2002, 5, 15))
                 .phoneNumber("9876543210")
+                .sameAsWhatsapp(true)
                 .institute("MNIT Jaipur")
                 .course(Course.BTECH)
                 .branch(Branch.COMPUTER_SCIENCE_ENGINEERING)
@@ -74,6 +101,7 @@ class ProfileCompletionCalculatorTest {
                 .section("A")
                 .city("Jaipur")
                 .state("Rajasthan")
+                .profilePhotoUrl("https://example.com/photo.jpg")
                 .hosteller(false)
                 .build();
 

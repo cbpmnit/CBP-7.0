@@ -5,10 +5,12 @@ import com.cbp7.platform.admin.student.service.AdminStudentManagementService;
 import com.cbp7.common.exception.ResourceNotFoundException;
 import com.cbp7.platform.notification.dto.request.SendTestEmailRequest;
 import com.cbp7.platform.notification.email.EmailSender;
+import com.cbp7.platform.notification.entity.EmailLog;
 import com.cbp7.platform.notification.entity.NotificationChannel;
 import com.cbp7.platform.notification.entity.NotificationTemplate;
 import com.cbp7.platform.notification.entity.NotificationType;
 import com.cbp7.platform.notification.processor.TemplateProcessorService;
+import com.cbp7.platform.notification.repository.EmailLogRepository;
 import com.cbp7.platform.notification.repository.NotificationTemplateRepository;
 import com.cbp7.platform.notification.service.EmailNotificationService;
 import lombok.RequiredArgsConstructor;
@@ -18,10 +20,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -30,33 +34,59 @@ import java.util.UUID;
 public class EmailNotificationServiceImpl implements EmailNotificationService {
 
     private final NotificationTemplateRepository notificationTemplateRepository;
+    private final EmailLogRepository emailLogRepository;
     private final TemplateProcessorService templateProcessorService;
     private final EmailSender emailSender;
     private final AdminStudentManagementService studentManagementService;
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public void sendTemplateEmail(UUID templateId, String recipient, Map<String, String> variables) {
         NotificationTemplate template = notificationTemplateRepository.findById(templateId)
                 .orElseThrow(() -> new ResourceNotFoundException("Email template not found with id: " + templateId));
 
-        sendEmailForTemplate(template, recipient, variables);
+        sendEmailForTemplate(template, recipient, variables, template.getEventType());
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public void sendTemplateEmailByType(NotificationType type, String recipient, Map<String, String> variables) {
-        NotificationTemplate template = notificationTemplateRepository
-                .findByTypeAndChannelAndStatus(type, NotificationChannel.EMAIL, "PUBLISHED")
-                .orElseGet(() -> notificationTemplateRepository
-                        .findByTypeAndChannel(type, NotificationChannel.EMAIL)
-                        .orElseGet(() -> createFallbackTemplate(type)));
-
-        sendEmailForTemplate(template, recipient, variables);
+        sendEventEmail(type != null ? type.name() : "GENERAL_NOTIFICATION", recipient, variables);
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
+    public void sendEventEmail(String eventType, String recipient, Map<String, String> variables) {
+        if (recipient == null || recipient.isBlank()) {
+            log.warn("Cannot send email: recipient address is null or blank for event {}", eventType);
+            return;
+        }
+
+        String targetEvent = eventType != null ? eventType.trim().toUpperCase() : "GENERAL_NOTIFICATION";
+
+        // Strictly check for ACTIVE template in DB
+        Optional<NotificationTemplate> templateOpt = notificationTemplateRepository
+                .findFirstByEventTypeAndChannelAndStatus(targetEvent, NotificationChannel.EMAIL, "ACTIVE");
+
+        if (templateOpt.isEmpty()) {
+            try {
+                NotificationType nType = NotificationType.valueOf(targetEvent);
+                templateOpt = notificationTemplateRepository
+                        .findFirstByTypeAndChannelAndStatus(nType, NotificationChannel.EMAIL, "ACTIVE");
+            } catch (Exception ignored) {}
+        }
+
+        if (templateOpt.isEmpty()) {
+            log.warn("Email skipped: No ACTIVE template configured for event {}", targetEvent);
+            saveEmailLog(null, targetEvent, "Email skipped: No ACTIVE template", recipient, "SKIPPED_NO_TEMPLATE", "Email skipped: No ACTIVE template configured for event " + targetEvent);
+            return;
+        }
+
+        sendEmailForTemplate(templateOpt.get(), recipient, variables, targetEvent);
+    }
+
+    @Override
+    @Transactional
     public boolean sendTestEmail(SendTestEmailRequest request) {
         log.info("Processing test email request for template ID: {}", request.templateId());
 
@@ -66,7 +96,7 @@ public class EmailNotificationServiceImpl implements EmailNotificationService {
 
         log.info("Dispatching test emails to {} recipient(s)", targetEmails.size());
         for (String email : targetEmails) {
-            sendEmailForTemplate(template, email, testVars);
+            sendEmailForTemplate(template, email, testVars, "TEST_EMAIL");
         }
 
         return true;
@@ -76,18 +106,10 @@ public class EmailNotificationServiceImpl implements EmailNotificationService {
 
     private NotificationTemplate resolveTestTemplate(UUID templateId) {
         if (templateId == null) {
-            return buildDefaultTestTemplate();
+            throw new IllegalArgumentException("Template ID is required for test email dispatch");
         }
         return notificationTemplateRepository.findById(templateId)
-                .orElseGet(this::buildDefaultTestTemplate);
-    }
-
-    private NotificationTemplate buildDefaultTestTemplate() {
-        return NotificationTemplate.builder()
-                .name("Test Template")
-                .subject("CBP Portal Notification Test")
-                .content("<div style='padding:20px; font-family:sans-serif;'><h2>CBP 7.0 Test Email Notification</h2><p>Dear {{studentName}}, this is a test email notification sent from the Email Builder.</p></div>")
-                .build();
+                .orElseThrow(() -> new ResourceNotFoundException("Email template not found with ID: " + templateId));
     }
 
     private List<String> resolveTestTargetEmails(SendTestEmailRequest request) {
@@ -111,27 +133,35 @@ public class EmailNotificationServiceImpl implements EmailNotificationService {
         return targetEmails;
     }
 
-    private NotificationTemplate createFallbackTemplate(NotificationType type) {
-        log.warn("Email template not found in database for type: {}, using in-memory fallback template", type);
-        return NotificationTemplate.builder()
-                .name("Default " + type.name())
-                .type(type)
-                .channel(NotificationChannel.EMAIL)
-                .subject("CBP Portal Notification")
-                .content("Hello {{studentName}}, thank you for using CBP Portal. Student ID: {{studentId}}")
-                .createdBy("SYSTEM")
-                .build();
-    }
-
-    private void sendEmailForTemplate(NotificationTemplate template, String recipient, Map<String, String> variables) {
+    private void sendEmailForTemplate(NotificationTemplate template, String recipient, Map<String, String> variables, String eventType) {
+        String processedSubject = "";
         try {
-            String processedSubject = templateProcessorService.processTemplate(template.getSubject(), variables);
+            processedSubject = templateProcessorService.processTemplate(template.getSubject(), variables);
             String processedBody = templateProcessorService.processTemplate(template.getContent(), variables);
 
             emailSender.sendEmail(recipient, processedSubject, processedBody);
-            log.info("Email notification successfully dispatched to: {}", recipient);
+            log.info("Email notification successfully dispatched to: {} for event {}", recipient, eventType);
+            saveEmailLog(template, eventType, processedSubject, recipient, "SENT", null);
         } catch (Exception e) {
-            log.error("Failed to process and send email notification to: {}", recipient, e);
+            log.error("Failed to process and send email notification to: {} for event {}", recipient, eventType, e);
+            saveEmailLog(template, eventType, processedSubject, recipient, "FAILED", e.getMessage());
+        }
+    }
+
+    private void saveEmailLog(NotificationTemplate template, String eventType, String subject, String recipient, String status, String errorMessage) {
+        try {
+            EmailLog logEntry = EmailLog.builder()
+                    .templateId(template != null ? template.getId() : null)
+                    .templateName(template != null ? template.getName() : "No Active Template")
+                    .recipient(recipient)
+                    .status(status)
+                    .errorMessage(errorMessage)
+                    .sentAt(LocalDateTime.now())
+                    .build();
+
+            emailLogRepository.save(logEntry);
+        } catch (Exception e) {
+            log.error("Failed to persist email delivery log for recipient {}", recipient, e);
         }
     }
 }

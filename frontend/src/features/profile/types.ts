@@ -1,5 +1,6 @@
 export interface UserProfileResponse {
   id?: string
+  name?: string
   studentId?: string
   email?: string
   firstName: string
@@ -47,6 +48,11 @@ export interface UserProfileRequest {
 
 export interface ProfileCompletionResponse {
   completed: boolean
-  completionPercentage: number
+  profileStatus: "COMPLETED" | "INCOMPLETE"
+  registrationEligible: boolean
+  missingRequiredFields?: string[]
+  missingMandatoryFields?: string[]
+  missingOptionalFields?: string[]
+  completionPercentage?: number
   lastCompletedStep?: string
 }

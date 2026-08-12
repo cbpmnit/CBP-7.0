@@ -6,11 +6,18 @@ import com.cbp7.common.exception.ForbiddenException;
 import com.cbp7.common.exception.ProfileIncompleteException;
 import com.cbp7.common.exception.RegistrationAlreadyExistsException;
 import com.cbp7.common.exception.UnauthorizedException;
-import com.cbp7.identity.profile.entity.ProfileCompletion;
+import com.cbp7.identity.profile.ProfileEligibilityValidator;
+import com.cbp7.identity.profile.entity.UserProfile;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 @Component
+@RequiredArgsConstructor
 public class CbpRegistrationValidator {
+
+    private final ProfileEligibilityValidator eligibilityValidator;
 
     public void validateStudentRole(User user) {
         if (user == null) {
@@ -21,13 +28,15 @@ public class CbpRegistrationValidator {
         }
     }
 
-    public void validateRegistrationPreconditions(boolean alreadyExists, ProfileCompletion completion) {
+    public void validateRegistrationPreconditions(boolean alreadyExists, UserProfile profile) {
         if (alreadyExists) {
             throw new RegistrationAlreadyExistsException("You are already registered for CBP.");
         }
 
-        if (completion == null || !Boolean.TRUE.equals(completion.getProfileCompleted())) {
-            throw new ProfileIncompleteException("Please complete your profile before registering.");
+        if (profile == null || !eligibilityValidator.canRegister(profile)) {
+            List<String> missing = eligibilityValidator.getMissingMandatoryFields(profile);
+            String details = missing.isEmpty() ? "" : ": " + String.join(", ", missing);
+            throw new ProfileIncompleteException("Please complete mandatory profile details before registration" + details);
         }
     }
 }

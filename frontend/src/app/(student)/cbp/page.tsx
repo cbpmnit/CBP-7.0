@@ -50,13 +50,16 @@ export default function CbpPage() {
     setError(null)
 
     try {
-      // 1. Verify profile completion before triggering backend registration
+      // 1. Verify required profile details before triggering backend registration
       const comp = await profileService.getCompletion().catch(() => null)
-      if (comp && (!comp.completed || comp.completionPercentage < 100)) {
-        setError("Your profile information is incomplete. Redirecting to complete your profile...")
+      if (comp && !comp.completed && comp.registrationEligible === false) {
+        const missing = comp.missingRequiredFields?.length
+          ? ` Missing required fields: ${comp.missingRequiredFields.join(", ")}.`
+          : ""
+        setError(`Please complete required profile details before registration.${missing}`)
         setTimeout(() => {
           router.push("/profile")
-        }, 1500)
+        }, 2000)
         return
       }
 

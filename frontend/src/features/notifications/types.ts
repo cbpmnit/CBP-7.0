@@ -1,12 +1,19 @@
 export type EmailEventType =
-  | "ATTENDANCE_QR_GENERATED"
-  | "PAYMENT_SUCCESS"
   | "REGISTRATION_SUCCESS"
+  | "PAYMENT_SUCCESS"
+  | "PAYMENT_FAILED"
+  | "ATTENDANCE_QR_GENERATED"
   | "CERTIFICATE_ISSUED"
+  | "CERTIFICATE_READY"
+  | "VOLUNTEER_INVITATION"
+  | "VOLUNTEER_ASSIGNED"
+  | "VOLUNTEER_PERMISSIONS_UPDATED"
+  | "VOLUNTEER_ACCESS_REVOKED"
   | "SESSION_REMINDER"
+  | "GENERAL_NOTIFICATION"
 
-export type VariableCategory = "STUDENT" | "PAYMENT" | "ATTENDANCE" | "CERTIFICATE"
-export type EmailTemplateStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED" | "ACTIVE" | "DISABLED"
+export type VariableCategory = "STUDENT" | "PAYMENT" | "ATTENDANCE" | "CERTIFICATE" | "VOLUNTEER" | "REGISTRATION"
+export type EmailTemplateStatus = "DRAFT" | "PUBLISHED" | "ACTIVE" | "INACTIVE" | "ARCHIVED"
 
 export interface EmailVariable {
   key: string
@@ -20,11 +27,11 @@ export interface EmailVariable {
 export interface NotificationTemplateResponse {
   id: string
   name?: string
-  templateName: string
+  templateName?: string
   subject: string
   content?: string
-  body: string
-  notificationType: string
+  body?: string
+  notificationType?: string
   eventType?: EmailEventType
   designJson?: string
   htmlContent?: string
@@ -37,7 +44,6 @@ export interface NotificationTemplateResponse {
   updatedAt?: string
 }
 
-// Alias
 export type EmailTemplateResponse = NotificationTemplateResponse
 
 export interface CreateNotificationTemplateRequest {
@@ -80,4 +86,14 @@ export interface SendTestEmailRequest {
   recipients?: string[]
   sampleData?: Record<string, string>
   sendToAll?: boolean
+}
+
+export interface NotificationTemplateStats {
+  totalTemplates: number
+  activeTemplates: number
+  draftTemplates: number
+  publishedTemplates: number
+  archivedTemplates: number
+  failedDeliveriesCount: number
+  missingActiveEventTypes: string[]
 }

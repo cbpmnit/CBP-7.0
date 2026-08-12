@@ -40,8 +40,15 @@ export default function EmailManagement() {
   const [builderOpen, setBuilderOpen] = useState(false)
   const [editingTemplate, setEditingTemplate] = useState<NotificationTemplateResponse | null>(null)
 
-  const handleOpenCreate = () => {
-    setEditingTemplate(null)
+  const handleOpenCreate = (initialEventType?: string) => {
+    setEditingTemplate(
+      initialEventType
+        ? ({
+            eventType: initialEventType as any,
+            name: `${initialEventType} Template`,
+          } as any)
+        : null
+    )
     setBuilderOpen(true)
   }
 
@@ -95,7 +102,7 @@ export default function EmailManagement() {
             actions={
               <button
                 type="button"
-                onClick={handleOpenCreate}
+                onClick={() => handleOpenCreate()}
                 className="px-4 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold uppercase tracking-wider shadow-sm transition inline-flex items-center gap-1.5 cursor-pointer"
               >
                 <FiPlus className="text-sm" />

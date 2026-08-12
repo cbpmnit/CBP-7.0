@@ -16,11 +16,17 @@ import {
 } from "react-icons/fi"
 
 const CATEGORY_OPTIONS: { label: string; value: EmailEventType }[] = [
-  { label: "Attendance Pass (ATTENDANCE)", value: "ATTENDANCE_QR_GENERATED" },
-  { label: "Payment Receipt (PAYMENT)", value: "PAYMENT_SUCCESS" },
-  { label: "Registration Welcome (REGISTRATION)", value: "REGISTRATION_SUCCESS" },
-  { label: "Certificate Issued (CERTIFICATE)", value: "CERTIFICATE_ISSUED" },
-  { label: "Session Reminder (ATTENDANCE)", value: "SESSION_REMINDER" },
+  { label: "Registration Welcome (REGISTRATION_SUCCESS)", value: "REGISTRATION_SUCCESS" },
+  { label: "Payment Success Receipt (PAYMENT_SUCCESS)", value: "PAYMENT_SUCCESS" },
+  { label: "Payment Failure Notice (PAYMENT_FAILED)", value: "PAYMENT_FAILED" },
+  { label: "Attendance QR Security Pass (ATTENDANCE_QR_GENERATED)", value: "ATTENDANCE_QR_GENERATED" },
+  { label: "Certificate Released (CERTIFICATE_ISSUED)", value: "CERTIFICATE_ISSUED" },
+  { label: "Volunteer Invitation (VOLUNTEER_INVITATION)", value: "VOLUNTEER_INVITATION" },
+  { label: "Volunteer Privileges Granted (VOLUNTEER_ASSIGNED)", value: "VOLUNTEER_ASSIGNED" },
+  { label: "Volunteer Scopes Updated (VOLUNTEER_PERMISSIONS_UPDATED)", value: "VOLUNTEER_PERMISSIONS_UPDATED" },
+  { label: "Volunteer Status Notice (VOLUNTEER_ACCESS_REVOKED)", value: "VOLUNTEER_ACCESS_REVOKED" },
+  { label: "Session Reminder (SESSION_REMINDER)", value: "SESSION_REMINDER" },
+  { label: "General Announcement (GENERAL_NOTIFICATION)", value: "GENERAL_NOTIFICATION" },
 ]
 
 interface Props {

@@ -10,11 +10,8 @@ import com.cbp7.program.registration.service.CbpRegistrationService;
 import com.cbp7.program.registration.CbpRegistrationValidator;
 import com.cbp7.common.exception.ProfileIncompleteException;
 import com.cbp7.common.exception.ResourceNotFoundException;
-import com.cbp7.identity.profile.entity.ProfileCompletion;
 import com.cbp7.identity.profile.entity.UserProfile;
-import com.cbp7.identity.profile.repository.ProfileCompletionRepository;
 import com.cbp7.identity.profile.repository.UserProfileRepository;
-import com.cbp7.identity.profile.service.ProfileService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -27,8 +24,6 @@ public class CbpRegistrationServiceImpl implements CbpRegistrationService {
 
     private final CbpRegistrationRepository cbpRegistrationRepository;
     private final UserProfileRepository userProfileRepository;
-    private final ProfileCompletionRepository profileCompletionRepository;
-    private final ProfileService profileService;
     private final CbpRegistrationValidator cbpRegistrationValidator;
     private final CbpRegistrationMapper cbpRegistrationMapper;
 
@@ -45,10 +40,7 @@ public class CbpRegistrationServiceImpl implements CbpRegistrationService {
         UserProfile profile = userProfileRepository.findByUserStudentIdIgnoreCase(user.getStudentId())
                 .orElseThrow(() -> new ProfileIncompleteException("Please complete your profile before registering."));
 
-        ProfileCompletion completion = profileCompletionRepository.findByUserStudentIdIgnoreCase(user.getStudentId())
-                .orElseGet(() -> profileService.calculateAndBuildCompletion(user, profile));
-
-        cbpRegistrationValidator.validateRegistrationPreconditions(false, completion);
+        cbpRegistrationValidator.validateRegistrationPreconditions(false, profile);
 
         String registrationId = generateRegistrationId();
         CbpRegistration registration = cbpRegistrationMapper.toEntity(user, profile, registrationId);

@@ -9,6 +9,7 @@ import com.cbp7.platform.notification.dto.request.CreateNotificationTemplateRequ
 import com.cbp7.platform.notification.dto.request.SendTestEmailRequest;
 import com.cbp7.platform.notification.dto.request.UpdateNotificationTemplateRequest;
 import com.cbp7.platform.notification.dto.response.NotificationTemplateResponse;
+import com.cbp7.platform.notification.dto.response.NotificationTemplateStatsResponse;
 import com.cbp7.platform.notification.service.EmailNotificationService;
 import com.cbp7.platform.notification.service.NotificationTemplateService;
 import jakarta.validation.Valid;
@@ -62,6 +63,20 @@ public class NotificationTemplateController {
         return ResponseEntity.ok(ApiResponse.success("Email templates retrieved successfully", response));
     }
 
+    @GetMapping({"/stats", "/templates/stats"})
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('EMAIL_SEND')")
+    public ResponseEntity<ApiResponse<NotificationTemplateStatsResponse>> getTemplateStats() {
+        NotificationTemplateStatsResponse stats = notificationTemplateService.getTemplateStats();
+        return ResponseEntity.ok(ApiResponse.success("Email template statistics retrieved successfully", stats));
+    }
+
+    @GetMapping({"/missing-active", "/templates/missing-active"})
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('EMAIL_SEND')")
+    public ResponseEntity<ApiResponse<List<String>>> getMissingActiveEventTypes() {
+        List<String> missing = notificationTemplateService.getMissingActiveEventTypes();
+        return ResponseEntity.ok(ApiResponse.success("Missing active event types retrieved successfully", missing));
+    }
+
     @GetMapping({"/eligible-students", "/templates/eligible-students"})
     @PreAuthorize("hasRole('ADMIN') or hasAuthority('EMAIL_SEND')")
     public ResponseEntity<ApiResponse<Page<AdminStudentListItemResponse>>> getEligiblePaidStudents(
@@ -70,7 +85,6 @@ public class NotificationTemplateController {
             @PageableDefault(size = 20) Pageable pageable
     ) {
         String effectiveQuery = query != null && !query.isBlank() ? query : search;
-        // Backend strictly enforces paymentStatus = "SUCCESS"
         Page<AdminStudentListItemResponse> page = studentManagementService.getStudentsPaginated(
                 effectiveQuery, null, "SUCCESS", null, null, pageable
         );
@@ -110,6 +124,20 @@ public class NotificationTemplateController {
     public ResponseEntity<ApiResponse<NotificationTemplateResponse>> publishTemplate(@PathVariable UUID id) {
         NotificationTemplateResponse response = notificationTemplateService.publishTemplate(id);
         return ResponseEntity.ok(ApiResponse.success("Email template published live successfully", response));
+    }
+
+    @PostMapping({"/{id}/activate", "/templates/{id}/activate"})
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('EMAIL_SEND')")
+    public ResponseEntity<ApiResponse<NotificationTemplateResponse>> activateTemplate(@PathVariable UUID id) {
+        NotificationTemplateResponse response = notificationTemplateService.activateTemplate(id);
+        return ResponseEntity.ok(ApiResponse.success("Email template activated for automated sending", response));
+    }
+
+    @PostMapping({"/{id}/deactivate", "/templates/{id}/deactivate"})
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('EMAIL_SEND')")
+    public ResponseEntity<ApiResponse<NotificationTemplateResponse>> deactivateTemplate(@PathVariable UUID id) {
+        NotificationTemplateResponse response = notificationTemplateService.deactivateTemplate(id);
+        return ResponseEntity.ok(ApiResponse.success("Email template deactivated successfully", response));
     }
 
     @PostMapping({"/{id}/archive", "/templates/{id}/archive"})

@@ -5,6 +5,7 @@ import com.cbp7.identity.profile.dto.request.CreateProfileRequest;
 import com.cbp7.identity.profile.dto.response.ProfileResponse;
 import com.cbp7.identity.profile.entity.UserProfile;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 @Component
 public class ProfileMapper {
@@ -17,7 +18,13 @@ public class ProfileMapper {
         String studentId = profile.getUser() != null ? profile.getUser().getStudentId() : null;
         String email = profile.getUser() != null ? profile.getUser().getEmail() : null;
 
+        String fullName = buildFullName(profile.getFirstName(), profile.getMiddleName(), profile.getLastName());
+        if (!StringUtils.hasText(fullName) && profile.getUser() != null) {
+            fullName = profile.getUser().getName();
+        }
+
         return new ProfileResponse(
+                fullName,
                 studentId,
                 email,
                 profile.getFirstName(),
@@ -63,5 +70,19 @@ public class ProfileMapper {
                 .city(request.city() != null ? request.city().trim() : null)
                 .state(request.state() != null ? request.state().trim() : null)
                 .build();
+    }
+
+    private String buildFullName(String first, String middle, String last) {
+        StringBuilder sb = new StringBuilder();
+        if (StringUtils.hasText(first)) sb.append(first.trim());
+        if (StringUtils.hasText(middle)) {
+            if (sb.length() > 0) sb.append(" ");
+            sb.append(middle.trim());
+        }
+        if (StringUtils.hasText(last)) {
+            if (sb.length() > 0) sb.append(" ");
+            sb.append(last.trim());
+        }
+        return sb.toString().trim();
     }
 }

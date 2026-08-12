@@ -1,7 +1,7 @@
 "use client"
 
-import React, { useState } from "react"
-import { NotificationTemplateResponse } from "../types"
+import React, { useState, useEffect } from "react"
+import { NotificationTemplateResponse, NotificationTemplateStats } from "../types"
 import { emailTemplateApi } from "../services/notificationApi"
 import EmailPreviewModal from "./EmailPreviewModal"
 import {
@@ -18,17 +18,27 @@ import {
   FiChevronUp,
   FiCheck,
   FiSearch,
-  FiFilter,
   FiMoreVertical,
   FiClock,
+  FiAlertTriangle,
+  FiZap,
+  FiPower,
+  FiActivity,
+  FiFileText,
 } from "react-icons/fi"
 
 const EVENT_TYPE_LABELS: Record<string, { label: string; category: string }> = {
-  ATTENDANCE_QR_GENERATED: { label: "Attendance QR Pass", category: "ATTENDANCE" },
-  SESSION_REMINDER: { label: "Session Reminder", category: "ATTENDANCE" },
-  PAYMENT_SUCCESS: { label: "Payment Receipt", category: "PAYMENT" },
   REGISTRATION_SUCCESS: { label: "Registration Welcome", category: "REGISTRATION" },
-  CERTIFICATE_ISSUED: { label: "Certificate Issued", category: "CERTIFICATE" },
+  PAYMENT_SUCCESS: { label: "Payment Success Receipt", category: "PAYMENT" },
+  PAYMENT_FAILED: { label: "Payment Failure Notice", category: "PAYMENT" },
+  ATTENDANCE_QR_GENERATED: { label: "Attendance QR Security Pass", category: "ATTENDANCE" },
+  CERTIFICATE_ISSUED: { label: "Certificate Released", category: "CERTIFICATE" },
+  CERTIFICATE_READY: { label: "Certificate Released", category: "CERTIFICATE" },
+  VOLUNTEER_INVITATION: { label: "Volunteer Invitation", category: "VOLUNTEER" },
+  VOLUNTEER_ASSIGNED: { label: "Volunteer Privileges Granted", category: "VOLUNTEER" },
+  VOLUNTEER_PERMISSIONS_UPDATED: { label: "Volunteer Scopes Updated", category: "VOLUNTEER" },
+  VOLUNTEER_ACCESS_REVOKED: { label: "Volunteer Status Notice", category: "VOLUNTEER" },
+  SESSION_REMINDER: { label: "Session Reminder", category: "ATTENDANCE" },
   GENERAL_NOTIFICATION: { label: "General Announcement", category: "NOTIFICATION" },
 }
 
@@ -36,7 +46,7 @@ interface Props {
   templates: NotificationTemplateResponse[]
   loading: boolean
   onReload: () => Promise<void>
-  onOpenCreate: () => void
+  onOpenCreate: (initialEventType?: string) => void
   onOpenEdit: (template: NotificationTemplateResponse) => void
 }
 
@@ -52,11 +62,58 @@ export default function EmailTemplatesTab({
   const [categoryFilter, setCategoryFilter] = useState("ALL")
   const [sortBy, setSortBy] = useState<"updated" | "name">("updated")
 
+  const [stats, setStats] = useState<NotificationTemplateStats | null>(null)
   const [expandedVariables, setExpandedVariables] = useState<Record<string, boolean>>({})
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null)
   const [previewOpen, setPreviewOpen] = useState(false)
   const [selectedPreviewTemplate, setSelectedPreviewTemplate] = useState<NotificationTemplateResponse | null>(null)
   const [toastMessage, setToastMessage] = useState<string | null>(null)
+  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null)
+
+  useEffect(() => {
+    fetchStats()
+  }, [templates])
+
+  const fetchStats = async () => {
+    try {
+      const res = await emailTemplateApi.getTemplateStats()
+      if (res) setStats(res)
+    } catch {
+      // Fallback in-memory stats
+      const total = templates.length
+      const active = templates.filter((t) => (t.status || "").toUpperCase() === "ACTIVE").length
+      const draft = templates.filter((t) => (t.status || "").toUpperCase() === "DRAFT").length
+      const published = templates.filter((t) => (t.status || "").toUpperCase() === "PUBLISHED").length
+      const archived = templates.filter((t) => (t.status || "").toUpperCase() === "ARCHIVED").length
+
+      const requiredEvents = [
+        "REGISTRATION_SUCCESS",
+        "PAYMENT_SUCCESS",
+        "PAYMENT_FAILED",
+        "ATTENDANCE_QR_GENERATED",
+        "CERTIFICATE_ISSUED",
+        "VOLUNTEER_INVITATION",
+        "VOLUNTEER_ASSIGNED",
+        "VOLUNTEER_PERMISSIONS_UPDATED",
+        "VOLUNTEER_ACCESS_REVOKED",
+      ]
+      const activeEventKeys = templates
+        .filter((t) => (t.status || "").toUpperCase() === "ACTIVE")
+        .map((t) => (t.eventType || t.notificationType || "").toUpperCase())
+
+      const missing = requiredEvents.filter((e) => !activeEventKeys.includes(e))
+
+      setStats({
+        totalTemplates: total,
+        activeTemplates: active,
+        draftTemplates: draft,
+        publishedTemplates: published,
+        archivedTemplates: archived,
+        failedDeliveriesCount: 0,
+        missingActiveEventTypes: missing,
+      })
+    }
+  }
 
   const handleOpenPreview = (t: NotificationTemplateResponse) => {
     setSelectedPreviewTemplate(t)
@@ -64,20 +121,35 @@ export default function EmailTemplatesTab({
     setActiveMenuId(null)
   }
 
-  const handlePublishTemplate = async (t: NotificationTemplateResponse) => {
-    if (!t.subject?.trim() || !(t.templateName || t.name)?.trim()) {
-      alert("Template name and subject line are required before publishing.")
-      return
-    }
-
+  const handleActivateTemplate = async (t: NotificationTemplateResponse) => {
+    setActionLoadingId(t.id)
     try {
-      await emailTemplateApi.publishTemplate(t.id)
-      setToastMessage(`"${t.templateName || t.name}" is now live and published!`)
+      await emailTemplateApi.activateTemplate(t.id)
+      setToastMessage(`"${t.templateName || t.name}" is now ACTIVE for automated emails!`)
+      setTimeout(() => setToastMessage(null), 3500)
+      setActiveMenuId(null)
+      await onReload()
+    } catch (e: any) {
+      alert(e?.message || "Failed to activate template.")
+      await onReload()
+    } finally {
+      setActionLoadingId(null)
+    }
+  }
+
+  const handleDeactivateTemplate = async (t: NotificationTemplateResponse) => {
+    setActionLoadingId(t.id)
+    try {
+      await emailTemplateApi.deactivateTemplate(t.id)
+      setToastMessage(`"${t.templateName || t.name}" is now INACTIVE.`)
       setTimeout(() => setToastMessage(null), 3000)
       setActiveMenuId(null)
       await onReload()
-    } catch {
+    } catch (e: any) {
+      alert(e?.message || "Failed to deactivate template.")
       await onReload()
+    } finally {
+      setActionLoadingId(null)
     }
   }
 
@@ -142,7 +214,7 @@ export default function EmailTemplatesTab({
     const matchesStatus =
       statusFilter === "ALL" ||
       status === statusFilter ||
-      (statusFilter === "PUBLISHED" && status === "ACTIVE")
+      (statusFilter === "PUBLISHED" && (status === "PUBLISHED" || status === "ACTIVE"))
 
     const catInfo = EVENT_TYPE_LABELS[t.eventType || t.notificationType || ""]
     const category = catInfo ? catInfo.category : "NOTIFICATION"
@@ -182,6 +254,7 @@ export default function EmailTemplatesTab({
 
   return (
     <div className="space-y-4">
+      {/* Toast Alert */}
       {toastMessage && (
         <div className="p-3.5 rounded-xl border bg-emerald-50 border-emerald-200 text-emerald-950 text-xs font-bold flex items-center gap-2 animate-in fade-in">
           <FiCheckCircle className="text-emerald-600 shrink-0 text-base" />
@@ -189,7 +262,83 @@ export default function EmailTemplatesTab({
         </div>
       )}
 
-      {/* 1. Toolbar: Search, Filters & Sort */}
+      {/* KPI Overview Cards */}
+      {stats && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-2xs flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center text-lg">
+              <FiFileText />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Templates</p>
+              <p className="text-lg font-black text-slate-900">{stats.totalTemplates}</p>
+            </div>
+          </div>
+
+          <div className="bg-white p-3.5 rounded-2xl border border-emerald-200 shadow-2xs flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center text-lg">
+              <FiZap />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider">Active Live</p>
+              <p className="text-lg font-black text-emerald-950">{stats.activeTemplates}</p>
+            </div>
+          </div>
+
+          <div className="bg-white p-3.5 rounded-2xl border border-amber-200 shadow-2xs flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center text-lg">
+              <FiClock />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-amber-800 uppercase tracking-wider">Draft Templates</p>
+              <p className="text-lg font-black text-amber-950">{stats.draftTemplates}</p>
+            </div>
+          </div>
+
+          <div className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-2xs flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-cyan-50 text-cyan-700 border border-cyan-200 flex items-center justify-center text-lg">
+              <FiActivity />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Failed Delivery Logs</p>
+              <p className="text-lg font-black text-slate-900">{stats.failedDeliveriesCount}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Missing Active Templates Warning Banner */}
+      {stats && stats.missingActiveEventTypes && stats.missingActiveEventTypes.length > 0 && (
+        <div className="p-4 rounded-2xl border bg-amber-50 border-amber-200 text-amber-950 space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <FiAlertTriangle className="text-amber-600 text-lg shrink-0" />
+              <h3 className="text-xs font-black uppercase tracking-wider text-amber-900">
+                Missing Active Templates ({stats.missingActiveEventTypes.length})
+              </h3>
+            </div>
+            <span className="text-[10px] font-semibold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
+              Automated emails for these triggers will be skipped
+            </span>
+          </div>
+          <p className="text-xs text-amber-800">
+            The following system triggers do not have an <strong>ACTIVE</strong> template configured:
+          </p>
+          <div className="flex flex-wrap gap-1.5 pt-1">
+            {stats.missingActiveEventTypes.map((evt) => (
+              <button
+                key={evt}
+                onClick={() => onOpenCreate(evt)}
+                className="px-2.5 py-1 rounded-lg bg-white border border-amber-300 text-amber-900 font-mono font-bold text-[11px] hover:bg-amber-100 transition inline-flex items-center gap-1 cursor-pointer"
+              >
+                <FiPlus className="text-xs" /> {evt}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Toolbar: Search, Filters & Sort */}
       <div className="bg-white border border-slate-200 rounded-2xl p-3.5 shadow-xs flex flex-col md:flex-row items-center justify-between gap-3">
         {/* Search Input */}
         <div className="relative w-full md:w-72">
@@ -214,8 +363,10 @@ export default function EmailTemplatesTab({
               className="bg-transparent text-xs font-bold text-slate-700 focus:outline-none cursor-pointer"
             >
               <option value="ALL">All Statuses</option>
+              <option value="ACTIVE">Active (Live)</option>
               <option value="PUBLISHED">Published</option>
               <option value="DRAFT">Draft</option>
+              <option value="INACTIVE">Inactive</option>
               <option value="ARCHIVED">Archived</option>
             </select>
           </div>
@@ -230,9 +381,10 @@ export default function EmailTemplatesTab({
             >
               <option value="ALL">All Categories</option>
               <option value="REGISTRATION">Registration</option>
-              <option value="ATTENDANCE">Attendance</option>
               <option value="PAYMENT">Payment</option>
+              <option value="ATTENDANCE">Attendance</option>
               <option value="CERTIFICATE">Certificate</option>
+              <option value="VOLUNTEER">Volunteer</option>
               <option value="NOTIFICATION">Notification</option>
             </select>
           </div>
@@ -252,7 +404,7 @@ export default function EmailTemplatesTab({
         </div>
       </div>
 
-      {/* 2. Templates Grid */}
+      {/* Templates Grid */}
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3].map((i) => (
@@ -268,21 +420,20 @@ export default function EmailTemplatesTab({
           ))}
         </div>
       ) : sortedTemplates.length === 0 ? (
-        /* Requirement 7: Clean Empty State */
         <div className="bg-white rounded-2xl p-10 border border-slate-200 text-center shadow-xs space-y-3 max-w-md mx-auto my-6">
           <div className="h-12 w-12 rounded-2xl bg-cyan-50 text-cyan-700 flex items-center justify-center mx-auto text-2xl">
             <FiMail />
           </div>
           <div className="space-y-1">
             <h3 className="text-sm font-extrabold text-slate-900">
-              No email templates created yet.
+              No email templates found.
             </h3>
             <p className="text-xs text-slate-500 max-w-xs mx-auto">
               Create your first reusable template for automated communication.
             </p>
           </div>
           <button
-            onClick={onOpenCreate}
+            onClick={() => onOpenCreate()}
             className="px-5 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold uppercase tracking-wider shadow-sm transition inline-flex items-center gap-1.5 cursor-pointer"
           >
             <FiPlus className="text-sm" /> Create Template
@@ -292,7 +443,7 @@ export default function EmailTemplatesTab({
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4.5">
           {sortedTemplates.map((t) => {
             const status = ((t.status as any) || "DRAFT").toUpperCase()
-            const eventTypeKey = t.eventType || t.notificationType || "ATTENDANCE_QR_GENERATED"
+            const eventTypeKey = (t.eventType || t.notificationType || "ATTENDANCE_QR_GENERATED").toUpperCase()
             const catInfo = EVENT_TYPE_LABELS[eventTypeKey]
             const categoryBadge = catInfo ? catInfo.category : "NOTIFICATION"
             const templateTitle = t.templateName || t.name || "Email Template"
@@ -303,17 +454,22 @@ export default function EmailTemplatesTab({
                 ? t.variables
                 : typeof t.variables === "string"
                 ? (t.variables as string).split(",")
-                : ["studentName", "studentId", "sessionName"])
+                : ["studentName", "studentId"])
 
             const variables = rawVars.filter((v: string) => v && v.trim().length > 0)
             const isExpanded = Boolean(expandedVariables[t.id])
             const visibleVars = isExpanded ? variables : variables.slice(0, 3)
             const hiddenCount = variables.length - 3
+            const isLoadingThis = actionLoadingId === t.id
 
             return (
               <div
                 key={t.id}
-                className="bg-white rounded-2xl p-4.5 border border-slate-200 shadow-xs flex flex-col justify-between space-y-3.5 hover:border-slate-300 hover:shadow-md transition group relative"
+                className={`bg-white rounded-2xl p-4.5 border shadow-xs flex flex-col justify-between space-y-3.5 hover:shadow-md transition group relative ${
+                  status === "ACTIVE"
+                    ? "border-emerald-300 ring-2 ring-emerald-500/10"
+                    : "border-slate-200 hover:border-slate-300"
+                }`}
               >
                 {/* Top Section */}
                 <div className="space-y-2.5">
@@ -324,24 +480,32 @@ export default function EmailTemplatesTab({
                     </span>
 
                     <span
-                      className={`text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md border ${
-                        status === "PUBLISHED" || status === "ACTIVE"
-                          ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                      className={`text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md border flex items-center gap-1 ${
+                        status === "ACTIVE"
+                          ? "bg-emerald-50 text-emerald-800 border-emerald-300 font-black"
+                          : status === "PUBLISHED"
+                          ? "bg-blue-50 text-blue-800 border-blue-200"
                           : status === "ARCHIVED"
                           ? "bg-rose-50 text-rose-800 border-rose-200"
+                          : status === "INACTIVE"
+                          ? "bg-slate-100 text-slate-600 border-slate-200"
                           : "bg-amber-50 text-amber-800 border-amber-200"
                       }`}
                     >
-                      {status === "ACTIVE" ? "PUBLISHED" : status}
+                      {status === "ACTIVE" && <FiZap className="text-emerald-600 text-xs" />}
+                      {status}
                     </span>
                   </div>
 
-                  {/* Template Name & Subject */}
+                  {/* Template Name & Event Mapping */}
                   <div>
                     <h2 className="text-sm font-black text-slate-900 group-hover:text-cyan-700 transition truncate">
                       {templateTitle}
                     </h2>
-                    <p className="text-xs text-slate-500 font-mono truncate mt-0.5">
+                    <p className="text-[11px] font-mono text-cyan-800 font-bold mt-0.5 truncate">
+                      Event: {eventTypeKey}
+                    </p>
+                    <p className="text-xs text-slate-500 truncate mt-0.5">
                       Subject: &quot;{t.subject || "No subject set"}&quot;
                     </p>
                   </div>
@@ -394,67 +558,82 @@ export default function EmailTemplatesTab({
 
                 {/* Actions Bar */}
                 <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5">
+                    {status === "ACTIVE" ? (
+                      <button
+                        type="button"
+                        disabled={isLoadingThis}
+                        onClick={() => handleDeactivateTemplate(t)}
+                        className="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition inline-flex items-center gap-1 cursor-pointer border border-slate-200"
+                      >
+                        <FiPower className="text-xs text-slate-500" /> Deactivate
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={isLoadingThis}
+                        onClick={() => handleActivateTemplate(t)}
+                        className="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition inline-flex items-center gap-1 shadow-2xs cursor-pointer"
+                      >
+                        <FiZap className="text-xs" /> Activate
+                      </button>
+                    )}
+
                     <button
                       type="button"
                       onClick={() => onOpenEdit(t)}
-                      className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition inline-flex items-center gap-1 shadow-2xs cursor-pointer"
+                      className="px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition inline-flex items-center gap-1 shadow-2xs cursor-pointer"
                     >
                       <FiEdit3 className="text-xs" /> Edit
                     </button>
+                  </div>
+
+                  <div className="flex items-center gap-1">
                     <button
                       type="button"
                       onClick={() => handleOpenPreview(t)}
-                      className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition inline-flex items-center gap-1 border border-slate-200 cursor-pointer"
+                      className="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition border border-slate-200 cursor-pointer"
+                      title="Preview Template"
                     >
-                      <FiEye className="text-xs" /> Preview
-                    </button>
-                  </div>
-
-                  {/* More Menu Dropdown */}
-                  <div className="relative">
-                    <button
-                      type="button"
-                      onClick={() => setActiveMenuId(activeMenuId === t.id ? null : t.id)}
-                      className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
-                    >
-                      <FiMoreVertical className="text-sm" />
+                      <FiEye className="text-sm" />
                     </button>
 
-                    {activeMenuId === t.id && (
-                      <div className="absolute right-0 bottom-8 z-30 w-40 bg-white rounded-xl shadow-xl border border-slate-200 py-1 text-xs animate-in zoom-in-95 duration-150">
-                        {status === "DRAFT" && (
+                    {/* More Menu Dropdown */}
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setActiveMenuId(activeMenuId === t.id ? null : t.id)}
+                        className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+                      >
+                        <FiMoreVertical className="text-sm" />
+                      </button>
+
+                      {activeMenuId === t.id && (
+                        <div className="absolute right-0 bottom-8 z-30 w-44 bg-white rounded-xl shadow-xl border border-slate-200 py-1 text-xs animate-in zoom-in-95 duration-150">
                           <button
                             type="button"
-                            onClick={() => handlePublishTemplate(t)}
-                            className="w-full text-left px-3 py-1.5 hover:bg-emerald-50 text-emerald-800 font-bold flex items-center gap-2 cursor-pointer"
+                            onClick={() => handleDuplicateTemplate(t)}
+                            className="w-full text-left px-3 py-1.5 hover:bg-slate-50 text-slate-700 font-semibold flex items-center gap-2 cursor-pointer"
                           >
-                            <FiCheck className="text-xs" /> Publish
+                            <FiCopy className="text-xs" /> Duplicate
                           </button>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => handleDuplicateTemplate(t)}
-                          className="w-full text-left px-3 py-1.5 hover:bg-slate-50 text-slate-700 font-semibold flex items-center gap-2 cursor-pointer"
-                        >
-                          <FiCopy className="text-xs" /> Duplicate
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleArchiveTemplate(t.id)}
-                          className="w-full text-left px-3 py-1.5 hover:bg-amber-50 text-amber-800 font-semibold flex items-center gap-2 cursor-pointer"
-                        >
-                          <FiArchive className="text-xs" /> Archive
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteTemplate(t.id)}
-                          className="w-full text-left px-3 py-1.5 hover:bg-rose-50 text-rose-700 font-semibold flex items-center gap-2 cursor-pointer border-t border-slate-100"
-                        >
-                          <FiTrash2 className="text-xs" /> Delete
-                        </button>
-                      </div>
-                    )}
+                          <button
+                            type="button"
+                            onClick={() => handleArchiveTemplate(t.id)}
+                            className="w-full text-left px-3 py-1.5 hover:bg-amber-50 text-amber-800 font-semibold flex items-center gap-2 cursor-pointer"
+                          >
+                            <FiArchive className="text-xs" /> Archive
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteTemplate(t.id)}
+                            className="w-full text-left px-3 py-1.5 hover:bg-rose-50 text-rose-700 font-semibold flex items-center gap-2 cursor-pointer border-t border-slate-100"
+                          >
+                            <FiTrash2 className="text-xs" /> Delete
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>

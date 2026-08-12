@@ -5,6 +5,7 @@ import {
   UpdateNotificationTemplateRequest,
   SendTestEmailRequest,
   EmailVariable,
+  NotificationTemplateStats,
 } from "@/features/notifications/types"
 import { EMAIL_VARIABLES } from "@/features/notifications/constants/emailVariables"
 import { AdminStudentListItem } from "@/features/students/services/studentApi"
@@ -44,7 +45,7 @@ export interface EmailLogItem {
   templateId?: string
   templateName?: string
   recipient: string
-  status: "PENDING" | "SENT" | "FAILED"
+  status: "PENDING" | "SENT" | "FAILED" | "SKIPPED_NO_TEMPLATE"
   sentAt: string
   errorMessage?: string
   createdAt?: string
@@ -64,12 +65,18 @@ export interface CreateEmailOperationPayload {
 export const emailTemplateApi = {
   getAllTemplates: () => apiClient.get<NotificationTemplateResponse[]>("/api/v1/admin/email-templates"),
   getTemplateById: (id: string) => apiClient.get<NotificationTemplateResponse>(`/api/v1/admin/email-templates/${id}`),
+  getTemplateStats: () => apiClient.get<NotificationTemplateStats>("/api/v1/admin/email-templates/stats"),
+  getMissingActiveEvents: () => apiClient.get<string[]>("/api/v1/admin/email-templates/missing-active"),
   createTemplate: (data: CreateNotificationTemplateRequest) =>
     apiClient.post<NotificationTemplateResponse>("/api/v1/admin/email-templates", data),
   updateTemplate: (id: string, data: UpdateNotificationTemplateRequest) =>
     apiClient.put<NotificationTemplateResponse>(`/api/v1/admin/email-templates/${id}`, data),
   publishTemplate: (id: string) =>
     apiClient.post<NotificationTemplateResponse>(`/api/v1/admin/email-templates/${id}/publish`),
+  activateTemplate: (id: string) =>
+    apiClient.post<NotificationTemplateResponse>(`/api/v1/admin/email-templates/${id}/activate`),
+  deactivateTemplate: (id: string) =>
+    apiClient.post<NotificationTemplateResponse>(`/api/v1/admin/email-templates/${id}/deactivate`),
   archiveTemplate: (id: string) =>
     apiClient.post<NotificationTemplateResponse>(`/api/v1/admin/email-templates/${id}/archive`),
   duplicateTemplate: (id: string) =>
