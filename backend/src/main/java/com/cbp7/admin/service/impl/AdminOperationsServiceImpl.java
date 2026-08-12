@@ -47,95 +47,26 @@ public class AdminOperationsServiceImpl implements AdminOperationsService {
 
     @Override
     public AdminOperationsOverviewResponse getOverview() {
-        // 1. Core Counts
         List<CbpRegistration> registrations = cbpRegistrationRepository.findAll();
-        long registeredCount = registrations.size();
-
         List<Payment> payments = paymentRepository.findAll();
-        long paidCount = payments.stream().filter(p -> p.getPaymentStatus() == PaymentStatus.SUCCESS).count();
-        long pendingPaymentCount = payments.stream().filter(p -> p.getPaymentStatus() == PaymentStatus.PENDING).count();
-        long failedPaymentCount = payments.stream().filter(p -> p.getPaymentStatus() == PaymentStatus.FAILED).count();
-
         List<AttendanceSession> allSessions = sessionRepository.findAllByOrderByDayNumberAsc();
+
+        long registeredCount = registrations.size();
+        long paidCount = countPaymentsWithStatus(payments, PaymentStatus.SUCCESS);
+        long pendingPaymentCount = countPaymentsWithStatus(payments, PaymentStatus.PENDING);
+        long failedPaymentCount = countPaymentsWithStatus(payments, PaymentStatus.FAILED);
         long sessionsConfiguredCount = allSessions.size();
 
-        // 2. Active / Today's Attendance
-        long totalRegisteredStudents = userRepository.countByRole(Role.ROLE_STUDENT);
-        if (totalRegisteredStudents == 0) {
-            totalRegisteredStudents = Math.max(1, registeredCount);
-        }
+        AttendanceSession activeSession = findActiveSession();
+        AttendanceSession targetSession = determineTargetSession(allSessions, activeSession);
+        long totalRegisteredStudents = determineTotalStudentCount(registeredCount);
 
-        List<AttendanceSession> activeSessions = sessionRepository.findByStatus(SessionStatus.ACTIVE);
-        AttendanceSession activeSession = activeSessions.isEmpty() ? null : activeSessions.get(0);
-        AttendanceSession targetSession = activeSession;
+        AttendanceMetrics attendanceMetrics = calculateAttendanceMetrics(targetSession, totalRegisteredStudents);
+        CertificateMetrics certificateMetrics = calculateCertificateMetrics(registrations, sessionsConfiguredCount);
 
-        if (targetSession == null) {
-            List<AttendanceSession> nonUpcoming = allSessions.stream()
-                    .filter(s -> s.getStatus() == SessionStatus.COMPLETED || s.getStatus() == SessionStatus.CLOSED)
-                    .toList();
-            if (!nonUpcoming.isEmpty()) {
-                targetSession = nonUpcoming.get(nonUpcoming.size() - 1);
-            }
-        }
+        SessionDisplayDetails currentSession = buildCurrentSessionDetails(activeSession);
+        SessionDisplayDetails upcomingSession = buildUpcomingSessionDetails(allSessions, activeSession);
 
-        long attendancePresentCount = 0;
-        long attendanceAbsentCount = 0;
-        double attendancePercentage = 0.0;
-
-        if (targetSession != null) {
-            attendancePresentCount = attendanceRecordRepository.countBySessionIdAndStatus(targetSession.getId(), AttendanceStatus.PRESENT);
-            attendanceAbsentCount = attendanceCalculator.calculateAbsentCount(totalRegisteredStudents, attendancePresentCount);
-            attendancePercentage = attendanceCalculator.calculatePercentage(attendancePresentCount, totalRegisteredStudents);
-        }
-
-        // 3. Certificates stats
-        long totalSessions = sessionsConfiguredCount;
-        long certificatesEligibleCount = registrations.stream()
-                .filter(reg -> {
-                    boolean paid = (reg.getRegistrationStatus() == RegistrationStatus.REGISTERED)
-                            || paymentRepository.existsByRegistrationIdAndPaymentStatus(reg.getId(), PaymentStatus.SUCCESS);
-                    if (!paid) return false;
-
-                    if (totalSessions == 0) return false;
-
-                    long attended = attendanceRecordRepository.countByStudentIdAndStatus(
-                            reg.getStudentId(), AttendanceStatus.PRESENT
-                    );
-                    double pct = ((double) attended / totalSessions) * 100.0;
-                    return pct >= 75.0;
-                })
-                .count();
-
-        List<Certificate> certificates = certificateRepository.findAll();
-        long certificatesGeneratedCount = certificates.size();
-        long certificatesPublishedCount = certificates.stream()
-                .filter(c -> c.getStatus() == CertificateStatus.PUBLISHED)
-                .count();
-
-        // 4. Current Session Details
-        UUID currentSessionId = activeSession != null ? activeSession.getId() : null;
-        String currentSessionTitle = activeSession != null ? activeSession.getTitle() : "No Active Session";
-        Integer currentSessionDay = activeSession != null ? activeSession.getDayNumber() : null;
-        String currentSessionTime = activeSession != null ? formatSessionTime(activeSession.getStartTime(), activeSession.getEndTime()) : null;
-        String currentSessionStatus = activeSession != null ? activeSession.getStatus().name() : null;
-
-        // 5. Upcoming Session Details
-        AttendanceSession upcomingSession = null;
-        if (activeSession != null) {
-            upcomingSession = allSessions.stream()
-                    .filter(s -> s.getDayNumber() > activeSession.getDayNumber() && s.getStatus() == SessionStatus.UPCOMING)
-                    .findFirst().orElse(null);
-        } else {
-            upcomingSession = allSessions.stream()
-                    .filter(s -> s.getStatus() == SessionStatus.UPCOMING)
-                    .findFirst().orElse(null);
-        }
-
-        String upcomingSessionTitle = upcomingSession != null ? upcomingSession.getTitle() : "No Upcoming Session";
-        Integer upcomingSessionDay = upcomingSession != null ? upcomingSession.getDayNumber() : null;
-        String upcomingSessionTime = upcomingSession != null ? formatSessionTime(upcomingSession.getStartTime(), upcomingSession.getEndTime()) : null;
-
-        // 6. Readiness Checks
         boolean registrationOpen = readinessEvaluator.isRegistrationOpen(registeredCount);
         boolean paymentGatewayActive = readinessEvaluator.isPaymentGatewayActive(paidCount, pendingPaymentCount);
         boolean sessionsConfigured = readinessEvaluator.isSessionsConfigured(sessionsConfiguredCount);
@@ -155,20 +86,110 @@ public class AdminOperationsServiceImpl implements AdminOperationsService {
                 pendingPaymentCount,
                 failedPaymentCount,
                 sessionsConfiguredCount,
-                attendancePresentCount,
-                attendanceAbsentCount,
-                attendancePercentage,
-                certificatesEligibleCount,
-                certificatesGeneratedCount,
-                certificatesPublishedCount,
-                currentSessionId,
-                currentSessionTitle,
-                currentSessionDay,
-                currentSessionTime,
-                currentSessionStatus,
-                upcomingSessionTitle,
-                upcomingSessionDay,
-                upcomingSessionTime
+                attendanceMetrics.presentCount(),
+                attendanceMetrics.absentCount(),
+                attendanceMetrics.attendancePercentage(),
+                certificateMetrics.eligibleCount(),
+                certificateMetrics.generatedCount(),
+                certificateMetrics.publishedCount(),
+                currentSession.sessionId(),
+                currentSession.title(),
+                currentSession.dayNumber(),
+                currentSession.formattedTime(),
+                currentSession.status(),
+                upcomingSession.title(),
+                upcomingSession.dayNumber(),
+                upcomingSession.formattedTime()
+        );
+    }
+
+    // --- Private Story Helper Methods ---
+
+    private long countPaymentsWithStatus(List<Payment> payments, PaymentStatus status) {
+        return payments.stream().filter(p -> p.getPaymentStatus() == status).count();
+    }
+
+    private AttendanceSession findActiveSession() {
+        List<AttendanceSession> activeSessions = sessionRepository.findByStatus(SessionStatus.ACTIVE);
+        return activeSessions.isEmpty() ? null : activeSessions.get(0);
+    }
+
+    private AttendanceSession determineTargetSession(List<AttendanceSession> allSessions, AttendanceSession activeSession) {
+        if (activeSession != null) {
+            return activeSession;
+        }
+        List<AttendanceSession> nonUpcoming = allSessions.stream()
+                .filter(s -> s.getStatus() == SessionStatus.COMPLETED || s.getStatus() == SessionStatus.CLOSED)
+                .toList();
+        return nonUpcoming.isEmpty() ? null : nonUpcoming.get(nonUpcoming.size() - 1);
+    }
+
+    private long determineTotalStudentCount(long registeredCount) {
+        long studentCount = userRepository.countByRole(Role.ROLE_STUDENT);
+        return studentCount > 0 ? studentCount : Math.max(1, registeredCount);
+    }
+
+    private AttendanceMetrics calculateAttendanceMetrics(AttendanceSession targetSession, long totalStudents) {
+        if (targetSession == null) {
+            return new AttendanceMetrics(0, 0, 0.0);
+        }
+        long present = attendanceRecordRepository.countBySessionIdAndStatus(targetSession.getId(), AttendanceStatus.PRESENT);
+        long absent = attendanceCalculator.calculateAbsentCount(totalStudents, present);
+        double percentage = attendanceCalculator.calculatePercentage(present, totalStudents);
+        return new AttendanceMetrics(present, absent, percentage);
+    }
+
+    private CertificateMetrics calculateCertificateMetrics(List<CbpRegistration> registrations, long totalSessions) {
+        long eligible = totalSessions == 0 ? 0 : registrations.stream()
+                .filter(reg -> isEligibleForCertificate(reg, totalSessions))
+                .count();
+
+        List<Certificate> certificates = certificateRepository.findAll();
+        long generated = certificates.size();
+        long published = certificates.stream().filter(c -> c.getStatus() == CertificateStatus.PUBLISHED).count();
+
+        return new CertificateMetrics(eligible, generated, published);
+    }
+
+    private boolean isEligibleForCertificate(CbpRegistration reg, long totalSessions) {
+        boolean isPaid = reg.getRegistrationStatus() == RegistrationStatus.REGISTERED
+                || paymentRepository.existsByRegistrationIdAndPaymentStatus(reg.getId(), PaymentStatus.SUCCESS);
+        if (!isPaid) {
+            return false;
+        }
+
+        long attended = attendanceRecordRepository.countByStudentIdAndStatus(reg.getStudentId(), AttendanceStatus.PRESENT);
+        double pct = ((double) attended / totalSessions) * 100.0;
+        return pct >= 75.0;
+    }
+
+    private SessionDisplayDetails buildCurrentSessionDetails(AttendanceSession activeSession) {
+        if (activeSession == null) {
+            return new SessionDisplayDetails(null, "No Active Session", null, null, null);
+        }
+        return new SessionDisplayDetails(
+                activeSession.getId(),
+                activeSession.getTitle(),
+                activeSession.getDayNumber(),
+                formatSessionTime(activeSession.getStartTime(), activeSession.getEndTime()),
+                activeSession.getStatus().name()
+        );
+    }
+
+    private SessionDisplayDetails buildUpcomingSessionDetails(List<AttendanceSession> allSessions, AttendanceSession activeSession) {
+        AttendanceSession upcoming = activeSession != null
+                ? allSessions.stream().filter(s -> s.getDayNumber() > activeSession.getDayNumber() && s.getStatus() == SessionStatus.UPCOMING).findFirst().orElse(null)
+                : allSessions.stream().filter(s -> s.getStatus() == SessionStatus.UPCOMING).findFirst().orElse(null);
+
+        if (upcoming == null) {
+            return new SessionDisplayDetails(null, "No Upcoming Session", null, null, null);
+        }
+        return new SessionDisplayDetails(
+                upcoming.getId(),
+                upcoming.getTitle(),
+                upcoming.getDayNumber(),
+                formatSessionTime(upcoming.getStartTime(), upcoming.getEndTime()),
+                upcoming.getStatus().name()
         );
     }
 
@@ -177,4 +198,8 @@ public class AdminOperationsServiceImpl implements AdminOperationsService {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("hh:mm a");
         return start.format(formatter) + " - " + end.format(formatter);
     }
+
+    private record AttendanceMetrics(long presentCount, long absentCount, double attendancePercentage) {}
+    private record CertificateMetrics(long eligibleCount, long generatedCount, long publishedCount) {}
+    private record SessionDisplayDetails(UUID sessionId, String title, Integer dayNumber, String formattedTime, String status) {}
 }

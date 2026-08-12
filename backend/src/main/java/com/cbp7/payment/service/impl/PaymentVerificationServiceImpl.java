@@ -37,29 +37,21 @@ public class PaymentVerificationServiceImpl implements PaymentVerificationServic
     @Override
     @Transactional
     public Payment verifyPaymentStatus(String transactionId) {
-        Payment payment = paymentRepository.findByTransactionIdWithLock(transactionId)
-                .orElseThrow(() -> new ResourceNotFoundException("Payment record not found for transaction: " + transactionId));
+        Payment payment = fetchLockedPayment(transactionId);
 
-        // Idempotency: If already SUCCESS, do not query the gateway or downgrade
         if (payment.getPaymentStatus() == PaymentStatus.SUCCESS) {
             log.info("Payment for transaction {} is already SUCCESS. Skipping gateway query.", transactionId);
             return payment;
         }
 
-        // Query PhonePe status API
         PhonePeStatusResponse statusResponse = paymentGateway.checkPaymentStatus(transactionId);
+        PaymentStatus resolvedStatus = resolveStatusFromGateway(statusResponse);
 
-        String code = statusResponse.code();
-        String state = statusResponse.state();
-
-        if ("PAYMENT_SUCCESS".equals(code) || "COMPLETED".equalsIgnoreCase(state)) {
-            updatePaymentStatus(payment, PaymentStatus.SUCCESS);
-            log.info("Payment transaction {} verified successfully as SUCCESS.", transactionId);
-        } else if ("FAILED".equalsIgnoreCase(state) || "PAYMENT_ERROR".equals(code)) {
-            updatePaymentStatus(payment, PaymentStatus.FAILED);
-            log.info("Payment transaction {} verified as FAILED.", transactionId);
+        if (resolvedStatus != null) {
+            updatePaymentStatus(payment, resolvedStatus);
+            log.info("Payment transaction {} verified as {}.", transactionId, resolvedStatus);
         } else {
-            log.info("Payment transaction {} is still PENDING at gateway.", transactionId);
+            log.info("Payment transaction {} remains PENDING at gateway.", transactionId);
         }
 
         return payment;
@@ -93,12 +85,7 @@ public class PaymentVerificationServiceImpl implements PaymentVerificationServic
         payment.setPaymentStatus(PaymentStatus.SUCCESS);
         paymentRepository.save(payment);
 
-        // Update CBP registration state
-        CbpRegistration registration = cbpRegistrationRepository.findById(payment.getRegistrationId())
-                .orElseThrow(() -> new ResourceNotFoundException("CBP registration not found for ID: " + payment.getRegistrationId()));
-        registration.setRegistrationStatus(RegistrationStatus.REGISTERED);
-        cbpRegistrationRepository.save(registration);
-
+        markRegistrationAsRegistered(payment.getRegistrationId());
         publishPaymentSuccessEvent(payment);
     }
 
@@ -108,9 +95,7 @@ public class PaymentVerificationServiceImpl implements PaymentVerificationServic
         paymentValidator.validateCallbackHeaders(authorization, rawRequestBody);
 
         CallbackResponse callbackResponse = paymentGateway.validateCallback(authorization, rawRequestBody);
-        if (callbackResponse == null || callbackResponse.getPayload() == null) {
-            throw new PhonePeBadRequestException("Invalid callback payload");
-        }
+        validateCallbackPayload(callbackResponse);
 
         String merchantOrderId = callbackResponse.getPayload().getOrderId();
         String state = callbackResponse.getPayload().getState();
@@ -118,19 +103,52 @@ public class PaymentVerificationServiceImpl implements PaymentVerificationServic
         log.info("PHONEPE_WEBHOOK_RECEIVED\ntransactionId={}\nstate={}", merchantOrderId, state);
         log.info("Processing callback for Order ID: {}, State: {}", merchantOrderId, state);
 
-        Payment payment = paymentRepository.findByTransactionIdWithLock(merchantOrderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Payment record not found for transaction: " + merchantOrderId));
+        Payment payment = fetchLockedPayment(merchantOrderId);
+        PaymentStatus newStatus = mapCallbackStateToPaymentStatus(state);
+        updatePaymentStatus(payment, newStatus);
+    }
 
-        if ("COMPLETED".equalsIgnoreCase(state)) {
-            updatePaymentStatus(payment, PaymentStatus.SUCCESS);
-            log.info("Payment transaction {} updated as SUCCESS via webhook callback.", merchantOrderId);
-        } else if ("FAILED".equalsIgnoreCase(state)) {
-            updatePaymentStatus(payment, PaymentStatus.FAILED);
-            log.info("Payment transaction {} updated as FAILED via webhook callback.", merchantOrderId);
-        } else {
-            updatePaymentStatus(payment, PaymentStatus.PENDING);
-            log.info("Payment transaction {} remains PENDING via webhook callback.", merchantOrderId);
+    // --- Private Story Helper Methods ---
+
+    private Payment fetchLockedPayment(String transactionId) {
+        return paymentRepository.findByTransactionIdWithLock(transactionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Payment record not found for transaction: " + transactionId));
+    }
+
+    private PaymentStatus resolveStatusFromGateway(PhonePeStatusResponse statusResponse) {
+        String code = statusResponse.code();
+        String state = statusResponse.state();
+
+        if ("PAYMENT_SUCCESS".equals(code) || "COMPLETED".equalsIgnoreCase(state)) {
+            return PaymentStatus.SUCCESS;
         }
+        if ("FAILED".equalsIgnoreCase(state) || "PAYMENT_ERROR".equals(code)) {
+            return PaymentStatus.FAILED;
+        }
+        return null;
+    }
+
+    private PaymentStatus mapCallbackStateToPaymentStatus(String state) {
+        if ("COMPLETED".equalsIgnoreCase(state)) {
+            return PaymentStatus.SUCCESS;
+        }
+        if ("FAILED".equalsIgnoreCase(state)) {
+            return PaymentStatus.FAILED;
+        }
+        return PaymentStatus.PENDING;
+    }
+
+    private void validateCallbackPayload(CallbackResponse callbackResponse) {
+        if (callbackResponse == null || callbackResponse.getPayload() == null) {
+            throw new PhonePeBadRequestException("Invalid callback payload");
+        }
+    }
+
+    private void markRegistrationAsRegistered(java.util.UUID registrationId) {
+        CbpRegistration registration = cbpRegistrationRepository.findById(registrationId)
+                .orElseThrow(() -> new ResourceNotFoundException("CBP registration not found for ID: " + registrationId));
+        registration.setRegistrationStatus(RegistrationStatus.REGISTERED);
+        cbpRegistrationRepository.save(registration);
     }
 
     private void publishPaymentSuccessEvent(Payment payment) {

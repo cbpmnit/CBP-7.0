@@ -78,73 +78,20 @@ public class EmailOperationServiceImpl implements EmailOperationService {
     public EmailOperationDto executeOperation(CreateEmailOperationRequest request, String adminStudentId) {
         log.info("Executing Email Operation: '{}' with recipientType: {}", request.name(), request.recipientType());
 
-        NotificationTemplate template = notificationTemplateRepository.findById(request.templateId())
-                .orElseThrow(() -> new ResourceNotFoundException("Template not found with id: " + request.templateId()));
-
+        NotificationTemplate template = fetchTemplateById(request.templateId());
         List<String> targetRecipients = recipientResolver.resolveRecipients(request);
 
-        EmailOperation operation = EmailOperation.builder()
-                .name(request.name())
-                .templateId(request.templateId())
-                .recipientType(request.recipientType())
-                .filters(request.filters())
-                .status("IN_PROGRESS")
-                .triggerType(request.triggerType() != null ? request.triggerType() : "MANUAL")
-                .totalRecipients(targetRecipients.size())
-                .sentCount(0)
-                .failedCount(0)
-                .scheduledAt(request.scheduledAt())
-                .executedAt(LocalDateTime.now())
-                .createdBy(adminStudentId != null ? adminStudentId : "SYSTEM")
-                .build();
-
+        EmailOperation operation = initializeOperation(request, targetRecipients.size(), adminStudentId);
         operation = emailOperationRepository.save(operation);
 
-        int sent = 0;
-        int failed = 0;
+        DispatchResult result = dispatchEmailsToRecipients(operation, template, targetRecipients, request.sampleData());
 
-        Map<String, String> baseVars = request.sampleData() != null ? new HashMap<>(request.sampleData()) : new HashMap<>();
-
-        for (String recipientEmail : targetRecipients) {
-            Map<String, String> studentVars = new HashMap<>(baseVars);
-            studentVars.put("email", recipientEmail);
-
-            try {
-                String processedSubject = templateProcessorService.processTemplate(template.getSubject(), studentVars);
-                String processedBody = templateProcessorService.processTemplate(template.getContent(), studentVars);
-
-                emailSender.sendEmail(recipientEmail, processedSubject, processedBody);
-
-                emailLogRepository.save(EmailLog.builder()
-                        .operationId(operation.getId())
-                        .templateId(template.getId())
-                        .templateName(template.getName())
-                        .recipient(recipientEmail)
-                        .status("SENT")
-                        .sentAt(LocalDateTime.now())
-                        .build());
-
-                sent++;
-            } catch (Exception e) {
-                log.error("Failed to send email to {}", recipientEmail, e);
-                emailLogRepository.save(EmailLog.builder()
-                        .operationId(operation.getId())
-                        .templateId(template.getId())
-                        .templateName(template.getName())
-                        .recipient(recipientEmail)
-                        .status("FAILED")
-                        .errorMessage(e.getMessage() != null ? e.getMessage() : "Unknown delivery failure")
-                        .sentAt(LocalDateTime.now())
-                        .build());
-                failed++;
-            }
-        }
-
-        operation.setStatus(failed == 0 ? "COMPLETED" : (sent == 0 ? "FAILED" : "COMPLETED_WITH_ERRORS"));
-        operation.setSentCount(sent);
-        operation.setFailedCount(failed);
+        operation.setStatus(determineFinalStatus(result.sentCount(), result.failedCount()));
+        operation.setSentCount(result.sentCount());
+        operation.setFailedCount(result.failedCount());
 
         EmailOperation updated = emailOperationRepository.save(operation);
+        
         return notificationMapper.toOperationDto(updated);
     }
 
@@ -154,4 +101,92 @@ public class EmailOperationServiceImpl implements EmailOperationService {
         List<EmailLog> allLogs = emailLogRepository.findAll();
         return csvExporter.exportEmailLogsCsv(allLogs);
     }
+
+    // --- Private Story Helper Methods ---
+
+    private NotificationTemplate fetchTemplateById(UUID templateId) {
+        return notificationTemplateRepository.findById(templateId)
+                .orElseThrow(() -> new ResourceNotFoundException("Template not found with id: " + templateId));
+    }
+
+    private EmailOperation initializeOperation(CreateEmailOperationRequest request, int totalRecipients, String adminStudentId) {
+        return EmailOperation.builder()
+                .name(request.name())
+                .templateId(request.templateId())
+                .recipientType(request.recipientType())
+                .filters(request.filters())
+                .status("IN_PROGRESS")
+                .triggerType(request.triggerType() != null ? request.triggerType() : "MANUAL")
+                .totalRecipients(totalRecipients)
+                .sentCount(0)
+                .failedCount(0)
+                .scheduledAt(request.scheduledAt())
+                .executedAt(LocalDateTime.now())
+                .createdBy(adminStudentId != null ? adminStudentId : "SYSTEM")
+                .build();
+    }
+
+    private DispatchResult dispatchEmailsToRecipients(
+            EmailOperation operation, NotificationTemplate template, List<String> targetRecipients, Map<String, String> sampleData
+    ) {
+        int sent = 0;
+        int failed = 0;
+        Map<String, String> baseVars = sampleData != null ? new HashMap<>(sampleData) : new HashMap<>();
+
+        for (String recipientEmail : targetRecipients) {
+            boolean success = dispatchSingleEmail(operation, template, recipientEmail, baseVars);
+            if (success) {
+                sent++;
+            } else {
+                failed++;
+            }
+        }
+        return new DispatchResult(sent, failed);
+    }
+
+    private boolean dispatchSingleEmail(
+            EmailOperation operation, NotificationTemplate template, String recipientEmail, Map<String, String> baseVars
+    ) {
+        Map<String, String> studentVars = new HashMap<>(baseVars);
+        studentVars.put("email", recipientEmail);
+
+        try {
+            String processedSubject = templateProcessorService.processTemplate(template.getSubject(), studentVars);
+            String processedBody = templateProcessorService.processTemplate(template.getContent(), studentVars);
+
+            emailSender.sendEmail(recipientEmail, processedSubject, processedBody);
+            logEmailDelivery(operation.getId(), template, recipientEmail, "SENT", null);
+            return true;
+        } catch (Exception e) {
+            log.error("Failed to send email to {}", recipientEmail, e);
+            String errorMessage = e.getMessage() != null ? e.getMessage() : "Unknown delivery failure";
+            logEmailDelivery(operation.getId(), template, recipientEmail, "FAILED", errorMessage);
+            return false;
+        }
+    }
+
+    private void logEmailDelivery(UUID operationId, NotificationTemplate template, String recipient, String status, String errorMessage) {
+        EmailLog logEntry = EmailLog.builder()
+                .operationId(operationId)
+                .templateId(template.getId())
+                .templateName(template.getName())
+                .recipient(recipient)
+                .status(status)
+                .errorMessage(errorMessage)
+                .sentAt(LocalDateTime.now())
+                .build();
+        emailLogRepository.save(logEntry);
+    }
+
+    private String determineFinalStatus(int sentCount, int failedCount) {
+        if (failedCount == 0) {
+            return "COMPLETED";
+        }
+        if (sentCount == 0) {
+            return "FAILED";
+        }
+        return "COMPLETED_WITH_ERRORS";
+    }
+
+    private record DispatchResult(int sentCount, int failedCount) {}
 }

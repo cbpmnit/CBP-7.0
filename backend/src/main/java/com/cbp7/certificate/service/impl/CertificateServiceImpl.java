@@ -5,6 +5,7 @@ import com.cbp7.attendance.record.service.AttendanceQueryService;
 import com.cbp7.auth.entity.User;
 import com.cbp7.auth.repository.UserRepository;
 import com.cbp7.cbp.entity.CbpRegistration;
+import com.cbp7.cbp.enums.RegistrationStatus;
 import com.cbp7.cbp.repository.CbpRegistrationRepository;
 import com.cbp7.certificate.calculator.CertificateEligibilityCalculator;
 import com.cbp7.certificate.dto.common.CertificateTemplateDto;
@@ -66,14 +67,14 @@ public class CertificateServiceImpl implements CertificateService {
 
         CertificateTemplateDto activeTemplate = certificateTemplateService.getActivePublishedTemplate();
 
-        if (certificateRepository.existsByStudentIdAndCertificateType(studentId, CertificateType.PARTICIPATION)) {
-            Certificate existing = certificateRepository.findByStudentIdAndCertificateType(studentId, CertificateType.PARTICIPATION)
-                    .orElseThrow();
-            if (existing.getTemplateId() == null && activeTemplate != null) {
-                existing.setTemplateId(activeTemplate.id());
-                existing = certificateRepository.save(existing);
+        Optional<Certificate> existingCert = certificateRepository.findByStudentIdAndCertificateType(studentId, CertificateType.PARTICIPATION);
+        if (existingCert.isPresent()) {
+            Certificate cert = existingCert.get();
+            if (cert.getTemplateId() == null && activeTemplate != null) {
+                cert.setTemplateId(activeTemplate.id());
+                cert = certificateRepository.save(cert);
             }
-            return certificateMapper.toCertificateResponse(existing);
+            return certificateMapper.toCertificateResponse(cert);
         }
 
         verifyEligibility(studentId);
@@ -81,24 +82,11 @@ public class CertificateServiceImpl implements CertificateService {
         User user = userRepository.findByStudentId(studentId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found for student ID: " + studentId));
 
-        String certNumber = numberGenerator.generateUniqueCertificateNumber();
-        String downloadUrl = "/api/v1/student/certificate";
-
-        Certificate certificate = Certificate.builder()
-                .studentId(studentId)
-                .templateId(activeTemplate != null ? activeTemplate.id() : null)
-                .certificateNumber(certNumber)
-                .certificateType(CertificateType.PARTICIPATION)
-                .status(CertificateStatus.GENERATED)
-                .fileUrl(downloadUrl)
-                .generatedAt(LocalDateTime.now())
-                .build();
-
+        Certificate certificate = buildCertificateEntity(studentId, activeTemplate);
         Certificate saved = certificateRepository.save(certificate);
-        log.info("Successfully generated certificate {} for student {}", certNumber, studentId);
+        log.info("Successfully generated certificate {} for student {}", saved.getCertificateNumber(), studentId);
 
         publishCertificateGeneratedEvent(saved, user.getName(), user.getEmail());
-
         return certificateMapper.toCertificateResponse(saved);
     }
 
@@ -155,7 +143,7 @@ public class CertificateServiceImpl implements CertificateService {
         CbpRegistration registration = cbpRegistrationRepository.findByUserStudentIdIgnoreCase(studentId)
                 .orElseThrow(() -> new ResourceNotFoundException("CBP registration incomplete or not found for student: " + studentId));
 
-        boolean paymentPaid = (registration.getRegistrationStatus() == com.cbp7.cbp.enums.RegistrationStatus.REGISTERED)
+        boolean paymentPaid = (registration.getRegistrationStatus() == RegistrationStatus.REGISTERED)
                 || paymentRepository.existsByRegistrationIdAndPaymentStatus(registration.getId(), PaymentStatus.SUCCESS);
 
         if (!paymentPaid) {
@@ -171,16 +159,11 @@ public class CertificateServiceImpl implements CertificateService {
     @Override
     @Transactional
     public List<CertificateResponse> publishAllCertificates() {
-        List<Certificate> certificates = certificateRepository.findAll();
-        List<CertificateResponse> publishedList = new ArrayList<>();
-        for (Certificate cert : certificates) {
-            if (cert.getStatus() == CertificateStatus.GENERATED) {
-                cert.setStatus(CertificateStatus.PUBLISHED);
-                Certificate saved = certificateRepository.save(cert);
-                publishedList.add(certificateMapper.toCertificateResponse(saved));
-            }
-        }
-        return publishedList;
+        return certificateRepository.findAll().stream()
+                .filter(cert -> cert.getStatus() == CertificateStatus.GENERATED)
+                .map(this::publishSingleCertificate)
+                .map(certificateMapper::toCertificateResponse)
+                .toList();
     }
 
     @Override
@@ -198,7 +181,27 @@ public class CertificateServiceImpl implements CertificateService {
         return csvExporter.exportCertificatesCsv(certificates, userNames);
     }
 
-    // --- Private Helper Methods ---
+    // --- Private Story Helper Methods ---
+
+    private Certificate buildCertificateEntity(String studentId, CertificateTemplateDto activeTemplate) {
+        String certNumber = numberGenerator.generateUniqueCertificateNumber();
+        String downloadUrl = "/api/v1/student/certificate";
+
+        return Certificate.builder()
+                .studentId(studentId)
+                .templateId(activeTemplate != null ? activeTemplate.id() : null)
+                .certificateNumber(certNumber)
+                .certificateType(CertificateType.PARTICIPATION)
+                .status(CertificateStatus.GENERATED)
+                .fileUrl(downloadUrl)
+                .generatedAt(LocalDateTime.now())
+                .build();
+    }
+
+    private Certificate publishSingleCertificate(Certificate cert) {
+        cert.setStatus(CertificateStatus.PUBLISHED);
+        return certificateRepository.save(cert);
+    }
 
     private void publishCertificateGeneratedEvent(Certificate cert, String studentName, String studentEmail) {
         try {
@@ -208,7 +211,6 @@ public class CertificateServiceImpl implements CertificateService {
                     studentName != null ? studentName : "",
                     cert.getFileUrl() != null ? cert.getFileUrl() : ""
             );
-
             notificationEventPublisher.publish(event);
         } catch (Exception e) {
             log.error("Failed to publish CertificateGeneratedEvent for student: {}", cert.getStudentId(), e);

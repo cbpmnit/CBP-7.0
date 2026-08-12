@@ -49,11 +49,7 @@ public class AttendanceQueryServiceImpl implements AttendanceQueryService {
         AttendanceSession session = sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Session not found with ID: " + sessionId));
 
-        long totalRegisteredStudents = userRepository.countByRole(Role.ROLE_STUDENT);
-        if (totalRegisteredStudents == 0) {
-            totalRegisteredStudents = userRepository.count();
-        }
-
+        long totalRegisteredStudents = determineTotalRegisteredStudents();
         long presentCount = attendanceRecordRepository.countBySessionIdAndStatus(sessionId, AttendanceStatus.PRESENT);
         long absentCount = attendanceCalculator.calculateAbsentCount(totalRegisteredStudents, presentCount);
         double percentage = attendanceCalculator.calculatePercentage(presentCount, totalRegisteredStudents);
@@ -82,46 +78,11 @@ public class AttendanceQueryServiceImpl implements AttendanceQueryService {
             throw new ResourceNotFoundException("Session not found with ID: " + sessionId);
         }
 
-        Page<AttendanceRecord> recordsPage;
         String cleanSearch = search != null && !search.isBlank() ? search.trim().toLowerCase() : null;
-
-        if (cleanSearch != null && status != null) {
-            recordsPage = attendanceRecordRepository.findBySessionIdAndStudentIdContainingIgnoreCaseAndStatus(sessionId, cleanSearch, status, pageable);
-        } else if (cleanSearch != null) {
-            recordsPage = attendanceRecordRepository.findBySessionIdAndStudentIdContainingIgnoreCase(sessionId, cleanSearch, pageable);
-        } else if (status != null) {
-            recordsPage = attendanceRecordRepository.findBySessionIdAndStatus(sessionId, status, pageable);
-        } else {
-            recordsPage = attendanceRecordRepository.findBySessionId(sessionId, pageable);
-        }
+        Page<AttendanceRecord> recordsPage = fetchFilteredRecordsPage(sessionId, cleanSearch, status, pageable);
 
         List<StudentSessionRecordDto> dtos = recordsPage.getContent().stream()
-                .map(r -> {
-                    String name = "";
-                    String email = "";
-                    String userIdStr = "";
-                    Optional<User> userOpt = userRepository.findByStudentId(r.getStudentId());
-                    if (userOpt.isPresent()) {
-                        User user = userOpt.get();
-                        name = user.getName() != null ? user.getName() : "";
-                        email = user.getEmail() != null ? user.getEmail() : "";
-                        userIdStr = user.getId() != null ? user.getId().toString() : "";
-                    }
-
-                    StudentInfo studentInfo = new StudentInfo(userIdStr, name, r.getStudentId(), email);
-                    MarkedByInfo markerDetail = markerResolver.resolveMarker(r.getMarkedBy());
-
-                    return new StudentSessionRecordDto(
-                            r.getStudentId(),
-                            name,
-                            email,
-                            r.getStatus(),
-                            r.getMarkedAt(),
-                            markerDetail.name(),
-                            studentInfo,
-                            markerDetail
-                    );
-                })
+                .map(this::toStudentSessionRecordDto)
                 .toList();
 
         return new PageImpl<>(dtos, pageable, recordsPage.getTotalElements());
@@ -194,11 +155,7 @@ public class AttendanceQueryServiceImpl implements AttendanceQueryService {
     @Override
     @Transactional(readOnly = true)
     public AdminAttendanceSummaryResponse getAdminAttendanceSummary() {
-        long totalRegisteredStudents = userRepository.countByRole(Role.ROLE_STUDENT);
-        if (totalRegisteredStudents == 0) {
-            totalRegisteredStudents = userRepository.count();
-        }
-
+        long totalRegisteredStudents = determineTotalRegisteredStudents();
         long totalSessions = sessionRepository.count();
         long totalPresentRecords = attendanceRecordRepository.findAll().stream()
                 .filter(r -> r.getStatus() == AttendanceStatus.PRESENT)
@@ -245,5 +202,55 @@ public class AttendanceQueryServiceImpl implements AttendanceQueryService {
     @Transactional(readOnly = true)
     public UserAttendanceProfileResponse getUserAttendanceProfile(String userId) {
         return profileAggregator.buildUserAttendanceProfile(userId);
+    }
+
+    // --- Private Story Helper Methods ---
+
+    private long determineTotalRegisteredStudents() {
+        long count = userRepository.countByRole(Role.ROLE_STUDENT);
+        return count > 0 ? count : userRepository.count();
+    }
+
+    private Page<AttendanceRecord> fetchFilteredRecordsPage(
+            UUID sessionId, String cleanSearch, AttendanceStatus status, Pageable pageable
+    ) {
+        if (cleanSearch != null && status != null) {
+            return attendanceRecordRepository.findBySessionIdAndStudentIdContainingIgnoreCaseAndStatus(sessionId, cleanSearch, status, pageable);
+        }
+        if (cleanSearch != null) {
+            return attendanceRecordRepository.findBySessionIdAndStudentIdContainingIgnoreCase(sessionId, cleanSearch, pageable);
+        }
+        if (status != null) {
+            return attendanceRecordRepository.findBySessionIdAndStatus(sessionId, status, pageable);
+        }
+        return attendanceRecordRepository.findBySessionId(sessionId, pageable);
+    }
+
+    private StudentSessionRecordDto toStudentSessionRecordDto(AttendanceRecord r) {
+        String name = "";
+        String email = "";
+        String userIdStr = "";
+
+        Optional<User> userOpt = userRepository.findByStudentId(r.getStudentId());
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            name = user.getName() != null ? user.getName() : "";
+            email = user.getEmail() != null ? user.getEmail() : "";
+            userIdStr = user.getId() != null ? user.getId().toString() : "";
+        }
+
+        StudentInfo studentInfo = new StudentInfo(userIdStr, name, r.getStudentId(), email);
+        MarkedByInfo markerDetail = markerResolver.resolveMarker(r.getMarkedBy());
+
+        return new StudentSessionRecordDto(
+                r.getStudentId(),
+                name,
+                email,
+                r.getStatus(),
+                r.getMarkedAt(),
+                markerDetail.name(),
+                studentInfo,
+                markerDetail
+        );
     }
 }

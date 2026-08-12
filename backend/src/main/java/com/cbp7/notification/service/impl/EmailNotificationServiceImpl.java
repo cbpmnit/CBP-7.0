@@ -60,18 +60,37 @@ public class EmailNotificationServiceImpl implements EmailNotificationService {
     public boolean sendTestEmail(SendTestEmailRequest request) {
         log.info("Processing test email request for template ID: {}", request.templateId());
 
-        NotificationTemplate template = notificationTemplateRepository.findById(request.templateId())
-                .orElseGet(() -> NotificationTemplate.builder()
-                        .name("Test Template")
-                        .subject("CBP Portal Notification Test")
-                        .content("<div style='padding:20px; font-family:sans-serif;'><h2>CBP 7.0 Test Email Notification</h2><p>Dear {{studentName}}, this is a test email notification sent from the Email Builder.</p></div>")
-                        .build());
+        NotificationTemplate template = resolveTestTemplate(request.templateId());
+        Map<String, String> testVars = request.sampleData() != null ? new HashMap<>(request.sampleData()) : new HashMap<>();
+        List<String> targetEmails = resolveTestTargetEmails(request);
 
-        Map<String, String> testVars = new HashMap<>();
-        if (request.sampleData() != null) {
-            testVars.putAll(request.sampleData());
+        log.info("Dispatching test emails to {} recipient(s)", targetEmails.size());
+        for (String email : targetEmails) {
+            sendEmailForTemplate(template, email, testVars);
         }
 
+        return true;
+    }
+
+    // --- Private Story Helper Methods ---
+
+    private NotificationTemplate resolveTestTemplate(UUID templateId) {
+        if (templateId == null) {
+            return buildDefaultTestTemplate();
+        }
+        return notificationTemplateRepository.findById(templateId)
+                .orElseGet(this::buildDefaultTestTemplate);
+    }
+
+    private NotificationTemplate buildDefaultTestTemplate() {
+        return NotificationTemplate.builder()
+                .name("Test Template")
+                .subject("CBP Portal Notification Test")
+                .content("<div style='padding:20px; font-family:sans-serif;'><h2>CBP 7.0 Test Email Notification</h2><p>Dear {{studentName}}, this is a test email notification sent from the Email Builder.</p></div>")
+                .build();
+    }
+
+    private List<String> resolveTestTargetEmails(SendTestEmailRequest request) {
         List<String> targetEmails = new ArrayList<>();
         if (Boolean.TRUE.equals(request.sendToAll())) {
             Page<AdminStudentListItemResponse> paidStudents = studentManagementService.getStudentsPaginated(
@@ -89,13 +108,7 @@ public class EmailNotificationServiceImpl implements EmailNotificationService {
         } else {
             targetEmails.add("admin@mnit.ac.in");
         }
-
-        log.info("Dispatching test emails to {} paid recipient(s)", targetEmails.size());
-        for (String email : targetEmails) {
-            sendEmailForTemplate(template, email, testVars);
-        }
-
-        return true;
+        return targetEmails;
     }
 
     private NotificationTemplate createFallbackTemplate(NotificationType type) {

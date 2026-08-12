@@ -38,7 +38,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
@@ -81,18 +80,8 @@ public class AdminStudentManagementServiceImpl implements AdminStudentManagement
     public AdminFullStudentDetailResponse getStudentFullDetail(String studentId) {
         String cleanStudentId = studentId.trim();
 
-        Optional<CbpRegistration> regOpt = cbpRegistrationRepository.findByUserStudentIdIgnoreCase(cleanStudentId)
-                .or(() -> cbpRegistrationRepository.findAll().stream().filter(r -> cleanStudentId.equalsIgnoreCase(r.getStudentId())).findFirst());
-
-        Optional<User> userOpt = userRepository.findByStudentIdIgnoreCase(cleanStudentId)
-                .or(() -> userRepository.findByEmailIgnoreCase(cleanStudentId))
-                .or(() -> {
-                    try {
-                        return userRepository.findById(UUID.fromString(cleanStudentId));
-                    } catch (Exception ignored) {
-                        return Optional.empty();
-                    }
-                });
+        Optional<CbpRegistration> regOpt = findStudentRegistration(cleanStudentId);
+        Optional<User> userOpt = findStudentUser(cleanStudentId);
 
         if (regOpt.isEmpty() && userOpt.isEmpty()) {
             throw new ResourceNotFoundException("Student record not found for studentId: " + studentId);
@@ -101,16 +90,8 @@ public class AdminStudentManagementServiceImpl implements AdminStudentManagement
         CbpRegistration reg = regOpt.orElse(null);
         User user = userOpt.orElse(reg != null ? reg.getUser() : null);
 
-        Optional<UserProfile> profileOpt = user != null
-                ? userProfileRepository.findByUserId(user.getId())
-                : userProfileRepository.findByUserStudentIdIgnoreCase(cleanStudentId);
-
-        List<Payment> payments = reg != null
-                ? paymentRepository.findByRegistrationId(reg.getId())
-                : (user != null ? paymentRepository.findByUserId(user.getId()) : List.of());
-
-        Optional<Payment> paymentOpt = payments.stream().filter(p -> p.getPaymentStatus() == PaymentStatus.SUCCESS).findFirst();
-        if (paymentOpt.isEmpty() && !payments.isEmpty()) paymentOpt = Optional.of(payments.get(0));
+        Optional<UserProfile> profileOpt = findStudentProfile(user, cleanStudentId);
+        Optional<Payment> paymentOpt = findStudentPayment(reg, user);
 
         long totalSessions = sessionRepository.count();
         long attendedSessions = attendanceRecordRepository.countByStudentIdAndStatus(cleanStudentId, AttendanceStatus.PRESENT);
@@ -128,61 +109,8 @@ public class AdminStudentManagementServiceImpl implements AdminStudentManagement
     public AdminFullStudentDetailResponse updateStudentProfile(String studentId, UpdateStudentProfileRequest request) {
         String cleanStudentId = studentId.trim();
 
-        Optional<CbpRegistration> regOpt = cbpRegistrationRepository.findByUserStudentIdIgnoreCase(cleanStudentId)
-                .or(() -> cbpRegistrationRepository.findAll().stream().filter(r -> cleanStudentId.equalsIgnoreCase(r.getStudentId())).findFirst());
-
-        if (regOpt.isPresent()) {
-            CbpRegistration reg = regOpt.get();
-            if (request.firstName() != null && !request.firstName().isBlank()) reg.setFirstName(request.firstName().trim());
-            if (request.lastName() != null && !request.lastName().isBlank()) reg.setLastName(request.lastName().trim());
-            if (request.phone() != null) reg.setPhoneNumber(request.phone().trim());
-            if (request.email() != null) reg.setEmail(request.email().trim());
-            if (request.course() != null) reg.setCourse(request.course().trim());
-            if (request.branch() != null) reg.setBranch(request.branch().trim());
-            if (request.year() != null) {
-                try {
-                    reg.setYear(Integer.parseInt(request.year().replaceAll("[^0-9]", "")));
-                } catch (Exception ignored) {}
-            }
-            cbpRegistrationRepository.save(reg);
-        }
-
-        Optional<User> userOpt = userRepository.findByStudentId(cleanStudentId);
-        if (userOpt.isPresent()) {
-            User u = userOpt.get();
-            if (request.firstName() != null || request.lastName() != null) {
-                String fullName = ((request.firstName() != null ? request.firstName().trim() : "") + " " +
-                        (request.lastName() != null ? request.lastName().trim() : "")).trim();
-                if (!fullName.isBlank()) u.setName(fullName);
-            }
-            if (request.phone() != null) u.setPhoneNumber(request.phone().trim());
-            if (request.email() != null) u.setEmail(request.email().trim());
-            userRepository.save(u);
-
-            Optional<UserProfile> profileOpt = userProfileRepository.findByUserId(u.getId());
-            if (profileOpt.isPresent()) {
-                UserProfile prof = profileOpt.get();
-                if (request.firstName() != null) prof.setFirstName(request.firstName().trim());
-                if (request.lastName() != null) prof.setLastName(request.lastName().trim());
-                if (request.phone() != null) prof.setPhoneNumber(request.phone().trim());
-                if (request.gender() != null) {
-                    try {
-                        prof.setGender(Gender.valueOf(request.gender().toUpperCase()));
-                    } catch (Exception ignored) {}
-                }
-                if (request.dob() != null) {
-                    try {
-                        prof.setDateOfBirth(LocalDate.parse(request.dob()));
-                    } catch (Exception ignored) {}
-                }
-                if (request.section() != null) prof.setSection(request.section().trim());
-                if (request.hosteller() != null) prof.setHosteller(request.hosteller());
-                if (request.roomNumber() != null) prof.setRoomNumber(request.roomNumber().trim());
-                if (request.city() != null) prof.setCity(request.city().trim());
-                if (request.state() != null) prof.setState(request.state().trim());
-                userProfileRepository.save(prof);
-            }
-        }
+        findStudentRegistration(cleanStudentId).ifPresent(reg -> applyRegistrationUpdates(reg, request));
+        userRepository.findByStudentId(cleanStudentId).ifPresent(user -> applyUserAndProfileUpdates(user, request));
 
         return getStudentFullDetail(cleanStudentId);
     }
@@ -206,49 +134,21 @@ public class AdminStudentManagementServiceImpl implements AdminStudentManagement
     @Override
     @Transactional(readOnly = true)
     public AdminDashboardStatsResponse getDashboardSummary() {
-        List<User> studentUsers = userRepository.findAll().stream()
-                .filter(u -> u.hasRole(Role.ROLE_STUDENT) && !u.hasRole(Role.ROLE_ADMIN) && Boolean.TRUE.equals(u.getEnabled()))
-                .toList();
+        List<User> studentUsers = fetchActiveStudentUsers();
+        List<CbpRegistration> registrations = cbpRegistrationRepository.findAll();
 
         long totalStudents = studentUsers.size();
-        long registered = totalStudents;
-
-        List<CbpRegistration> registrations = cbpRegistrationRepository.findAll();
-        long paymentCompleted = studentUsers.stream()
-                .filter(u -> {
-                    boolean byReg = registrations.stream().anyMatch(r ->
-                            (r.getUser() != null && u.getId().equals(r.getUser().getId()) || (u.getStudentId() != null && u.getStudentId().equalsIgnoreCase(r.getStudentId())))
-                                    && (r.getRegistrationStatus() == RegistrationStatus.REGISTERED || paymentRepository.existsByRegistrationIdAndPaymentStatus(r.getId(), PaymentStatus.SUCCESS)));
-                    return byReg || paymentRepository.existsByUserIdAndPaymentStatus(u.getId(), PaymentStatus.SUCCESS);
-                })
-                .count();
-
+        long paymentCompleted = countPaymentCompletedStudents(studentUsers, registrations);
         long paymentPending = Math.max(0, totalStudents - paymentCompleted);
-
-        long profileCompleted = studentUsers.stream()
-                .filter(u -> userProfileRepository.existsByUserId(u.getId()))
-                .count();
+        long profileCompleted = countProfileCompletedStudents(studentUsers);
 
         long totalSessions = sessionRepository.count();
-        double avgAttendance = 0.0;
-        long certificateEligible = 0;
-
-        if (totalStudents > 0 && totalSessions > 0) {
-            double sumPct = 0.0;
-            for (User u : studentUsers) {
-                if (u.getStudentId() != null && !u.getStudentId().isBlank()) {
-                    long attended = attendanceRecordRepository.countByStudentIdAndStatus(u.getStudentId(), AttendanceStatus.PRESENT);
-                    double pct = attendanceCalculator.calculatePercentage(attended, totalSessions);
-                    sumPct += pct;
-                    if (pct >= 75.0) certificateEligible++;
-                }
-            }
-            avgAttendance = sumPct / totalStudents;
-        }
+        double avgAttendance = calculateAverageAttendance(studentUsers, totalSessions);
+        long certificateEligible = countCertificateEligibleStudents(studentUsers, totalSessions);
 
         return studentMapper.toDashboardStatsResponse(
                 totalStudents,
-                registered,
+                totalStudents,
                 paymentCompleted,
                 paymentPending,
                 profileCompleted,
@@ -276,5 +176,141 @@ public class AdminStudentManagementServiceImpl implements AdminStudentManagement
         pref.setVisibleColumns(dto.visibleColumns());
         AdminPreferences saved = adminPreferencesRepository.save(pref);
         return new AdminPreferencesDto(saved.getVisibleColumns());
+    }
+
+    // --- Private Story Helper Methods ---
+
+    private Optional<CbpRegistration> findStudentRegistration(String cleanStudentId) {
+        return cbpRegistrationRepository.findByUserStudentIdIgnoreCase(cleanStudentId)
+                .or(() -> cbpRegistrationRepository.findAll().stream()
+                        .filter(r -> cleanStudentId.equalsIgnoreCase(r.getStudentId()))
+                        .findFirst());
+    }
+
+    private Optional<User> findStudentUser(String cleanStudentId) {
+        return userRepository.findByStudentIdIgnoreCase(cleanStudentId)
+                .or(() -> userRepository.findByEmailIgnoreCase(cleanStudentId))
+                .or(() -> {
+                    try {
+                        return userRepository.findById(UUID.fromString(cleanStudentId));
+                    } catch (Exception ignored) {
+                        return Optional.empty();
+                    }
+                });
+    }
+
+    private Optional<UserProfile> findStudentProfile(User user, String cleanStudentId) {
+        return user != null
+                ? userProfileRepository.findByUserId(user.getId())
+                : userProfileRepository.findByUserStudentIdIgnoreCase(cleanStudentId);
+    }
+
+    private Optional<Payment> findStudentPayment(CbpRegistration reg, User user) {
+        List<Payment> payments = reg != null
+                ? paymentRepository.findByRegistrationId(reg.getId())
+                : (user != null ? paymentRepository.findByUserId(user.getId()) : List.of());
+
+        return payments.stream()
+                .filter(p -> p.getPaymentStatus() == PaymentStatus.SUCCESS)
+                .findFirst()
+                .or(() -> payments.isEmpty() ? Optional.empty() : Optional.of(payments.get(0)));
+    }
+
+    private void applyRegistrationUpdates(CbpRegistration reg, UpdateStudentProfileRequest request) {
+        if (request.firstName() != null && !request.firstName().isBlank()) reg.setFirstName(request.firstName().trim());
+        if (request.lastName() != null && !request.lastName().isBlank()) reg.setLastName(request.lastName().trim());
+        if (request.phone() != null) reg.setPhoneNumber(request.phone().trim());
+        if (request.email() != null) reg.setEmail(request.email().trim());
+        if (request.course() != null) reg.setCourse(request.course().trim());
+        if (request.branch() != null) reg.setBranch(request.branch().trim());
+        if (request.year() != null) {
+            try {
+                reg.setYear(Integer.parseInt(request.year().replaceAll("[^0-9]", "")));
+            } catch (Exception ignored) {}
+        }
+        cbpRegistrationRepository.save(reg);
+    }
+
+    private void applyUserAndProfileUpdates(User user, UpdateStudentProfileRequest request) {
+        if (request.firstName() != null || request.lastName() != null) {
+            String fullName = ((request.firstName() != null ? request.firstName().trim() : "") + " " +
+                    (request.lastName() != null ? request.lastName().trim() : "")).trim();
+            if (!fullName.isBlank()) user.setName(fullName);
+        }
+        if (request.phone() != null) user.setPhoneNumber(request.phone().trim());
+        if (request.email() != null) user.setEmail(request.email().trim());
+        userRepository.save(user);
+
+        userProfileRepository.findByUserId(user.getId()).ifPresent(prof -> applyProfileFields(prof, request));
+    }
+
+    private void applyProfileFields(UserProfile prof, UpdateStudentProfileRequest request) {
+        if (request.firstName() != null) prof.setFirstName(request.firstName().trim());
+        if (request.lastName() != null) prof.setLastName(request.lastName().trim());
+        if (request.phone() != null) prof.setPhoneNumber(request.phone().trim());
+        if (request.gender() != null) {
+            try {
+                prof.setGender(Gender.valueOf(request.gender().toUpperCase()));
+            } catch (Exception ignored) {}
+        }
+        if (request.dob() != null) {
+            try {
+                prof.setDateOfBirth(LocalDate.parse(request.dob()));
+            } catch (Exception ignored) {}
+        }
+        if (request.section() != null) prof.setSection(request.section().trim());
+        if (request.hosteller() != null) prof.setHosteller(request.hosteller());
+        if (request.roomNumber() != null) prof.setRoomNumber(request.roomNumber().trim());
+        if (request.city() != null) prof.setCity(request.city().trim());
+        if (request.state() != null) prof.setState(request.state().trim());
+        userProfileRepository.save(prof);
+    }
+
+    private List<User> fetchActiveStudentUsers() {
+        return userRepository.findAll().stream()
+                .filter(u -> u.hasRole(Role.ROLE_STUDENT) && !u.hasRole(Role.ROLE_ADMIN) && Boolean.TRUE.equals(u.getEnabled()))
+                .toList();
+    }
+
+    private long countPaymentCompletedStudents(List<User> studentUsers, List<CbpRegistration> registrations) {
+        return studentUsers.stream()
+                .filter(u -> isStudentPaid(u, registrations))
+                .count();
+    }
+
+    private boolean isStudentPaid(User user, List<CbpRegistration> registrations) {
+        boolean byReg = registrations.stream().anyMatch(r ->
+                (r.getUser() != null && user.getId().equals(r.getUser().getId()) || (user.getStudentId() != null && user.getStudentId().equalsIgnoreCase(r.getStudentId())))
+                        && (r.getRegistrationStatus() == RegistrationStatus.REGISTERED || paymentRepository.existsByRegistrationIdAndPaymentStatus(r.getId(), PaymentStatus.SUCCESS)));
+        return byReg || paymentRepository.existsByUserIdAndPaymentStatus(user.getId(), PaymentStatus.SUCCESS);
+    }
+
+    private long countProfileCompletedStudents(List<User> studentUsers) {
+        return studentUsers.stream().filter(u -> userProfileRepository.existsByUserId(u.getId())).count();
+    }
+
+    private double calculateAverageAttendance(List<User> studentUsers, long totalSessions) {
+        if (studentUsers.isEmpty() || totalSessions == 0) return 0.0;
+        double sumPct = 0.0;
+        for (User u : studentUsers) {
+            if (u.getStudentId() != null && !u.getStudentId().isBlank()) {
+                long attended = attendanceRecordRepository.countByStudentIdAndStatus(u.getStudentId(), AttendanceStatus.PRESENT);
+                sumPct += attendanceCalculator.calculatePercentage(attended, totalSessions);
+            }
+        }
+        return sumPct / studentUsers.size();
+    }
+
+    private long countCertificateEligibleStudents(List<User> studentUsers, long totalSessions) {
+        if (studentUsers.isEmpty() || totalSessions == 0) return 0;
+        long count = 0;
+        for (User u : studentUsers) {
+            if (u.getStudentId() != null && !u.getStudentId().isBlank()) {
+                long attended = attendanceRecordRepository.countByStudentIdAndStatus(u.getStudentId(), AttendanceStatus.PRESENT);
+                double pct = attendanceCalculator.calculatePercentage(attended, totalSessions);
+                if (pct >= 75.0) count++;
+            }
+        }
+        return count;
     }
 }

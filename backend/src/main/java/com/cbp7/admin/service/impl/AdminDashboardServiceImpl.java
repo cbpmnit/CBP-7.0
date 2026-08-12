@@ -25,6 +25,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -43,29 +46,17 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
 
     @Override
     public AdminDashboardSummaryResponse getSummary() {
-        List<User> studentUsers = userRepository.findAll().stream()
-                .filter(u -> u.hasRole(Role.ROLE_STUDENT) && !u.hasRole(Role.ROLE_ADMIN) && Boolean.TRUE.equals(u.getEnabled()))
-                .toList();
-
+        List<User> studentUsers = fetchActiveStudentUsers();
         List<CbpRegistration> registrations = cbpRegistrationRepository.findAll();
+
         long totalStudents = Math.max(studentUsers.size(), registrations.size());
-        long registeredStudents = totalStudents;
-
-        long paidStudents = studentUsers.stream()
-                .filter(u -> {
-                    boolean byReg = registrations.stream().anyMatch(r ->
-                            (r.getUser() != null && u.getId().equals(r.getUser().getId()) || (u.getStudentId() != null && u.getStudentId().equalsIgnoreCase(r.getStudentId())))
-                                    && (r.getRegistrationStatus() == RegistrationStatus.REGISTERED || paymentRepository.existsByRegistrationIdAndPaymentStatus(r.getId(), PaymentStatus.SUCCESS)));
-                    return byReg || paymentRepository.existsByUserIdAndPaymentStatus(u.getId(), PaymentStatus.SUCCESS);
-                })
-                .count();
-
+        long paidStudents = countPaidStudents(studentUsers, registrations);
         long todayAttendance = attendanceRecordRepository.count();
         long certificatesIssued = certificateRepository.count();
 
         return adminMapper.toDashboardSummaryResponse(
                 totalStudents,
-                registeredStudents,
+                totalStudents,
                 paidStudents,
                 todayAttendance,
                 certificatesIssued
@@ -78,34 +69,8 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         long totalSessions = attendanceSessionRepository.count();
 
         return registrations.stream()
-                .filter(r -> {
-                    if (search == null || search.trim().isEmpty()) return true;
-                    String query = search.trim().toLowerCase();
-                    String studentId = r.getStudentId() != null ? r.getStudentId().toLowerCase() : "";
-                    String name = (r.getFirstName() + " " + r.getLastName()).toLowerCase();
-                    String email = r.getEmail() != null ? r.getEmail().toLowerCase() : "";
-                    return studentId.contains(query) || name.contains(query) || email.contains(query);
-                })
-                .map(r -> {
-                    long attended = attendanceRecordRepository.countByStudentIdAndStatus(
-                            r.getStudentId(), AttendanceStatus.PRESENT
-                    );
-                    double pct = attendanceCalculator.calculatePercentage(attended, totalSessions);
-                    boolean isPaid = r.getRegistrationStatus() == RegistrationStatus.REGISTERED
-                            || paymentRepository.existsByRegistrationIdAndPaymentStatus(r.getId(), PaymentStatus.SUCCESS);
-
-                    return adminMapper.toStudentDetailResponse(
-                            r.getStudentId(),
-                            r.getFirstName(),
-                            r.getLastName(),
-                            r.getEmail(),
-                            r.getBranch(),
-                            r.getCourse(),
-                            isPaid,
-                            pct,
-                            r.getRegistrationId()
-                    );
-                })
+                .filter(reg -> matchesSearchQuery(reg, search))
+                .map(reg -> buildStudentDetail(reg, totalSessions))
                 .toList();
     }
 
@@ -115,36 +80,15 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         List<Payment> payments = paymentRepository.findAll();
 
         long totalRegistrations = registrations.size();
-        long successfulPayments = payments.stream().filter(p -> p.getPaymentStatus() == PaymentStatus.SUCCESS).count();
-        long pendingPayments = payments.stream().filter(p -> p.getPaymentStatus() == PaymentStatus.PENDING).count();
-        long failedPayments = payments.stream().filter(p -> p.getPaymentStatus() == PaymentStatus.FAILED).count();
+        long successfulPayments = countPaymentsWithStatus(payments, PaymentStatus.SUCCESS);
+        long pendingPayments = countPaymentsWithStatus(payments, PaymentStatus.PENDING);
+        long failedPayments = countPaymentsWithStatus(payments, PaymentStatus.FAILED);
+
+        Map<UUID, CbpRegistration> registrationsById = registrations.stream()
+                .collect(Collectors.toMap(CbpRegistration::getId, r -> r, (a, b) -> a));
 
         List<AdminPaymentOverviewResponse.PaymentTransactionDto> transactions = payments.stream()
-                .map(p -> {
-                    String regIdStr = p.getRegistrationId() != null ? p.getRegistrationId().toString() : "-";
-                    String studentId = "-";
-                    String studentName = "Student";
-
-                    var regOpt = cbpRegistrationRepository.findById(p.getRegistrationId());
-                    if (regOpt.isPresent()) {
-                        CbpRegistration reg = regOpt.get();
-                        studentId = reg.getStudentId();
-                        studentName = reg.getFirstName() + " " + reg.getLastName();
-                        regIdStr = reg.getRegistrationId();
-                    }
-
-                    Double amountVal = p.getAmount() != null ? p.getAmount().doubleValue() : 0.0;
-
-                    return new AdminPaymentOverviewResponse.PaymentTransactionDto(
-                            studentName,
-                            studentId,
-                            regIdStr,
-                            amountVal,
-                            p.getPaymentStatus().name(),
-                            p.getTransactionId() != null ? p.getTransactionId() : "-",
-                            p.getCreatedAt()
-                    );
-                })
+                .map(payment -> buildPaymentTransactionDto(payment, registrationsById))
                 .toList();
 
         return adminMapper.toPaymentOverviewResponse(
@@ -160,5 +104,100 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
     public byte[] exportPaymentsCsv(String search, String paymentStatus) {
         AdminPaymentOverviewResponse overview = getPaymentOverview();
         return paymentCsvExporter.exportPaymentsCsv(overview.transactions(), search, paymentStatus);
+    }
+
+    // --- Private Story Helper Methods ---
+
+    private List<User> fetchActiveStudentUsers() {
+        return userRepository.findAll().stream()
+                .filter(u -> u.hasRole(Role.ROLE_STUDENT) && !u.hasRole(Role.ROLE_ADMIN) && Boolean.TRUE.equals(u.getEnabled()))
+                .toList();
+    }
+
+    private long countPaidStudents(List<User> studentUsers, List<CbpRegistration> registrations) {
+        return studentUsers.stream()
+                .filter(u -> isStudentPaymentComplete(u, registrations))
+                .count();
+    }
+
+    private boolean isStudentPaymentComplete(User user, List<CbpRegistration> registrations) {
+        boolean paidViaRegistration = registrations.stream().anyMatch(r ->
+                isRegistrationLinkedToUser(r, user) && isRegistrationPaid(r)
+        );
+        return paidViaRegistration || paymentRepository.existsByUserIdAndPaymentStatus(user.getId(), PaymentStatus.SUCCESS);
+    }
+
+    private boolean isRegistrationLinkedToUser(CbpRegistration reg, User user) {
+        boolean matchById = reg.getUser() != null && user.getId().equals(reg.getUser().getId());
+        boolean matchByStudentId = user.getStudentId() != null && user.getStudentId().equalsIgnoreCase(reg.getStudentId());
+        return matchById || matchByStudentId;
+    }
+
+    private boolean isRegistrationPaid(CbpRegistration reg) {
+        return reg.getRegistrationStatus() == RegistrationStatus.REGISTERED
+                || paymentRepository.existsByRegistrationIdAndPaymentStatus(reg.getId(), PaymentStatus.SUCCESS);
+    }
+
+    private boolean matchesSearchQuery(CbpRegistration reg, String search) {
+        if (search == null || search.trim().isEmpty()) {
+            return true;
+        }
+        String query = search.trim().toLowerCase();
+        String studentId = reg.getStudentId() != null ? reg.getStudentId().toLowerCase() : "";
+        String name = ((reg.getFirstName() != null ? reg.getFirstName() : "") + " " +
+                (reg.getLastName() != null ? reg.getLastName() : "")).toLowerCase();
+        String email = reg.getEmail() != null ? reg.getEmail().toLowerCase() : "";
+
+        return studentId.contains(query) || name.contains(query) || email.contains(query);
+    }
+
+    private AdminStudentDetailResponse buildStudentDetail(CbpRegistration reg, long totalSessions) {
+        long attended = attendanceRecordRepository.countByStudentIdAndStatus(reg.getStudentId(), AttendanceStatus.PRESENT);
+        double attendancePercentage = attendanceCalculator.calculatePercentage(attended, totalSessions);
+        boolean isPaid = isRegistrationPaid(reg);
+
+        return adminMapper.toStudentDetailResponse(
+                reg.getStudentId(),
+                reg.getFirstName(),
+                reg.getLastName(),
+                reg.getEmail(),
+                reg.getBranch(),
+                reg.getCourse(),
+                isPaid,
+                attendancePercentage,
+                reg.getRegistrationId()
+        );
+    }
+
+    private long countPaymentsWithStatus(List<Payment> payments, PaymentStatus status) {
+        return payments.stream().filter(p -> p.getPaymentStatus() == status).count();
+    }
+
+    private AdminPaymentOverviewResponse.PaymentTransactionDto buildPaymentTransactionDto(
+            Payment payment, Map<UUID, CbpRegistration> registrationsById
+    ) {
+        String regIdStr = payment.getRegistrationId() != null ? payment.getRegistrationId().toString() : "-";
+        String studentId = "-";
+        String studentName = "Student";
+
+        CbpRegistration reg = payment.getRegistrationId() != null ? registrationsById.get(payment.getRegistrationId()) : null;
+        if (reg != null) {
+            studentId = reg.getStudentId() != null ? reg.getStudentId() : "-";
+            studentName = (reg.getFirstName() != null ? reg.getFirstName() : "") + " " + (reg.getLastName() != null ? reg.getLastName() : "");
+            regIdStr = reg.getRegistrationId() != null ? reg.getRegistrationId() : regIdStr;
+        }
+
+        Double amountVal = payment.getAmount() != null ? payment.getAmount().doubleValue() : 0.0;
+        String txnId = payment.getTransactionId() != null ? payment.getTransactionId() : "-";
+
+        return new AdminPaymentOverviewResponse.PaymentTransactionDto(
+                studentName.trim(),
+                studentId,
+                regIdStr,
+                amountVal,
+                payment.getPaymentStatus().name(),
+                txnId,
+                payment.getCreatedAt()
+        );
     }
 }
