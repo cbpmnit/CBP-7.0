@@ -1,6 +1,8 @@
 package com.cbp7.admin.student.controller;
 
-import com.cbp7.admin.student.dto.*;
+import com.cbp7.admin.student.dto.common.*;
+import com.cbp7.admin.student.dto.request.*;
+import com.cbp7.admin.student.dto.response.*;
 import com.cbp7.admin.student.service.AdminStudentManagementService;
 import com.cbp7.auth.entity.User;
 import com.cbp7.common.response.ApiResponse;
@@ -24,7 +26,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.cbp7.payment.service.PaymentVerificationService;
-import com.cbp7.payment.dto.PaymentStatusResponse;
+import com.cbp7.payment.dto.response.PaymentStatusResponse;
 import com.cbp7.payment.entity.Payment;
 
 @RestController
@@ -34,6 +36,7 @@ public class AdminStudentManagementController {
 
     private final AdminStudentManagementService studentManagementService;
     private final PaymentVerificationService paymentVerificationService;
+    private final com.cbp7.payment.mapper.PaymentMapper paymentMapper;
 
     @GetMapping("/students")
     @PreAuthorize("hasRole('ADMIN') or hasAuthority('STUDENT_VIEW')")
@@ -133,14 +136,7 @@ public class AdminStudentManagementController {
             @PathVariable String transactionId
     ) {
         Payment verifiedPayment = paymentVerificationService.verifyPaymentStatus(transactionId);
-        PaymentStatusResponse response = new PaymentStatusResponse(
-                verifiedPayment.getTransactionId(),
-                verifiedPayment.getPaymentStatus(),
-                verifiedPayment.getAmount(),
-                verifiedPayment.getUpdatedAt(),
-                verifiedPayment.getRegistrationId(),
-                verifiedPayment.getCreatedAt()
-        );
+        PaymentStatusResponse response = paymentMapper.toPaymentStatusResponse(verifiedPayment);
         return ResponseEntity.ok(ApiResponse.success("Payment status verified and reconciled manually", response));
     }
 }

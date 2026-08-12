@@ -1,9 +1,9 @@
 package com.cbp7.attendance.qr.service;
 
-import com.cbp7.attendance.qr.dto.BatchQrGenerationResponse;
-import com.cbp7.attendance.qr.dto.QrGenerationStatusResponse;
-import com.cbp7.attendance.qr.dto.SessionQrCodeResponse;
-import com.cbp7.attendance.qr.dto.StudentSessionQrResponse;
+import com.cbp7.attendance.qr.dto.response.BatchQrGenerationResponse;
+import com.cbp7.attendance.qr.dto.response.QrGenerationStatusResponse;
+import com.cbp7.attendance.qr.dto.response.SessionQrCodeResponse;
+import com.cbp7.attendance.qr.dto.response.StudentSessionQrResponse;
 import com.cbp7.attendance.qr.entity.AttendanceQrCode;
 import com.cbp7.attendance.qr.generator.QrImageGenerator;
 import com.cbp7.attendance.qr.repository.AttendanceQrRepository;

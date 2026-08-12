@@ -1,9 +1,10 @@
 package com.cbp7.auth;
 
-import com.cbp7.auth.dto.LoginRequest;
-import com.cbp7.auth.dto.LoginResponse;
-import com.cbp7.auth.dto.RegisterRequest;
-import com.cbp7.auth.dto.UserResponse;
+import com.cbp7.auth.dto.request.LoginRequest;
+import com.cbp7.auth.dto.request.ProfileUpdateRequest;
+import com.cbp7.auth.dto.request.RegisterRequest;
+import com.cbp7.auth.dto.response.LoginResponse;
+import com.cbp7.auth.dto.response.UserResponse;
 import com.cbp7.auth.entity.Role;
 import com.cbp7.auth.entity.User;
 import com.cbp7.auth.identity.UserIdentityResolver;
@@ -42,7 +43,15 @@ class AuthServiceTest {
         passwordEncoder = new BCryptPasswordEncoder();
         jwtProvider = mock(JwtProvider.class);
         notificationEventPublisher = mock(NotificationEventPublisher.class);
-        authService = new AuthService(userRepository, userIdentityResolver, passwordEncoder, jwtProvider, notificationEventPublisher);
+        authService = new com.cbp7.auth.service.impl.AuthServiceImpl(
+                userRepository,
+                userIdentityResolver,
+                passwordEncoder,
+                jwtProvider,
+                notificationEventPublisher,
+                new com.cbp7.auth.validation.AuthValidator(),
+                new com.cbp7.auth.mapper.AuthMapper()
+        );
     }
 
     @Test

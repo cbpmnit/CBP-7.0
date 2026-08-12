@@ -2,9 +2,9 @@ package com.cbp7.notification.controller;
 
 import com.cbp7.auth.entity.User;
 import com.cbp7.common.response.ApiResponse;
-import com.cbp7.notification.dto.CreateEmailOperationRequest;
-import com.cbp7.notification.dto.EmailLogDto;
-import com.cbp7.notification.dto.EmailOperationDto;
+import com.cbp7.notification.dto.request.CreateEmailOperationRequest;
+import com.cbp7.notification.dto.response.EmailLogDto;
+import com.cbp7.notification.dto.response.EmailOperationDto;
 import com.cbp7.notification.service.EmailOperationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

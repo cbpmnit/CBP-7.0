@@ -1,8 +1,8 @@
 package com.cbp7.admin.controller;
 
-import com.cbp7.admin.dto.AdminOperationsOverviewResponse;
+import com.cbp7.admin.dto.response.AdminOperationsOverviewResponse;
 import com.cbp7.admin.service.AdminOperationsService;
-import com.cbp7.certificate.dto.CertificateResponse;
+import com.cbp7.certificate.dto.response.CertificateResponse;
 import com.cbp7.certificate.service.CertificateService;
 import com.cbp7.common.response.ApiResponse;
 import lombok.RequiredArgsConstructor;

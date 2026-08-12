@@ -1,6 +1,6 @@
 package com.cbp7.admin.student.generator;
 
-import com.cbp7.admin.student.dto.AdminFullStudentDetailResponse;
+import com.cbp7.admin.student.dto.response.AdminFullStudentDetailResponse;
 import com.lowagie.text.Document;
 import com.lowagie.text.Element;
 import com.lowagie.text.Font;

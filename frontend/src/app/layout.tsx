@@ -13,7 +13,7 @@ const inter = Inter({
   variable: "--font-inter",
 });
 
-export const viewport: Viewport = {
+export const viewport: any = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,

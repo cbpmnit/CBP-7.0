@@ -1,18 +1,18 @@
 package com.cbp7.payment.controller;
 
-import com.cbp7.auth.dto.LoginRequest;
-import com.cbp7.auth.dto.RegisterRequest;
+import com.cbp7.auth.dto.request.LoginRequest;
+import com.cbp7.auth.dto.request.RegisterRequest;
 import com.cbp7.auth.entity.Role;
 import com.cbp7.auth.entity.User;
 import com.cbp7.auth.repository.UserRepository;
 import com.cbp7.cbp.enums.RegistrationStatus;
 import com.cbp7.cbp.repository.CbpRegistrationRepository;
 import com.cbp7.common.response.ApiResponse;
-import com.cbp7.payment.dto.CreatePaymentRequest;
+import com.cbp7.payment.dto.request.CreatePaymentRequest;
 import com.cbp7.payment.enums.PaymentMode;
 import com.cbp7.payment.enums.PaymentStatus;
 import com.cbp7.payment.repository.PaymentRepository;
-import com.cbp7.profile.dto.CreateProfileRequest;
+import com.cbp7.profile.dto.request.CreateProfileRequest;
 import com.cbp7.profile.entity.Branch;
 import com.cbp7.profile.entity.Course;
 import com.cbp7.profile.entity.Gender;

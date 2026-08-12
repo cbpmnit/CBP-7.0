@@ -1,6 +1,6 @@
 package com.cbp7.attendance.session.controller;
 
-import com.cbp7.attendance.session.dto.AttendanceSessionResponse;
+import com.cbp7.attendance.session.dto.response.AttendanceSessionResponse;
 import com.cbp7.attendance.session.entity.SessionStatus;
 import com.cbp7.attendance.session.service.AttendanceSessionService;
 import com.cbp7.common.response.ApiResponse;

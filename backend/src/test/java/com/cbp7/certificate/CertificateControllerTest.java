@@ -1,6 +1,6 @@
 package com.cbp7.certificate;
 
-import com.cbp7.attendance.record.dto.StudentAttendanceSummaryResponse;
+import com.cbp7.attendance.record.dto.response.StudentAttendanceSummaryResponse;
 import com.cbp7.attendance.record.service.AttendanceQueryService;
 import com.cbp7.auth.entity.Role;
 import com.cbp7.auth.entity.User;

@@ -1,6 +1,6 @@
 package com.cbp7.attendance.qr;
 
-import com.cbp7.attendance.qr.dto.SessionQrCodeResponse;
+import com.cbp7.attendance.qr.dto.response.SessionQrCodeResponse;
 import com.cbp7.attendance.qr.entity.AttendanceQrCode;
 import com.cbp7.attendance.qr.repository.AttendanceQrRepository;
 import com.cbp7.attendance.qr.service.AttendanceQrService;

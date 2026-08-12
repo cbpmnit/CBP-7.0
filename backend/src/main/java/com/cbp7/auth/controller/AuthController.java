@@ -1,9 +1,10 @@
 package com.cbp7.auth.controller;
 
-import com.cbp7.auth.dto.LoginRequest;
-import com.cbp7.auth.dto.LoginResponse;
-import com.cbp7.auth.dto.RegisterRequest;
-import com.cbp7.auth.dto.UserResponse;
+import com.cbp7.auth.dto.request.LoginRequest;
+import com.cbp7.auth.dto.request.ProfileUpdateRequest;
+import com.cbp7.auth.dto.request.RegisterRequest;
+import com.cbp7.auth.dto.response.LoginResponse;
+import com.cbp7.auth.dto.response.UserResponse;
 import com.cbp7.auth.entity.User;
 import com.cbp7.auth.service.AuthService;
 import com.cbp7.common.response.ApiResponse;
@@ -58,7 +59,7 @@ public class AuthController {
     @org.springframework.web.bind.annotation.PutMapping("/profile")
     public ResponseEntity<ApiResponse<UserResponse>> updateProfile(
             @AuthenticationPrincipal User user,
-            @Valid @RequestBody com.cbp7.auth.dto.ProfileUpdateRequest request
+            @Valid @RequestBody ProfileUpdateRequest request
     ) {
         UserResponse response = authService.updateProfile(user, request);
         return ResponseEntity.ok(ApiResponse.success("Profile updated successfully", response));

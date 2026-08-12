@@ -1,6 +1,6 @@
 package com.cbp7.certificate;
 
-import com.cbp7.attendance.record.dto.StudentAttendanceSummaryResponse;
+import com.cbp7.attendance.record.dto.response.StudentAttendanceSummaryResponse;
 import com.cbp7.attendance.record.service.AttendanceQueryService;
 import com.cbp7.auth.entity.Role;
 import com.cbp7.auth.entity.User;
@@ -8,7 +8,7 @@ import com.cbp7.auth.repository.UserRepository;
 import com.cbp7.cbp.entity.CbpRegistration;
 import com.cbp7.cbp.enums.RegistrationStatus;
 import com.cbp7.cbp.repository.CbpRegistrationRepository;
-import com.cbp7.certificate.dto.CertificateResponse;
+import com.cbp7.certificate.dto.response.CertificateResponse;
 import com.cbp7.certificate.entity.CertificateStatus;
 import com.cbp7.certificate.entity.CertificateType;
 import com.cbp7.certificate.repository.CertificateRepository;

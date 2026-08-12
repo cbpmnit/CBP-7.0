@@ -2,7 +2,8 @@ package com.cbp7.volunteer.controller;
 
 import com.cbp7.auth.entity.User;
 import com.cbp7.common.response.ApiResponse;
-import com.cbp7.volunteer.dto.*;
+import com.cbp7.volunteer.dto.request.*;
+import com.cbp7.volunteer.dto.response.*;
 import com.cbp7.volunteer.service.VolunteerInvitationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

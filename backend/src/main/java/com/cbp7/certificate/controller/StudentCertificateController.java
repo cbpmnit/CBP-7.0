@@ -1,7 +1,7 @@
 package com.cbp7.certificate.controller;
 
 import com.cbp7.auth.entity.User;
-import com.cbp7.certificate.dto.CertificateResponse;
+import com.cbp7.certificate.dto.response.CertificateResponse;
 import com.cbp7.certificate.entity.CertificateStatus;
 import com.cbp7.certificate.service.CertificateService;
 import com.cbp7.common.response.ApiResponse;

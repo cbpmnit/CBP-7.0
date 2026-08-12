@@ -6,7 +6,7 @@ import com.cbp7.payment.enums.PaymentStatus;
 import com.cbp7.payment.repository.PaymentRepository;
 import com.cbp7.payment.service.PaymentVerificationService;
 import com.cbp7.payment.gateway.PaymentGateway;
-import com.cbp7.payment.dto.PhonePeStatusResponse;
+import com.cbp7.payment.dto.response.PhonePeStatusResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -25,7 +25,7 @@ public class PaymentStatusScheduler {
     private final PhonePeConfig phonePeConfig;
     private final PaymentGateway paymentGateway;
 
-    @Scheduled(cron = "${phonepe.scheduler.cron:0 */5 * * * *}")
+    @Scheduled(cron = "${phonepe.scheduler.cron:0 */5 * * * *}") // every 5 mintes method execute
     public void reconcilePendingPayments() {
         log.info("Starting background payment reconciliation scheduler...");
         

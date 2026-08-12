@@ -1,10 +1,10 @@
 package com.cbp7.attendance.record;
 
-import com.cbp7.attendance.qr.dto.SessionQrCodeResponse;
+import com.cbp7.attendance.qr.dto.response.SessionQrCodeResponse;
 import com.cbp7.attendance.qr.repository.AttendanceQrRepository;
 import com.cbp7.attendance.qr.service.AttendanceQrService;
-import com.cbp7.attendance.record.dto.AdminAttendanceSummaryResponse;
-import com.cbp7.attendance.record.dto.StudentAttendanceSummaryResponse;
+import com.cbp7.attendance.record.dto.response.AdminAttendanceSummaryResponse;
+import com.cbp7.attendance.record.dto.response.StudentAttendanceSummaryResponse;
 import com.cbp7.attendance.record.repository.AttendanceRecordRepository;
 import com.cbp7.attendance.record.service.AttendanceQueryService;
 import com.cbp7.attendance.record.service.AttendanceService;

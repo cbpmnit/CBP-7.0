@@ -4,10 +4,10 @@ import com.cbp7.auth.entity.Role;
 import com.cbp7.auth.entity.User;
 import com.cbp7.common.exception.DuplicateResourceException;
 import com.cbp7.common.exception.ResourceNotFoundException;
-import com.cbp7.profile.dto.CreateProfileRequest;
-import com.cbp7.profile.dto.ProfileCompletionResponse;
-import com.cbp7.profile.dto.ProfileResponse;
-import com.cbp7.profile.dto.UpdateProfileRequest;
+import com.cbp7.profile.dto.request.CreateProfileRequest;
+import com.cbp7.profile.dto.request.UpdateProfileRequest;
+import com.cbp7.profile.dto.response.ProfileCompletionResponse;
+import com.cbp7.profile.dto.response.ProfileResponse;
 import com.cbp7.profile.entity.Branch;
 import com.cbp7.profile.entity.Course;
 import com.cbp7.profile.entity.Gender;
@@ -38,7 +38,13 @@ class ProfileServiceTest {
     void setUp() {
         userProfileRepository = mock(UserProfileRepository.class);
         profileCompletionRepository = mock(ProfileCompletionRepository.class);
-        profileService = new ProfileService(userProfileRepository, profileCompletionRepository);
+        profileService = new com.cbp7.profile.service.impl.ProfileServiceImpl(
+                userProfileRepository,
+                profileCompletionRepository,
+                new com.cbp7.profile.validation.ProfileValidator(),
+                new com.cbp7.profile.mapper.ProfileMapper(),
+                new com.cbp7.profile.engine.ProfileCompletionCalculator()
+        );
 
         testUser = User.builder()
                 .studentId("2023ucp1234")

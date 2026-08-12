@@ -1,8 +1,8 @@
 package com.cbp7.attendance.session;
 
-import com.cbp7.attendance.session.dto.AttendanceSessionResponse;
-import com.cbp7.attendance.session.dto.CreateAttendanceSessionRequest;
-import com.cbp7.attendance.session.dto.UpdateAttendanceSessionRequest;
+import com.cbp7.attendance.session.dto.request.CreateAttendanceSessionRequest;
+import com.cbp7.attendance.session.dto.request.UpdateAttendanceSessionRequest;
+import com.cbp7.attendance.session.dto.response.AttendanceSessionResponse;
 import com.cbp7.attendance.session.entity.AttendanceSession;
 import com.cbp7.attendance.session.entity.SessionStatus;
 import com.cbp7.attendance.session.repository.AttendanceSessionRepository;

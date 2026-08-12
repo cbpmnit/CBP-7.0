@@ -2,8 +2,8 @@ package com.cbp7.cbp;
 
 import com.cbp7.auth.entity.Role;
 import com.cbp7.auth.entity.User;
-import com.cbp7.cbp.dto.CbpRegistrationDetailResponse;
-import com.cbp7.cbp.dto.CbpRegistrationResponse;
+import com.cbp7.cbp.dto.response.CbpRegistrationDetailResponse;
+import com.cbp7.cbp.dto.response.CbpRegistrationResponse;
 import com.cbp7.cbp.entity.CbpRegistration;
 import com.cbp7.cbp.enums.RegistrationStatus;
 import com.cbp7.cbp.repository.CbpRegistrationRepository;
@@ -53,11 +53,13 @@ class CbpRegistrationServiceTest {
         userProfileRepository = mock(UserProfileRepository.class);
         profileCompletionRepository = mock(ProfileCompletionRepository.class);
         profileService = mock(ProfileService.class);
-        cbpRegistrationService = new CbpRegistrationService(
+        cbpRegistrationService = new com.cbp7.cbp.service.impl.CbpRegistrationServiceImpl(
                 cbpRegistrationRepository,
                 userProfileRepository,
                 profileCompletionRepository,
-                profileService
+                profileService,
+                new com.cbp7.cbp.validation.CbpRegistrationValidator(),
+                new com.cbp7.cbp.mapper.CbpRegistrationMapper()
         );
 
         studentUser = User.builder()

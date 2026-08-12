@@ -1,9 +1,9 @@
 package com.cbp7.attendance.record.controller;
 
-import com.cbp7.attendance.record.dto.AttendanceRecordResponse;
-import com.cbp7.attendance.record.dto.MarkAttendanceRequest;
-import com.cbp7.attendance.record.dto.ScanAttendanceRequest;
-import com.cbp7.attendance.record.dto.ScanAttendanceResponse;
+import com.cbp7.attendance.record.dto.request.MarkAttendanceRequest;
+import com.cbp7.attendance.record.dto.request.ScanAttendanceRequest;
+import com.cbp7.attendance.record.dto.response.AttendanceRecordResponse;
+import com.cbp7.attendance.record.dto.response.ScanAttendanceResponse;
 import com.cbp7.attendance.record.service.AttendanceService;
 import com.cbp7.auth.entity.User;
 import com.cbp7.common.response.ApiResponse;

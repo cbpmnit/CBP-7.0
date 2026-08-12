@@ -1,10 +1,10 @@
 package com.cbp7.auth;
 
 import com.cbp7.auth.controller.AuthController;
-import com.cbp7.auth.dto.LoginRequest;
-import com.cbp7.auth.dto.LoginResponse;
-import com.cbp7.auth.dto.RegisterRequest;
-import com.cbp7.auth.dto.UserResponse;
+import com.cbp7.auth.dto.request.LoginRequest;
+import com.cbp7.auth.dto.request.RegisterRequest;
+import com.cbp7.auth.dto.response.LoginResponse;
+import com.cbp7.auth.dto.response.UserResponse;
 import com.cbp7.auth.entity.Role;
 import com.cbp7.auth.entity.User;
 import com.cbp7.auth.service.AuthService;

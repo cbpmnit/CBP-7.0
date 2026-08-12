@@ -1,8 +1,8 @@
 package com.cbp7.attendance.qr.controller;
 
-import com.cbp7.attendance.qr.dto.StudentSessionQrResponse;
+import com.cbp7.attendance.qr.dto.response.StudentSessionQrResponse;
 import com.cbp7.attendance.qr.service.AttendanceQrService;
-import com.cbp7.attendance.session.dto.AttendanceSessionResponse;
+import com.cbp7.attendance.session.dto.response.AttendanceSessionResponse;
 import com.cbp7.attendance.session.service.AttendanceSessionService;
 import com.cbp7.auth.entity.User;
 import com.cbp7.common.response.ApiResponse;

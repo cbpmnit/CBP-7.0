@@ -2,10 +2,10 @@ package com.cbp7.profile.controller;
 
 import com.cbp7.auth.entity.User;
 import com.cbp7.common.response.ApiResponse;
-import com.cbp7.profile.dto.CreateProfileRequest;
-import com.cbp7.profile.dto.ProfileCompletionResponse;
-import com.cbp7.profile.dto.ProfileResponse;
-import com.cbp7.profile.dto.UpdateProfileRequest;
+import com.cbp7.profile.dto.request.CreateProfileRequest;
+import com.cbp7.profile.dto.request.UpdateProfileRequest;
+import com.cbp7.profile.dto.response.ProfileCompletionResponse;
+import com.cbp7.profile.dto.response.ProfileResponse;
 import com.cbp7.profile.service.ProfileService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

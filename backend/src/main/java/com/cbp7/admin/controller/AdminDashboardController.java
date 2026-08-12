@@ -1,7 +1,7 @@
 package com.cbp7.admin.controller;
 
-import com.cbp7.admin.dto.AdminDashboardSummaryResponse;
-import com.cbp7.admin.dto.AdminPaymentOverviewResponse;
+import com.cbp7.admin.dto.response.AdminDashboardSummaryResponse;
+import com.cbp7.admin.dto.response.AdminPaymentOverviewResponse;
 import com.cbp7.admin.service.AdminDashboardService;
 import com.cbp7.common.response.ApiResponse;
 import lombok.RequiredArgsConstructor;

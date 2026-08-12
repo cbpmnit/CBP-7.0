@@ -1,8 +1,8 @@
 package com.cbp7.cbp.controller;
 
 import com.cbp7.auth.entity.User;
-import com.cbp7.cbp.dto.CbpRegistrationDetailResponse;
-import com.cbp7.cbp.dto.CbpRegistrationResponse;
+import com.cbp7.cbp.dto.response.CbpRegistrationDetailResponse;
+import com.cbp7.cbp.dto.response.CbpRegistrationResponse;
 import com.cbp7.cbp.service.CbpRegistrationService;
 import com.cbp7.common.response.ApiResponse;
 import lombok.RequiredArgsConstructor;

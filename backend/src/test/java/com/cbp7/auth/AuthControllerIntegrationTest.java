@@ -1,7 +1,7 @@
 package com.cbp7.auth;
 
-import com.cbp7.auth.dto.LoginRequest;
-import com.cbp7.auth.dto.RegisterRequest;
+import com.cbp7.auth.dto.request.LoginRequest;
+import com.cbp7.auth.dto.request.RegisterRequest;
 import com.cbp7.auth.entity.User;
 import com.cbp7.auth.repository.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;

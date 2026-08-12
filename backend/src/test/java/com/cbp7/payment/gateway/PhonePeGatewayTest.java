@@ -3,7 +3,7 @@ package com.cbp7.payment.gateway;
 import com.cbp7.common.exception.PhonePeBadRequestException;
 import com.cbp7.common.exception.PhonePeGatewayException;
 import com.cbp7.payment.config.PhonePeConfig;
-import com.cbp7.payment.dto.PhonePeStatusResponse;
+import com.cbp7.payment.dto.response.PhonePeStatusResponse;
 import com.cbp7.payment.entity.Payment;
 import com.phonepe.sdk.pg.payments.v2.StandardCheckoutClient;
 import com.phonepe.sdk.pg.payments.v2.models.request.StandardCheckoutPayRequest;

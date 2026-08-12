@@ -6,10 +6,14 @@ import com.cbp7.auth.repository.UserRepository;
 import com.cbp7.common.config.FrontendProperties;
 import com.cbp7.common.exception.InvalidCredentialsException;
 import com.cbp7.notification.email.EmailSender;
-import com.cbp7.volunteer.dto.*;
+import com.cbp7.volunteer.dto.request.*;
+import com.cbp7.volunteer.dto.response.*;
 import com.cbp7.volunteer.entity.VolunteerInvitation;
 import com.cbp7.volunteer.entity.VolunteerInvitationStatus;
+import com.cbp7.volunteer.helper.VolunteerEmailHelper;
+import com.cbp7.volunteer.mapper.VolunteerMapper;
 import com.cbp7.volunteer.repository.VolunteerInvitationRepository;
+import com.cbp7.volunteer.validation.VolunteerValidator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -49,7 +53,6 @@ class VolunteerInvitationServiceTest {
     @Mock
     private FrontendProperties frontendProperties;
 
-    @InjectMocks
     private VolunteerInvitationService volunteerInvitationService;
 
     private InviteVolunteerRequest inviteRequest;
@@ -59,6 +62,20 @@ class VolunteerInvitationServiceTest {
         inviteRequest = new InviteVolunteerRequest("volunteer@mnit.ac.in", "John Volunteer", Set.of("ATTENDANCE_SCAN", "ATTENDANCE_VIEW", "STUDENT_VIEW"));
         lenient().when(frontendProperties.buildUrl(anyString())).thenAnswer(i -> "http://localhost:3000" + i.getArgument(0));
         lenient().when(frontendProperties.getUrl()).thenReturn("http://localhost:3000");
+
+        VolunteerEmailHelper emailHelper = new VolunteerEmailHelper(emailSender, frontendProperties);
+        VolunteerValidator validator = new VolunteerValidator();
+        VolunteerMapper mapper = new VolunteerMapper(frontendProperties);
+
+        volunteerInvitationService = new com.cbp7.volunteer.service.impl.VolunteerInvitationServiceImpl(
+                invitationRepository,
+                userRepository,
+                passwordEncoder,
+                frontendProperties,
+                emailHelper,
+                validator,
+                mapper
+        );
     }
 
     @Test

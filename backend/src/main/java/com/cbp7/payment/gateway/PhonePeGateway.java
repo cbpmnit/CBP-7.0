@@ -3,7 +3,7 @@ package com.cbp7.payment.gateway;
 import com.cbp7.common.exception.*;
 import com.cbp7.payment.config.PhonePeConfig;
 import com.cbp7.payment.entity.Payment;
-import com.cbp7.payment.dto.PhonePeStatusResponse;
+import com.cbp7.payment.dto.response.PhonePeStatusResponse;
 import com.phonepe.sdk.pg.payments.v2.StandardCheckoutClient;
 import com.phonepe.sdk.pg.payments.v2.models.request.StandardCheckoutPayRequest;
 import com.phonepe.sdk.pg.payments.v2.models.response.StandardCheckoutPayResponse;
@@ -82,6 +82,21 @@ public class PhonePeGateway implements PaymentGateway {
         } catch (Exception e) {
             log.error("PhonePe status query failed - Unexpected error: {}", e.getMessage(), e);
             throw new PhonePeGatewayException("Unable to retrieve payment status");
+        }
+    }
+
+    @Override
+    public com.phonepe.sdk.pg.common.models.response.CallbackResponse validateCallback(String authorization, String rawRequestBody) {
+        try {
+            return standardCheckoutClient.validateCallback(
+                    phonePeConfig.getCallbackUsername(),
+                    phonePeConfig.getCallbackPassword(),
+                    authorization,
+                    rawRequestBody
+            );
+        } catch (com.phonepe.sdk.pg.common.exception.PhonePeException e) {
+            log.error("PhonePe callback signature verification failed: {}", e.getMessage());
+            throw new PhonePeBadRequestException("Invalid PhonePe callback signature");
         }
     }
 

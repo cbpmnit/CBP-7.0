@@ -1,8 +1,8 @@
 package com.cbp7.notification.controller;
 
 import com.cbp7.common.response.ApiResponse;
-import com.cbp7.notification.dto.CreateEmailBlockRequest;
-import com.cbp7.notification.dto.EmailBlockDto;
+import com.cbp7.notification.dto.request.CreateEmailBlockRequest;
+import com.cbp7.notification.dto.response.EmailBlockDto;
 import com.cbp7.notification.service.EmailBlockService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

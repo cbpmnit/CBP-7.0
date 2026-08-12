@@ -1,7 +1,7 @@
 package com.cbp7.certificate.controller;
 
-import com.cbp7.certificate.dto.CertificateTemplateDto;
-import com.cbp7.certificate.dto.SaveCertificateTemplateRequest;
+import com.cbp7.certificate.dto.common.CertificateTemplateDto;
+import com.cbp7.certificate.dto.request.SaveCertificateTemplateRequest;
 import com.cbp7.certificate.service.CertificateTemplateService;
 import com.cbp7.common.response.ApiResponse;
 import jakarta.validation.Valid;

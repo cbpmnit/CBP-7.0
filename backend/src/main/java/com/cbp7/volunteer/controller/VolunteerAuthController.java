@@ -1,10 +1,10 @@
 package com.cbp7.volunteer.controller;
 
 import com.cbp7.common.response.ApiResponse;
-import com.cbp7.volunteer.dto.AcceptVolunteerInvitationRequest;
-import com.cbp7.volunteer.dto.AcceptVolunteerInvitationResponse;
-import com.cbp7.volunteer.dto.VerifyInvitationResponse;
-import com.cbp7.volunteer.dto.VolunteerPasswordSetupRequest;
+import com.cbp7.volunteer.dto.request.AcceptVolunteerInvitationRequest;
+import com.cbp7.volunteer.dto.request.VolunteerPasswordSetupRequest;
+import com.cbp7.volunteer.dto.response.AcceptVolunteerInvitationResponse;
+import com.cbp7.volunteer.dto.response.VerifyInvitationResponse;
 import com.cbp7.volunteer.service.VolunteerInvitationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

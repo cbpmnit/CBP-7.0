@@ -1,16 +1,17 @@
 package com.cbp7.attendance.session.controller;
 
-import com.cbp7.attendance.qr.dto.BatchQrGenerationResponse;
-import com.cbp7.attendance.qr.dto.QrGenerationStatusResponse;
-import com.cbp7.attendance.qr.dto.SessionQrCodeResponse;
+import com.cbp7.attendance.qr.dto.response.BatchQrGenerationResponse;
+import com.cbp7.attendance.qr.dto.response.QrGenerationStatusResponse;
+import com.cbp7.attendance.qr.dto.response.SessionQrCodeResponse;
 import com.cbp7.attendance.qr.service.AttendanceQrService;
-import com.cbp7.attendance.record.dto.StudentSessionRecordDto;
+import com.cbp7.attendance.record.dto.common.StudentSessionRecordDto;
 import com.cbp7.attendance.record.entity.AttendanceStatus;
 import com.cbp7.attendance.record.service.AttendanceQueryService;
-import com.cbp7.attendance.session.dto.AttendanceSessionResponse;
-import com.cbp7.attendance.session.dto.CreateAttendanceSessionRequest;
-import com.cbp7.attendance.session.dto.SessionSummaryResponse;
-import com.cbp7.attendance.session.dto.UpdateAttendanceSessionRequest;
+import com.cbp7.attendance.session.dto.request.CreateAttendanceSessionRequest;
+import com.cbp7.attendance.session.dto.request.UpdateAttendanceSessionRequest;
+import com.cbp7.attendance.session.dto.response.AttendanceSessionResponse;
+import com.cbp7.attendance.session.dto.response.SessionSummaryResponse;
+import com.cbp7.attendance.session.dto.response.SessionUpdateResponse;
 import com.cbp7.attendance.session.service.AttendanceSessionService;
 import com.cbp7.auth.entity.User;
 import com.cbp7.common.response.ApiResponse;
@@ -74,12 +75,12 @@ public class AdminAttendanceSessionController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or hasAuthority('SESSION_EDIT') or hasAuthority('SESSION_MANAGE')")
-    public ResponseEntity<ApiResponse<com.cbp7.attendance.session.dto.SessionUpdateResponse>> updateSession(
+    public ResponseEntity<ApiResponse<SessionUpdateResponse>> updateSession(
             @PathVariable UUID id,
             @Valid @RequestBody UpdateAttendanceSessionRequest request
     ) {
         AttendanceSessionResponse response = sessionService.updateSession(id, request);
-        com.cbp7.attendance.session.dto.SessionUpdateResponse updateResponse = com.cbp7.attendance.session.dto.SessionUpdateResponse.fromResponse(
+        SessionUpdateResponse updateResponse = SessionUpdateResponse.fromResponse(
                 "Session updated successfully. Attendance validity synchronized.",
                 true,
                 response

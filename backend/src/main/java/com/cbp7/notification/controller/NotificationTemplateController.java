@@ -1,14 +1,14 @@
 package com.cbp7.notification.controller;
 
-import com.cbp7.admin.student.dto.AdminStudentListItemResponse;
+import com.cbp7.admin.student.dto.response.AdminStudentListItemResponse;
 import com.cbp7.admin.student.service.AdminStudentManagementService;
 import com.cbp7.auth.entity.User;
 import com.cbp7.common.response.ApiResponse;
-import com.cbp7.notification.dto.CreateNotificationTemplateRequest;
-import com.cbp7.notification.dto.EmailVariableDto;
-import com.cbp7.notification.dto.NotificationTemplateResponse;
-import com.cbp7.notification.dto.SendTestEmailRequest;
-import com.cbp7.notification.dto.UpdateNotificationTemplateRequest;
+import com.cbp7.notification.dto.common.EmailVariableDto;
+import com.cbp7.notification.dto.request.CreateNotificationTemplateRequest;
+import com.cbp7.notification.dto.request.SendTestEmailRequest;
+import com.cbp7.notification.dto.request.UpdateNotificationTemplateRequest;
+import com.cbp7.notification.dto.response.NotificationTemplateResponse;
 import com.cbp7.notification.service.EmailNotificationService;
 import com.cbp7.notification.service.NotificationTemplateService;
 import jakarta.validation.Valid;

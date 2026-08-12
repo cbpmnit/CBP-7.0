@@ -1,18 +1,18 @@
 package com.cbp7.volunteer;
 
-import com.cbp7.auth.dto.LoginRequest;
-import com.cbp7.auth.dto.LoginResponse;
+import com.cbp7.auth.dto.request.LoginRequest;
+import com.cbp7.auth.dto.response.LoginResponse;
 import com.cbp7.auth.entity.Role;
 import com.cbp7.auth.entity.User;
 import com.cbp7.auth.repository.UserRepository;
 import com.cbp7.auth.security.JwtProvider;
 import com.cbp7.auth.service.AuthService;
-import com.cbp7.volunteer.dto.AcceptVolunteerInvitationRequest;
-import com.cbp7.volunteer.dto.AcceptVolunteerInvitationResponse;
-import com.cbp7.volunteer.dto.GrantVolunteerAccessRequest;
-import com.cbp7.volunteer.dto.InviteVolunteerRequest;
-import com.cbp7.volunteer.dto.VolunteerDetailResponse;
-import com.cbp7.volunteer.dto.VolunteerInviteCheckResponse;
+import com.cbp7.volunteer.dto.request.AcceptVolunteerInvitationRequest;
+import com.cbp7.volunteer.dto.request.GrantVolunteerAccessRequest;
+import com.cbp7.volunteer.dto.request.InviteVolunteerRequest;
+import com.cbp7.volunteer.dto.response.AcceptVolunteerInvitationResponse;
+import com.cbp7.volunteer.dto.response.VolunteerDetailResponse;
+import com.cbp7.volunteer.dto.response.VolunteerInviteCheckResponse;
 import com.cbp7.volunteer.repository.VolunteerInvitationRepository;
 import com.cbp7.volunteer.service.VolunteerInvitationService;
 import org.junit.jupiter.api.BeforeEach;
