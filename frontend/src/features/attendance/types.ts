@@ -1,5 +1,6 @@
 export type AttendanceStatus = "PRESENT" | "ABSENT"
 export type SessionStatus = "UPCOMING" | "ACTIVE" | "CLOSED"
+export type QrGenerationMode = "MISSING_ONLY" | "SELECTED_STUDENTS" | "FORCE_REGENERATE"
 
 export interface AttendanceRecordResponse {
   id: string
@@ -67,6 +68,8 @@ export interface StudentSessionRecordDto {
   status: AttendanceStatus
   markedAt?: string | null
   markedBy?: string | null
+  hasActiveQr?: boolean
+  qrStatus?: "Generated" | "Missing"
   student?: {
     id: string
     name: string
@@ -80,6 +83,16 @@ export interface StudentSessionRecordDto {
   } | null
 }
 
+export interface EligibleStudentQrItem {
+  studentId: string
+  name: string
+  email: string
+  registrationStatus: string
+  paymentStatus: string
+  qrStatus: "GENERATED" | "MISSING"
+  attendanceStatus: "PRESENT" | "ABSENT" | "NOT_MARKED"
+}
+
 export interface SessionQrCodeResponse {
   id: string
   sessionId: string
@@ -90,10 +103,20 @@ export interface SessionQrCodeResponse {
   active: boolean
 }
 
+export interface BatchQrGenerationRequest {
+  sessionId: string
+  mode?: QrGenerationMode
+  studentIds?: string[]
+}
+
 export interface BatchQrGenerationResponse {
   totalStudents: number
   generated: number
   generatedCount?: number
+  skippedCount?: number
+  alreadyAttendedCount?: number
+  alreadyHasQrCount?: number
+  summaryMessage?: string
 }
 
 export interface QrGenerationStatusResponse {

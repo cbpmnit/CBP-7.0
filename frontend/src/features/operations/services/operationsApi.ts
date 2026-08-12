@@ -73,6 +73,8 @@ export const operationsApi = {
     templateId: string
     recipientType: string
     triggerType: string
+    individualRecipients?: string[]
+    filters?: string
   }) =>
     apiClient.post<any>("/api/v1/admin/email-operations", data),
 }

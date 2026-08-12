@@ -1,20 +1,26 @@
 package com.cbp7.program.attendance.qr.service.impl;
 
 import com.cbp7.program.attendance.qr.service.AttendanceQrService;
+import com.cbp7.program.attendance.qr.dto.request.BatchQrGenerationRequest;
+import com.cbp7.program.attendance.qr.dto.request.GenerateSelectedQrRequest;
+import com.cbp7.program.attendance.qr.dto.request.RegenerateSelectedQrRequest;
 import com.cbp7.program.attendance.qr.dto.response.BatchQrGenerationResponse;
 import com.cbp7.program.attendance.qr.dto.response.QrGenerationStatusResponse;
 import com.cbp7.program.attendance.qr.dto.response.SessionQrCodeResponse;
 import com.cbp7.program.attendance.qr.dto.response.StudentSessionQrResponse;
 import com.cbp7.program.attendance.qr.entity.AttendanceQrCode;
+import com.cbp7.program.attendance.qr.entity.QrGenerationMode;
 import com.cbp7.program.attendance.qr.generator.AttendanceQrTokenGenerator;
 import com.cbp7.program.attendance.qr.generator.QrImageGenerator;
 import com.cbp7.program.attendance.qr.AttendanceQrMapper;
 import com.cbp7.program.attendance.qr.repository.AttendanceQrRepository;
+import com.cbp7.program.attendance.record.repository.AttendanceRecordRepository;
 import com.cbp7.program.attendance.session.entity.AttendanceSession;
 import com.cbp7.program.attendance.session.entity.SessionStatus;
 import com.cbp7.program.attendance.session.repository.AttendanceSessionRepository;
 import com.cbp7.identity.auth.entity.Role;
 import com.cbp7.identity.auth.repository.UserRepository;
+import com.cbp7.program.registration.entity.CbpRegistration;
 import com.cbp7.program.registration.repository.CbpRegistrationRepository;
 import com.cbp7.common.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +39,7 @@ import java.util.*;
 public class AttendanceQrServiceImpl implements AttendanceQrService {
 
     private final AttendanceQrRepository attendanceQrRepository;
+    private final AttendanceRecordRepository attendanceRecordRepository;
     private final AttendanceSessionRepository sessionRepository;
     private final CbpRegistrationRepository cbpRegistrationRepository;
     private final UserRepository userRepository;
@@ -47,25 +54,126 @@ public class AttendanceQrServiceImpl implements AttendanceQrService {
     @Override
     @Transactional
     public BatchQrGenerationResponse generateStudentQrsForSession(UUID sessionId) {
+        return generateStudentQrsForSession(new BatchQrGenerationRequest(sessionId, QrGenerationMode.MISSING_ONLY, null));
+    }
+
+    @Override
+    @Transactional
+    public BatchQrGenerationResponse generateSelectedQrs(GenerateSelectedQrRequest request) {
+        if (request == null || request.sessionId() == null || request.studentIds() == null || request.studentIds().isEmpty()) {
+            throw new IllegalArgumentException("Session ID and studentIds collection are required.");
+        }
+        return generateStudentQrsForSession(new BatchQrGenerationRequest(
+                request.sessionId(),
+                QrGenerationMode.SELECTED_STUDENTS,
+                request.studentIds()
+        ));
+    }
+
+    @Override
+    @Transactional
+    public BatchQrGenerationResponse regenerateSelectedQrs(RegenerateSelectedQrRequest request) {
+        if (request == null || request.sessionId() == null || request.studentIds() == null || request.studentIds().isEmpty()) {
+            throw new IllegalArgumentException("Session ID and studentIds collection are required.");
+        }
+
+        UUID sessionId = request.sessionId();
+        Set<String> attendedStudentIds = attendanceRecordRepository.findAttendedStudentIdsForSession(sessionId);
+
+        // Check if any selected student has already marked attendance
+        boolean hasAttendedStudents = request.studentIds().stream()
+                .map(String::trim)
+                .map(String::toLowerCase)
+                .anyMatch(attendedStudentIds::contains);
+
+        if (hasAttendedStudents && !request.isForce()) {
+            throw new IllegalStateException("Student has already marked attendance. Continue only with force regeneration.");
+        }
+
+        return generateStudentQrsForSession(new BatchQrGenerationRequest(
+                sessionId,
+                QrGenerationMode.FORCE_REGENERATE,
+                request.studentIds()
+        ));
+    }
+
+    @Override
+    @Transactional
+    public BatchQrGenerationResponse generateStudentQrsForSession(BatchQrGenerationRequest request) {
+        if (request == null || request.sessionId() == null) {
+            throw new IllegalArgumentException("Session ID is required for QR generation.");
+        }
+
+        UUID sessionId = request.sessionId();
         AttendanceSession session = fetchSessionById(sessionId);
 
         if (session.getStatus() == SessionStatus.CLOSED) {
             throw new IllegalStateException("QR operations are not allowed for closed sessions.");
         }
 
-        Set<String> studentIds = getRegisteredStudentIds();
+        QrGenerationMode mode = request.getEffectiveMode();
+        Set<String> targetStudentIds = resolveTargetStudentIds(request);
+
+        // Fetch DB sets to avoid N+1 query overhead
+        Set<String> attendedStudentIds = attendanceRecordRepository.findAttendedStudentIdsForSession(sessionId);
+        Set<String> activeQrStudentIds = attendanceQrRepository.findActiveStudentIdsForSession(sessionId);
+
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime expiresAt = tokenGenerator.calculateExpiry(session);
 
         long generatedCount = 0;
-        for (String studentId : studentIds) {
-            deactivateActiveTokensForStudent(sessionId, studentId); // inactive all the sessions
-            createAndSaveStudentQrCode(sessionId, studentId, now, expiresAt);
+        long skippedCount = 0;
+        long alreadyAttendedCount = 0;
+        long alreadyHasQrCount = 0;
+
+        for (String studentId : targetStudentIds) {
+            String cleanStudentId = studentId.toLowerCase().trim();
+
+            // Rule 1: CRITICAL - Never regenerate QR for students who have ALREADY marked attendance unless force == true via explicit action
+            if (attendedStudentIds.contains(cleanStudentId) || checkAttendanceStatus(sessionId, cleanStudentId)) {
+                alreadyAttendedCount++;
+                skippedCount++;
+                log.info("Skipping QR generation for student {} - attendance already marked", cleanStudentId);
+                continue;
+            }
+
+            // Rule 2: In MISSING_ONLY mode, skip if an active QR pass already exists
+            if (mode == QrGenerationMode.MISSING_ONLY && (activeQrStudentIds.contains(cleanStudentId) || checkExistingQr(sessionId, cleanStudentId))) {
+                alreadyHasQrCount++;
+                skippedCount++;
+                continue;
+            }
+
+            // If regenerating for a student with an active QR code, deactivate old tokens first
+            if (activeQrStudentIds.contains(cleanStudentId)) {
+                deactivateActiveTokensForStudent(sessionId, cleanStudentId);
+            }
+
+            createAndSaveStudentQrCode(sessionId, cleanStudentId, now, expiresAt);
             generatedCount++;
         }
 
-        log.info("Generated {} student QR codes for session Day {}", generatedCount, session.getDayNumber());
-        return new BatchQrGenerationResponse(studentIds.size(), generatedCount);
+        String summary = String.format(
+                "QR Generation Completed (%s). Mode: %s. Generated: %d, Skipped: %d (Attended: %d, Has Active QR: %d).",
+                session.getTitle() != null ? session.getTitle() : "Day " + session.getDayNumber(),
+                mode,
+                generatedCount,
+                skippedCount,
+                alreadyAttendedCount,
+                alreadyHasQrCount
+        );
+
+        log.info(summary);
+
+        return new BatchQrGenerationResponse(
+                targetStudentIds.size(),
+                generatedCount,
+                generatedCount,
+                skippedCount,
+                alreadyAttendedCount,
+                alreadyHasQrCount,
+                summary
+        );
     }
 
     @Override
@@ -178,17 +286,35 @@ public class AttendanceQrServiceImpl implements AttendanceQrService {
         return qrImageGenerator.generatePngBytes(token);
     }
 
-    // --- Private Story Helper Methods ---
+    // --- Private Helper Methods ---
 
     private AttendanceSession fetchSessionById(UUID sessionId) {
         return sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Session not found with ID: " + sessionId));
     }
 
+    private Set<String> resolveTargetStudentIds(BatchQrGenerationRequest request) {
+        if (request.getEffectiveMode() == QrGenerationMode.SELECTED_STUDENTS || request.studentIds() != null) {
+            if (request.studentIds() == null || request.studentIds().isEmpty()) {
+                throw new IllegalArgumentException("studentIds collection cannot be empty.");
+            }
+            Set<String> selected = new LinkedHashSet<>();
+            for (String sId : request.studentIds()) {
+                if (sId != null && !sId.isBlank()) {
+                    selected.add(sId.trim().toLowerCase());
+                }
+            }
+            return selected;
+        }
+        return getRegisteredStudentIds();
+    }
+
     private Set<String> getRegisteredStudentIds() {
         Set<String> distinctStudentIds = new LinkedHashSet<>();
         cbpRegistrationRepository.findAll().forEach(r -> {
-            if (r.getStudentId() != null && !r.getStudentId().isBlank()) {
+            // Rule 1: Never generate QR for unpaid students
+            if (r.getStudentId() != null && !r.getStudentId().isBlank() &&
+                r.getRegistrationStatus() != com.cbp7.program.registration.entity.RegistrationStatus.PAYMENT_PENDING) {
                 distinctStudentIds.add(r.getStudentId().trim().toLowerCase());
             }
         });
@@ -198,6 +324,14 @@ public class AttendanceQrServiceImpl implements AttendanceQrService {
             }
         });
         return distinctStudentIds;
+    }
+
+    private boolean checkAttendanceStatus(UUID sessionId, String studentId) {
+        return attendanceRecordRepository.existsBySessionIdAndStudentIdIgnoreCase(sessionId, studentId);
+    }
+
+    private boolean checkExistingQr(UUID sessionId, String studentId) {
+        return attendanceQrRepository.existsBySessionIdAndStudentIdIgnoreCaseAndActiveTrue(sessionId, studentId);
     }
 
     private void deactivateActiveTokensForStudent(UUID sessionId, String studentId) {

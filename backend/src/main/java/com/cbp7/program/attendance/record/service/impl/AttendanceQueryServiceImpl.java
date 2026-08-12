@@ -1,5 +1,7 @@
 package com.cbp7.program.attendance.record.service.impl;
 
+import com.cbp7.program.attendance.qr.dto.response.EligibleStudentQrResponse;
+import com.cbp7.program.attendance.qr.repository.AttendanceQrRepository;
 import com.cbp7.program.attendance.record.AttendanceCalculator;
 import com.cbp7.program.attendance.record.dto.common.*;
 import com.cbp7.program.attendance.record.dto.response.*;
@@ -14,6 +16,8 @@ import com.cbp7.program.attendance.record.service.AttendanceQueryService;
 import com.cbp7.program.attendance.session.dto.response.SessionSummaryResponse;
 import com.cbp7.program.attendance.session.entity.AttendanceSession;
 import com.cbp7.program.attendance.session.repository.AttendanceSessionRepository;
+import com.cbp7.program.registration.entity.CbpRegistration;
+import com.cbp7.program.registration.repository.CbpRegistrationRepository;
 import com.cbp7.identity.auth.entity.Role;
 import com.cbp7.identity.auth.entity.User;
 import com.cbp7.identity.auth.repository.UserRepository;
@@ -36,6 +40,8 @@ public class AttendanceQueryServiceImpl implements AttendanceQueryService {
 
     private final AttendanceRecordRepository attendanceRecordRepository;
     private final AttendanceSessionRepository sessionRepository;
+    private final AttendanceQrRepository attendanceQrRepository;
+    private final CbpRegistrationRepository cbpRegistrationRepository;
     private final UserRepository userRepository;
     private final AttendanceMarkerResolver markerResolver;
     private final AttendanceMapper attendanceMapper;
@@ -86,6 +92,109 @@ public class AttendanceQueryServiceImpl implements AttendanceQueryService {
                 .toList();
 
         return new PageImpl<>(dtos, pageable, recordsPage.getTotalElements());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<EligibleStudentQrResponse> getEligibleStudentsForSessionQr(
+            UUID sessionId,
+            String search,
+            String qrStatusFilter,
+            Pageable pageable
+    ) {
+        if (!sessionRepository.existsById(sessionId)) {
+            throw new ResourceNotFoundException("Session not found with ID: " + sessionId);
+        }
+
+        Set<String> activeQrStudentIds = attendanceQrRepository.findActiveStudentIdsForSession(sessionId);
+        Set<String> attendedStudentIds = attendanceRecordRepository.findAttendedStudentIdsForSession(sessionId);
+
+        List<EligibleStudentQrResponse> allEligible = new ArrayList<>();
+        Set<String> processedStudentIds = new HashSet<>();
+
+        // 1. Process registrations with payment SUCCESS
+        List<CbpRegistration> registrations = cbpRegistrationRepository.findAll();
+        for (CbpRegistration r : registrations) {
+            if (r.getStudentId() == null || r.getStudentId().isBlank()) continue;
+            String cleanStudentId = r.getStudentId().trim().toLowerCase();
+            if (processedStudentIds.contains(cleanStudentId)) continue;
+
+            // Rule 1: Never generate QR for unpaid students
+            if (r.getRegistrationStatus() == com.cbp7.program.registration.entity.RegistrationStatus.PAYMENT_PENDING) {
+                continue;
+            }
+
+            processedStudentIds.add(cleanStudentId);
+
+            boolean hasQr = activeQrStudentIds.contains(cleanStudentId);
+            boolean hasAttended = attendedStudentIds.contains(cleanStudentId);
+
+            String qrStatus = hasQr ? "GENERATED" : "MISSING";
+            String attendanceStatus = hasAttended ? "PRESENT" : "NOT_MARKED";
+            String fullName = (r.getFirstName() != null ? r.getFirstName() : "") +
+                    (r.getLastName() != null ? " " + r.getLastName() : "");
+            if (fullName.isBlank()) fullName = cleanStudentId;
+
+            allEligible.add(new EligibleStudentQrResponse(
+                    cleanStudentId,
+                    fullName,
+                    r.getEmail() != null ? r.getEmail() : "",
+                    r.getRegistrationStatus() != null ? r.getRegistrationStatus().name() : "CONFIRMED",
+                    "SUCCESS",
+                    qrStatus,
+                    attendanceStatus
+            ));
+        }
+
+        // 2. Process student users with ROLE_STUDENT
+        List<User> studentUsers = userRepository.findAll();
+        for (User u : studentUsers) {
+            if (!u.hasRole(Role.ROLE_STUDENT) || u.getStudentId() == null || u.getStudentId().isBlank()) continue;
+            String cleanStudentId = u.getStudentId().trim().toLowerCase();
+            if (processedStudentIds.contains(cleanStudentId)) continue;
+
+            processedStudentIds.add(cleanStudentId);
+
+            boolean hasQr = activeQrStudentIds.contains(cleanStudentId);
+            boolean hasAttended = attendedStudentIds.contains(cleanStudentId);
+
+            String qrStatus = hasQr ? "GENERATED" : "MISSING";
+            String attendanceStatus = hasAttended ? "PRESENT" : "NOT_MARKED";
+
+            allEligible.add(new EligibleStudentQrResponse(
+                    cleanStudentId,
+                    u.getName() != null ? u.getName() : cleanStudentId,
+                    u.getEmail() != null ? u.getEmail() : "",
+                    "CONFIRMED",
+                    "SUCCESS",
+                    qrStatus,
+                    attendanceStatus
+            ));
+        }
+
+        // Filter search term
+        String cleanSearch = search != null && !search.isBlank() ? search.trim().toLowerCase() : null;
+        List<EligibleStudentQrResponse> filtered = allEligible.stream().filter(item -> {
+            if (cleanSearch != null) {
+                boolean matchesSearch = item.studentId().toLowerCase().contains(cleanSearch)
+                        || item.name().toLowerCase().contains(cleanSearch)
+                        || item.email().toLowerCase().contains(cleanSearch);
+                if (!matchesSearch) return false;
+            }
+            if (qrStatusFilter != null && !"ALL".equalsIgnoreCase(qrStatusFilter)) {
+                if (!item.qrStatus().equalsIgnoreCase(qrStatusFilter)) return false;
+            }
+            return true;
+        }).toList();
+
+        // Paginate
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), filtered.size());
+        List<EligibleStudentQrResponse> pageContent = (start <= end && start < filtered.size())
+                ? filtered.subList(start, end)
+                : Collections.emptyList();
+
+        return new PageImpl<>(pageContent, pageable, filtered.size());
     }
 
     @Override

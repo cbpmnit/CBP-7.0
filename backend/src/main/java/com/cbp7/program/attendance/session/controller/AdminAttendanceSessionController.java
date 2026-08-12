@@ -177,4 +177,17 @@ public class AdminAttendanceSessionController {
         Page<StudentSessionRecordDto> response = attendanceQueryService.getSessionRecordsPaginated(id, search, status, pageable);
         return ResponseEntity.ok(ApiResponse.success("Session attendance records retrieved successfully", response));
     }
+
+    @GetMapping("/{id}/eligible-students")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('ATTENDANCE_VIEW')")
+    public ResponseEntity<ApiResponse<Page<com.cbp7.program.attendance.qr.dto.response.EligibleStudentQrResponse>>> getEligibleStudentsForSessionQr(
+            @PathVariable UUID id,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String qrStatus,
+            @PageableDefault(size = 20) Pageable pageable
+    ) {
+        Page<com.cbp7.program.attendance.qr.dto.response.EligibleStudentQrResponse> response = attendanceQueryService.getEligibleStudentsForSessionQr(id, search, qrStatus, pageable);
+        return ResponseEntity.ok(ApiResponse.success("Eligible student QR list retrieved successfully", response));
+    }
 }
+

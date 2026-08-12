@@ -5,13 +5,18 @@ import com.cbp7.program.attendance.record.entity.AttendanceStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 public interface AttendanceRecordRepository extends JpaRepository<AttendanceRecord, UUID> {
     Optional<AttendanceRecord> findBySessionIdAndStudentId(UUID sessionId, String studentId);
     boolean existsBySessionIdAndStudentId(UUID sessionId, String studentId);
+    boolean existsBySessionIdAndStudentIdIgnoreCase(UUID sessionId, String studentId);
     List<AttendanceRecord> findBySessionId(UUID sessionId);
     List<AttendanceRecord> findByStudentId(String studentId);
     long countBySessionId(UUID sessionId);
@@ -19,6 +24,9 @@ public interface AttendanceRecordRepository extends JpaRepository<AttendanceReco
     long countByStudentIdAndStatus(String studentId, AttendanceStatus status);
     long countByStudentId(String studentId);
     List<AttendanceRecord> findTop50ByMarkedByOrderByMarkedAtDesc(String markedBy);
+
+    @Query("SELECT LOWER(r.studentId) FROM AttendanceRecord r WHERE r.sessionId = :sessionId")
+    Set<String> findAttendedStudentIdsForSession(@Param("sessionId") UUID sessionId);
 
     Page<AttendanceRecord> findBySessionId(UUID sessionId, Pageable pageable);
     Page<AttendanceRecord> findBySessionIdAndStatus(UUID sessionId, AttendanceStatus status, Pageable pageable);

@@ -5,7 +5,9 @@ import {
   AttendanceSessionDto,
   SessionSummaryResponse,
   StudentSessionRecordDto,
+  EligibleStudentQrItem,
   SessionQrCodeResponse,
+  BatchQrGenerationRequest,
   BatchQrGenerationResponse,
   QrGenerationStatusResponse,
   StudentSessionQrResponse,
@@ -15,6 +17,7 @@ import {
   DailyAttendanceReportResponse,
   StudentAttendanceProfile,
   UserAttendanceProfile,
+  QrGenerationMode,
 } from "@/features/attendance/types"
 import { PageResponse } from "@/types/pagination"
 
@@ -66,8 +69,34 @@ export const attendanceApi = {
     )
   },
 
-  generateStudentQrsForSession: (sessionId: string) =>
-    apiClient.post<BatchQrGenerationResponse>(`/api/v1/admin/attendance/sessions/${sessionId}/generate-student-qrs`),
+  getEligibleStudentsForSessionQr: (
+    sessionId: string,
+    search?: string,
+    qrStatus?: string,
+    page = 0,
+    size = 20
+  ) => {
+    const params = new URLSearchParams()
+    if (search && search.trim()) params.append("search", search.trim())
+    if (qrStatus && qrStatus !== "ALL") params.append("qrStatus", qrStatus)
+    params.append("page", page.toString())
+    params.append("size", size.toString())
+    return apiClient.get<PageResponse<EligibleStudentQrItem>>(
+      `/api/v1/admin/attendance/sessions/${sessionId}/eligible-students?${params.toString()}`
+    )
+  },
+
+  generateBatchStudentQrs: (payload: BatchQrGenerationRequest) =>
+    apiClient.post<BatchQrGenerationResponse>("/api/v1/admin/attendance/qr/generate", payload),
+
+  generateStudentQrsForSession: (sessionId: string, mode: QrGenerationMode = "MISSING_ONLY", studentIds?: string[]) =>
+    apiClient.post<BatchQrGenerationResponse>("/api/v1/admin/attendance/qr/generate", { sessionId, mode, studentIds }),
+
+  generateSelectedQrs: (sessionId: string, studentIds: string[]) =>
+    apiClient.post<BatchQrGenerationResponse>("/api/v1/admin/attendance/qr/generate-selected", { sessionId, studentIds }),
+
+  regenerateSelectedQrs: (sessionId: string, studentIds: string[], force = false) =>
+    apiClient.post<BatchQrGenerationResponse>("/api/v1/admin/attendance/qr/regenerate-selected", { sessionId, studentIds, force }),
 
   getQrGenerationStatus: (sessionId: string) =>
     apiClient.get<QrGenerationStatusResponse>(`/api/v1/admin/attendance/sessions/${sessionId}/qr-status`),

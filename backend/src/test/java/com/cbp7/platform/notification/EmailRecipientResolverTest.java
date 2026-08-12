@@ -5,6 +5,7 @@ import com.cbp7.platform.admin.student.service.AdminStudentManagementService;
 import com.cbp7.identity.auth.entity.User;
 import com.cbp7.identity.auth.repository.UserRepository;
 import com.cbp7.platform.notification.dto.request.CreateEmailOperationRequest;
+import com.cbp7.program.attendance.record.service.AttendanceQueryService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -32,11 +33,14 @@ class EmailRecipientResolverTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private AttendanceQueryService attendanceQueryService;
+
     private EmailRecipientResolver resolver;
 
     @BeforeEach
     void setUp() {
-        resolver = new EmailRecipientResolver(studentManagementService, userRepository);
+        resolver = new EmailRecipientResolver(studentManagementService, userRepository, attendanceQueryService);
     }
 
     @Test
