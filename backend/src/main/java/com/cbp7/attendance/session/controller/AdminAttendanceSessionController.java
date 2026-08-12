@@ -12,6 +12,8 @@ import com.cbp7.attendance.session.dto.request.UpdateAttendanceSessionRequest;
 import com.cbp7.attendance.session.dto.response.AttendanceSessionResponse;
 import com.cbp7.attendance.session.dto.response.SessionSummaryResponse;
 import com.cbp7.attendance.session.dto.response.SessionUpdateResponse;
+import com.cbp7.attendance.session.entity.AttendanceSession;
+import com.cbp7.attendance.session.mapper.AttendanceSessionMapper;
 import com.cbp7.attendance.session.service.AttendanceSessionService;
 import com.cbp7.auth.entity.User;
 import com.cbp7.common.response.ApiResponse;
@@ -46,6 +48,7 @@ public class AdminAttendanceSessionController {
     private final AttendanceSessionService sessionService;
     private final AttendanceQrService qrService;
     private final AttendanceQueryService attendanceQueryService;
+    private final AttendanceSessionMapper sessionMapper;
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
@@ -80,7 +83,7 @@ public class AdminAttendanceSessionController {
             @Valid @RequestBody UpdateAttendanceSessionRequest request
     ) {
         AttendanceSessionResponse response = sessionService.updateSession(id, request);
-        SessionUpdateResponse updateResponse = SessionUpdateResponse.fromResponse(
+        SessionUpdateResponse updateResponse = sessionMapper.toUpdateResponse(
                 "Session updated successfully. Attendance validity synchronized.",
                 true,
                 response

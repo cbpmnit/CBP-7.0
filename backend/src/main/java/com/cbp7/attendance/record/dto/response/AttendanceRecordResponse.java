@@ -1,6 +1,5 @@
 package com.cbp7.attendance.record.dto.response;
 
-import com.cbp7.attendance.record.entity.AttendanceRecord;
 import com.cbp7.attendance.record.entity.AttendanceStatus;
 
 import java.time.LocalDate;
@@ -15,18 +14,6 @@ public record AttendanceRecordResponse(
         LocalDateTime markedAt,
         AttendanceStatus status
 ) {
-    public static AttendanceRecordResponse fromEntity(AttendanceRecord record) {
-        if (record == null) return null;
-        return new AttendanceRecordResponse(
-                record.getId(),
-                record.getSessionId(),
-                record.getStudentId(),
-                record.getMarkedBy(),
-                record.getMarkedAt(),
-                record.getStatus()
-        );
-    }
-
     public LocalDate attendanceDate() {
         return markedAt != null ? markedAt.toLocalDate() : LocalDate.now();
     }

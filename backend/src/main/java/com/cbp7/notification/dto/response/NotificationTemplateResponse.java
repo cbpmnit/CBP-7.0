@@ -1,7 +1,6 @@
 package com.cbp7.notification.dto.response;
 
 import com.cbp7.notification.entity.NotificationChannel;
-import com.cbp7.notification.entity.NotificationTemplate;
 import com.cbp7.notification.entity.NotificationType;
 
 import java.time.LocalDateTime;
@@ -25,28 +24,4 @@ public record NotificationTemplateResponse(
         String createdBy,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
-) {
-    public static NotificationTemplateResponse fromEntity(NotificationTemplate template) {
-        String eventTypeStr = template.getEventType() != null ? template.getEventType()
-                : (template.getType() != null ? template.getType().name() : "ATTENDANCE_QR_GENERATED");
-        return new NotificationTemplateResponse(
-                template.getId(),
-                template.getName(),
-                template.getName(),
-                template.getChannel() != null ? template.getChannel() : NotificationChannel.EMAIL,
-                template.getType() != null ? template.getType() : NotificationType.ATTENDANCE_QR_GENERATED,
-                eventTypeStr,
-                eventTypeStr,
-                template.getSubject(),
-                template.getContent(),
-                template.getContent(),
-                template.getVariables(),
-                template.getDesignJson(),
-                template.getStatus() != null ? template.getStatus() : "DRAFT",
-                template.getPublishedAt(),
-                template.getCreatedBy(),
-                template.getCreatedAt(),
-                template.getUpdatedAt()
-        );
-    }
-}
+) {}

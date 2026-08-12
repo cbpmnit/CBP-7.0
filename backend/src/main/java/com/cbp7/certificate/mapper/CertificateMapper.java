@@ -14,7 +14,15 @@ public class CertificateMapper {
             return null;
         }
 
-        return CertificateResponse.fromEntity(cert);
+        return new CertificateResponse(
+                cert.getId(),
+                cert.getStudentId(),
+                cert.getCertificateNumber(),
+                cert.getCertificateType(),
+                cert.getStatus(),
+                cert.getFileUrl(),
+                cert.getGeneratedAt()
+        );
     }
 
     public CertificateTemplateDto toCertificateTemplateDto(CertificateTemplate template) {
@@ -22,6 +30,14 @@ public class CertificateMapper {
             return null;
         }
 
-        return CertificateTemplateDto.fromEntity(template);
+        return new CertificateTemplateDto(
+                template.getId(),
+                template.getName(),
+                template.getBackgroundUrl(),
+                template.getFieldConfigurationJson(),
+                template.getStatus(),
+                template.getCreatedAt(),
+                template.getUpdatedAt()
+        );
     }
 }

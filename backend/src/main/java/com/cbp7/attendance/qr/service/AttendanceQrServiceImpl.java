@@ -13,8 +13,10 @@ import com.cbp7.auth.entity.Role;
 import com.cbp7.auth.repository.UserRepository;
 import com.cbp7.cbp.repository.CbpRegistrationRepository;
 import com.cbp7.common.exception.ResourceNotFoundException;
+import com.cbp7.attendance.qr.mapper.AttendanceQrMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,7 +33,8 @@ public class AttendanceQrServiceImpl implements AttendanceQrService {
     private final CbpRegistrationRepository cbpRegistrationRepository;
     private final UserRepository userRepository;
     private final QrImageGenerator qrImageGenerator;
-    private final org.springframework.core.env.Environment env;
+    private final AttendanceQrMapper attendanceQrMapper;
+    private final Environment env;
 
     private static final String TOKEN_PREFIX = "CBP_STUDENT_QR_";
 
@@ -176,7 +179,7 @@ public class AttendanceQrServiceImpl implements AttendanceQrService {
 
         AttendanceQrCode saved = attendanceQrRepository.save(qrCode);
         String qrImage = qrImageGenerator.generateBase64DataUri(saved.getToken());
-        return SessionQrCodeResponse.fromEntity(saved, qrImage);
+        return attendanceQrMapper.toSessionQrCodeResponse(saved, qrImage);
     }
 
     @Override
@@ -186,7 +189,7 @@ public class AttendanceQrServiceImpl implements AttendanceQrService {
                 .orElseThrow(() -> new ResourceNotFoundException("Active QR code not found for session ID: " + sessionId));
 
         String qrImage = qrImageGenerator.generateBase64DataUri(qrCode.getToken());
-        return SessionQrCodeResponse.fromEntity(qrCode, qrImage);
+        return attendanceQrMapper.toSessionQrCodeResponse(qrCode, qrImage);
     }
 
     @Override

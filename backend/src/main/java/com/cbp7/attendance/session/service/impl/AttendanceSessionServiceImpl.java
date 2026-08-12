@@ -9,6 +9,7 @@ import com.cbp7.attendance.session.dto.request.UpdateAttendanceSessionRequest;
 import com.cbp7.attendance.session.dto.response.AttendanceSessionResponse;
 import com.cbp7.attendance.session.entity.AttendanceSession;
 import com.cbp7.attendance.session.entity.SessionStatus;
+import com.cbp7.attendance.session.mapper.AttendanceSessionMapper;
 import com.cbp7.attendance.session.repository.AttendanceSessionRepository;
 import com.cbp7.attendance.session.service.AttendanceSessionService;
 import com.cbp7.common.exception.DuplicateResourceException;
@@ -29,6 +30,7 @@ public class AttendanceSessionServiceImpl implements AttendanceSessionService {
     private final AttendanceRecordRepository recordRepository;
     private final AttendanceQrService qrService;
     private final AttendanceQrRepository attendanceQrRepository;
+    private final AttendanceSessionMapper sessionMapper;
 
     @Override
     @Transactional
@@ -51,7 +53,7 @@ public class AttendanceSessionServiceImpl implements AttendanceSessionService {
                 .build();
 
         AttendanceSession saved = sessionRepository.save(session);
-        return AttendanceSessionResponse.fromEntity(saved, 0);
+        return sessionMapper.toResponse(saved, 0);
     }
 
     @Override
@@ -60,7 +62,7 @@ public class AttendanceSessionServiceImpl implements AttendanceSessionService {
         return sessionRepository.findAllByOrderByDayNumberAsc().stream()
                 .map(s -> {
                     long count = recordRepository.countBySessionId(s.getId());
-                    return AttendanceSessionResponse.fromEntity(s, count);
+                    return sessionMapper.toResponse(s, count);
                 })
                 .toList();
     }
@@ -71,7 +73,7 @@ public class AttendanceSessionServiceImpl implements AttendanceSessionService {
         return sessionRepository.findByVisibilityTrueOrderByDayNumberAsc().stream()
                 .map(s -> {
                     long count = recordRepository.countBySessionId(s.getId());
-                    return AttendanceSessionResponse.fromEntity(s, count);
+                    return sessionMapper.toResponse(s, count);
                 })
                 .toList();
     }
@@ -82,7 +84,7 @@ public class AttendanceSessionServiceImpl implements AttendanceSessionService {
         AttendanceSession session = sessionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Attendance session not found with ID: " + id));
         long count = recordRepository.countBySessionId(session.getId());
-        return AttendanceSessionResponse.fromEntity(session, count);
+        return sessionMapper.toResponse(session, count);
     }
 
     @Override
@@ -141,7 +143,7 @@ public class AttendanceSessionServiceImpl implements AttendanceSessionService {
         }
 
         long count = recordRepository.countBySessionId(updated.getId());
-        return AttendanceSessionResponse.fromEntity(updated, count);
+        return sessionMapper.toResponse(updated, count);
     }
 
     @Override
@@ -153,7 +155,7 @@ public class AttendanceSessionServiceImpl implements AttendanceSessionService {
         session.setVisibility(visibility);
         AttendanceSession updated = sessionRepository.save(session);
         long count = recordRepository.countBySessionId(updated.getId());
-        return AttendanceSessionResponse.fromEntity(updated, count);
+        return sessionMapper.toResponse(updated, count);
     }
 
     @Override
@@ -165,7 +167,7 @@ public class AttendanceSessionServiceImpl implements AttendanceSessionService {
         session.setStatus(SessionStatus.ACTIVE);
         AttendanceSession updated = sessionRepository.save(session);
         long count = recordRepository.countBySessionId(updated.getId());
-        return AttendanceSessionResponse.fromEntity(updated, count);
+        return sessionMapper.toResponse(updated, count);
     }
 
     @Override
@@ -180,7 +182,7 @@ public class AttendanceSessionServiceImpl implements AttendanceSessionService {
         qrService.deactivateSessionQr(id);
 
         long count = recordRepository.countBySessionId(updated.getId());
-        return AttendanceSessionResponse.fromEntity(updated, count);
+        return sessionMapper.toResponse(updated, count);
     }
 
     @Override

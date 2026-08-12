@@ -7,6 +7,7 @@ import com.cbp7.attendance.record.dto.response.ScanAttendanceResponse;
 import com.cbp7.attendance.record.entity.AttendanceRecord;
 import com.cbp7.attendance.record.entity.AttendanceStatus;
 import com.cbp7.attendance.record.event.AttendanceMarkedEvent;
+import com.cbp7.attendance.record.mapper.AttendanceMapper;
 import com.cbp7.attendance.record.repository.AttendanceRecordRepository;
 import com.cbp7.attendance.record.service.AttendanceService;
 import com.cbp7.attendance.session.entity.AttendanceSession;
@@ -40,6 +41,7 @@ public class AttendanceServiceImpl implements AttendanceService {
     private final NotificationEventPublisher notificationEventPublisher;
     private final UserRepository userRepository;
     private final CbpRegistrationRepository cbpRegistrationRepository;
+    private final AttendanceMapper attendanceMapper;
 
     @Override
     @Transactional
@@ -131,7 +133,7 @@ public class AttendanceServiceImpl implements AttendanceService {
         AttendanceRecord saved = attendanceRecordRepository.save(record);
         publishAttendanceMarkedEvent(saved);
 
-        return AttendanceRecordResponse.fromEntity(saved);
+        return attendanceMapper.toRecordResponse(saved);
     }
 
     @Override
@@ -157,14 +159,14 @@ public class AttendanceServiceImpl implements AttendanceService {
         AttendanceRecord saved = attendanceRecordRepository.save(record);
         publishAttendanceMarkedEvent(saved);
 
-        return AttendanceRecordResponse.fromEntity(saved);
+        return attendanceMapper.toRecordResponse(saved);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<AttendanceRecordResponse> getSessionAttendanceRecords(UUID sessionId) {
         return attendanceRecordRepository.findBySessionId(sessionId).stream()
-                .map(AttendanceRecordResponse::fromEntity)
+                .map(attendanceMapper::toRecordResponse)
                 .toList();
     }
 
@@ -176,7 +178,7 @@ public class AttendanceServiceImpl implements AttendanceService {
         }
         return attendanceRecordRepository.findByStudentId(studentId.trim().toLowerCase())
                 .stream()
-                .map(AttendanceRecordResponse::fromEntity)
+                .map(attendanceMapper::toRecordResponse)
                 .toList();
     }
 

@@ -1,6 +1,5 @@
 package com.cbp7.certificate.dto.response;
 
-import com.cbp7.certificate.entity.Certificate;
 import com.cbp7.certificate.entity.CertificateStatus;
 import com.cbp7.certificate.entity.CertificateType;
 
@@ -15,16 +14,4 @@ public record CertificateResponse(
         CertificateStatus status,
         String downloadUrl,
         LocalDateTime generatedAt
-) {
-    public static CertificateResponse fromEntity(Certificate cert) {
-        return new CertificateResponse(
-                cert.getId(),
-                cert.getStudentId(),
-                cert.getCertificateNumber(),
-                cert.getCertificateType(),
-                cert.getStatus(),
-                cert.getFileUrl(),
-                cert.getGeneratedAt()
-        );
-    }
-}
+) {}

@@ -148,7 +148,7 @@ public class AttendanceQueryServiceImpl implements AttendanceQueryService {
 
         for (AttendanceSession session : sessionsOnDate) {
             List<AttendanceRecord> sessionRecords = attendanceRecordRepository.findBySessionId(session.getId());
-            records.addAll(sessionRecords.stream().map(AttendanceRecordResponse::fromEntity).toList());
+            records.addAll(sessionRecords.stream().map(attendanceMapper::toRecordResponse).toList());
         }
 
         long totalPresent = records.stream()

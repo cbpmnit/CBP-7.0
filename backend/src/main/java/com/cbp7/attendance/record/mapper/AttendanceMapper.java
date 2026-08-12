@@ -3,6 +3,7 @@ package com.cbp7.attendance.record.mapper;
 import com.cbp7.attendance.record.dto.common.MarkedByInfo;
 import com.cbp7.attendance.record.dto.common.StudentInfo;
 import com.cbp7.attendance.record.dto.common.StudentSessionRecordDto;
+import com.cbp7.attendance.record.dto.response.AttendanceRecordResponse;
 import com.cbp7.attendance.record.dto.response.ScanAttendanceResponse;
 import com.cbp7.attendance.record.entity.AttendanceRecord;
 import com.cbp7.attendance.session.entity.AttendanceSession;
@@ -13,6 +14,20 @@ import java.time.LocalDateTime;
 
 @Component
 public class AttendanceMapper {
+
+    public AttendanceRecordResponse toRecordResponse(AttendanceRecord record) {
+        if (record == null) {
+            return null;
+        }
+        return new AttendanceRecordResponse(
+                record.getId(),
+                record.getSessionId(),
+                record.getStudentId(),
+                record.getMarkedBy(),
+                record.getMarkedAt(),
+                record.getStatus()
+        );
+    }
 
     public ScanAttendanceResponse toScanResponse(
             String studentName,

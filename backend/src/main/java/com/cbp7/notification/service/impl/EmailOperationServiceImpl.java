@@ -13,6 +13,7 @@ import com.cbp7.notification.email.EmailSender;
 import com.cbp7.notification.entity.EmailLog;
 import com.cbp7.notification.entity.EmailOperation;
 import com.cbp7.notification.entity.NotificationTemplate;
+import com.cbp7.notification.mapper.NotificationMapper;
 import com.cbp7.notification.processor.TemplateProcessorService;
 import com.cbp7.notification.repository.EmailLogRepository;
 import com.cbp7.notification.repository.EmailOperationRepository;
@@ -40,13 +41,14 @@ public class EmailOperationServiceImpl implements EmailOperationService {
     private final TemplateProcessorService templateProcessorService;
     private final EmailSender emailSender;
     private final UserRepository userRepository;
+    private final NotificationMapper notificationMapper;
 
     @Override
     @Transactional(readOnly = true)
     public List<EmailOperationDto> getAllOperations() {
         return emailOperationRepository.findAllByOrderByCreatedAtDesc()
                 .stream()
-                .map(EmailOperationDto::fromEntity)
+                .map(notificationMapper::toOperationDto)
                 .toList();
     }
 
@@ -55,14 +57,14 @@ public class EmailOperationServiceImpl implements EmailOperationService {
     public EmailOperationDto getOperationById(UUID id) {
         EmailOperation op = emailOperationRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Email operation not found with id: " + id));
-        return EmailOperationDto.fromEntity(op);
+        return notificationMapper.toOperationDto(op);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<EmailLogDto> getDeliveryLogs(Pageable pageable) {
         return emailLogRepository.findAllByOrderBySentAtDesc(pageable)
-                .map(EmailLogDto::fromEntity);
+                .map(notificationMapper::toEmailLogDto);
     }
 
     @Override
@@ -70,7 +72,7 @@ public class EmailOperationServiceImpl implements EmailOperationService {
     public List<EmailLogDto> getLogsByOperationId(UUID operationId) {
         return emailLogRepository.findByOperationId(operationId)
                 .stream()
-                .map(EmailLogDto::fromEntity)
+                .map(notificationMapper::toEmailLogDto)
                 .toList();
     }
 
@@ -146,7 +148,7 @@ public class EmailOperationServiceImpl implements EmailOperationService {
         operation.setFailedCount(failed);
 
         EmailOperation updated = emailOperationRepository.save(operation);
-        return EmailOperationDto.fromEntity(updated);
+        return notificationMapper.toOperationDto(updated);
     }
 
     @Override
