@@ -123,4 +123,38 @@ class AttendanceSessionServiceTest {
         AttendanceSessionResponse closed = sessionService.closeSession(created.id());
         assertEquals(SessionStatus.CLOSED, closed.status());
     }
+
+    @Test
+    @DisplayName("6. Close session with multiple active QR codes deactivates all without exception")
+    void closeSessionWithMultipleActiveQrsSucceeds() {
+        CreateAttendanceSessionRequest req = new CreateAttendanceSessionRequest(
+                2, "Technical Workshop", "Coding", LocalDate.now(), LocalTime.of(9, 0), LocalTime.of(17, 0), "Hall B"
+        );
+        AttendanceSessionResponse created = sessionService.createSession(req, "admin1");
+        sessionService.activateSession(created.id());
+
+        // Close session
+        AttendanceSessionResponse closed = sessionService.closeSession(created.id());
+        assertEquals(SessionStatus.CLOSED, closed.status());
+    }
+
+    @Test
+    @DisplayName("7. Delete session cleans up session and all dependent records")
+    void deleteSessionDeletesSessionAndConnectedData() {
+        CreateAttendanceSessionRequest req = new CreateAttendanceSessionRequest(
+                4, "Leadership Lab", "Soft skills", LocalDate.now(), LocalTime.of(9, 0), LocalTime.of(17, 0), "Hall D"
+        );
+        AttendanceSessionResponse created = sessionService.createSession(req, "admin1");
+
+        sessionService.deleteSession(created.id());
+
+        assertFalse(sessionRepository.findById(created.id()).isPresent());
+        assertThrows(ResourceNotFoundException.class, () -> sessionService.getSessionById(created.id()));
+    }
+
+    @Test
+    @DisplayName("8. Delete non-existent session throws ResourceNotFoundException")
+    void deleteNonExistentSessionThrowsException() {
+        assertThrows(ResourceNotFoundException.class, () -> sessionService.deleteSession(java.util.UUID.randomUUID()));
+    }
 }

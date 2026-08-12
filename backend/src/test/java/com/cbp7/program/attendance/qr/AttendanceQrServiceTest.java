@@ -105,4 +105,21 @@ class AttendanceQrServiceTest {
 
         assertThrows(ResourceNotFoundException.class, () -> attendanceQrService.getActiveSessionQr(session.getId()));
     }
+
+    @Test
+    @DisplayName("5. Generate QR on CLOSED session throws IllegalStateException")
+    void generateQrOnClosedSessionThrowsException() {
+        session.setStatus(SessionStatus.CLOSED);
+        sessionRepository.save(session);
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
+                attendanceQrService.generateSessionQr(session.getId())
+        );
+        assertEquals("QR operations are not allowed for closed sessions.", ex.getMessage());
+
+        IllegalStateException ex2 = assertThrows(IllegalStateException.class, () ->
+                attendanceQrService.generateStudentQrsForSession(session.getId())
+        );
+        assertEquals("QR operations are not allowed for closed sessions.", ex2.getMessage());
+    }
 }

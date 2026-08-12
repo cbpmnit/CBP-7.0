@@ -49,6 +49,10 @@ public class AttendanceQrServiceImpl implements AttendanceQrService {
     public BatchQrGenerationResponse generateStudentQrsForSession(UUID sessionId) {
         AttendanceSession session = fetchSessionById(sessionId);
 
+        if (session.getStatus() == SessionStatus.CLOSED) {
+            throw new IllegalStateException("QR operations are not allowed for closed sessions.");
+        }
+
         Set<String> studentIds = getRegisteredStudentIds();
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime expiresAt = tokenGenerator.calculateExpiry(session);
@@ -97,6 +101,10 @@ public class AttendanceQrServiceImpl implements AttendanceQrService {
     public SessionQrCodeResponse generateSessionQr(UUID sessionId) {
         AttendanceSession session = fetchSessionById(sessionId);
 
+        if (session.getStatus() == SessionStatus.CLOSED) {
+            throw new IllegalStateException("QR operations are not allowed for closed sessions.");
+        }
+
         deactivateActiveTokensForStudent(sessionId, SESSION_DEFAULT_STUDENT_ID);
 
         String token = tokenGenerator.generateSessionDefaultToken();
@@ -120,7 +128,8 @@ public class AttendanceQrServiceImpl implements AttendanceQrService {
     @Override
     @Transactional(readOnly = true)
     public SessionQrCodeResponse getActiveSessionQr(UUID sessionId) {
-        AttendanceQrCode qrCode = attendanceQrRepository.findBySessionIdAndActiveTrue(sessionId)
+        AttendanceQrCode qrCode = attendanceQrRepository.findFirstBySessionIdAndStudentIdIgnoreCaseAndActiveTrueOrderByCreatedAtDesc(sessionId, SESSION_DEFAULT_STUDENT_ID)
+                .or(() -> attendanceQrRepository.findBySessionIdAndActiveTrue(sessionId).stream().findFirst())
                 .orElseThrow(() -> new ResourceNotFoundException("Active QR code not found for session ID: " + sessionId));
 
         String qrImage = qrImageGenerator.generateBase64DataUri(qrCode.getToken());
@@ -130,10 +139,14 @@ public class AttendanceQrServiceImpl implements AttendanceQrService {
     @Override
     @Transactional
     public void deactivateSessionQr(UUID sessionId) {
-        attendanceQrRepository.findBySessionIdAndActiveTrue(sessionId).ifPresent(qr -> {
-            qr.setActive(false);
-            attendanceQrRepository.save(qr);
-        });
+        List<AttendanceQrCode> activeQrs = attendanceQrRepository.findBySessionIdAndActiveTrue(sessionId);
+        if (!activeQrs.isEmpty()) {
+            for (AttendanceQrCode qr : activeQrs) {
+                qr.setActive(false);
+            }
+            attendanceQrRepository.saveAll(activeQrs);
+            log.info("Deactivated {} active QR code(s) for session {}", activeQrs.size(), sessionId);
+        }
     }
 
     @Override

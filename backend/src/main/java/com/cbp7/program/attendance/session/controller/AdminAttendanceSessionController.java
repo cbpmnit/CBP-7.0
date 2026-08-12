@@ -41,7 +41,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/admin/attendance/sessions")
+@RequestMapping({"/api/v1/admin/attendance/sessions", "/api/v1/admin/sessions"})
 @RequiredArgsConstructor
 public class AdminAttendanceSessionController {
 

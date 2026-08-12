@@ -3,6 +3,7 @@ package com.cbp7.program.attendance.session.service.impl;
 import com.cbp7.program.attendance.qr.entity.AttendanceQrCode;
 import com.cbp7.program.attendance.qr.repository.AttendanceQrRepository;
 import com.cbp7.program.attendance.qr.service.AttendanceQrService;
+import com.cbp7.program.attendance.record.entity.AttendanceRecord;
 import com.cbp7.program.attendance.record.repository.AttendanceRecordRepository;
 import com.cbp7.program.attendance.session.dto.request.CreateAttendanceSessionRequest;
 import com.cbp7.program.attendance.session.dto.request.UpdateAttendanceSessionRequest;
@@ -15,6 +16,7 @@ import com.cbp7.program.attendance.session.service.AttendanceSessionService;
 import com.cbp7.common.exception.DuplicateResourceException;
 import com.cbp7.common.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +24,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AttendanceSessionServiceImpl implements AttendanceSessionService {
@@ -129,7 +132,24 @@ public class AttendanceSessionServiceImpl implements AttendanceSessionService {
     @Transactional
     public void deleteSession(UUID id) {
         AttendanceSession session = fetchSession(id);
+
+        // 1. Explicitly clean up all Attendance QR Codes generated for this session
+        List<AttendanceQrCode> qrCodes = attendanceQrRepository.findAllBySessionId(id);
+        if (!qrCodes.isEmpty()) {
+            attendanceQrRepository.deleteAll(qrCodes);
+            log.info("Cascaded deletion of {} QR code(s) for session {}", qrCodes.size(), id);
+        }
+
+        // 2. Explicitly clean up all Attendance Records logged for this session
+        List<AttendanceRecord> records = recordRepository.findBySessionId(id);
+        if (!records.isEmpty()) {
+            recordRepository.deleteAll(records);
+            log.info("Cascaded deletion of {} attendance record(s) for session {}", records.size(), id);
+        }
+
+        // 3. Delete the session entity itself
         sessionRepository.delete(session);
+        log.info("Permanently deleted attendance session {}", id);
     }
 
     // --- Private Story Helper Methods ---

@@ -32,6 +32,9 @@ export const attendanceApi = {
   getMyActiveAttendanceQr: () =>
     apiClient.get<StudentSessionQrResponse>("/api/v1/student/attendance/qr"),
 
+  getMyActiveAttendanceQrs: () =>
+    apiClient.get<StudentSessionQrResponse[]>("/api/v1/student/attendance/active-qrs"),
+
   // Volunteer & Shared Session APIs
   getVolunteerSessions: () =>
     apiClient.get<AttendanceSessionDto[]>("/api/v1/attendance/sessions"),
@@ -80,6 +83,9 @@ export const attendanceApi = {
 
   closeSession: (sessionId: string) =>
     apiClient.post<AttendanceSessionDto>(`/api/v1/admin/attendance/sessions/${sessionId}/close`),
+
+  deleteSession: (sessionId: string) =>
+    apiClient.delete<void>(`/api/v1/admin/attendance/sessions/${sessionId}`),
 
   updateSession: (sessionId: string, payload: any) =>
     apiClient.put<any>(`/api/v1/admin/attendance/sessions/${sessionId}`, payload),

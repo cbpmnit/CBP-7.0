@@ -62,4 +62,22 @@ public class StudentAttendanceQrController {
         StudentSessionQrResponse response = qrService.getStudentSessionQr(activeSession.id(), studentId);
         return ResponseEntity.ok(ApiResponse.success("Active session QR code retrieved successfully", response));
     }
+
+    @GetMapping("/active-qrs")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<ApiResponse<List<StudentSessionQrResponse>>> getMyActiveAttendanceQrs(
+            @AuthenticationPrincipal User studentUser
+    ) {
+        String studentId = studentUser != null ? studentUser.getStudentId() : "system";
+        List<AttendanceSessionResponse> visibleSessions = sessionService.getVisibleSessions();
+
+        List<StudentSessionQrResponse> activeQrs = visibleSessions.stream()
+                .filter(s -> s.status() == com.cbp7.program.attendance.session.entity.SessionStatus.ACTIVE
+                          || s.status() == com.cbp7.program.attendance.session.entity.SessionStatus.UPCOMING)
+                .map(s -> qrService.getStudentSessionQr(s.id(), studentId))
+                .filter(java.util.Objects::nonNull)
+                .toList();
+
+        return ResponseEntity.ok(ApiResponse.success("Active session QR codes retrieved successfully", activeQrs));
+    }
 }
