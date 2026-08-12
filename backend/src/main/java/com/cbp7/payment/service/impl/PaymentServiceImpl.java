@@ -14,8 +14,8 @@ import com.cbp7.payment.dto.response.PhonePePaymentResponse;
 import com.cbp7.payment.dto.response.PhonePeStatusDetailsResponse;
 import com.cbp7.payment.dto.response.PhonePeStatusResponse;
 import com.cbp7.payment.entity.Payment;
-import com.cbp7.payment.enums.PaymentMode;
 import com.cbp7.payment.enums.PaymentStatus;
+import com.cbp7.payment.factory.PaymentTransactionFactory;
 import com.cbp7.payment.gateway.PaymentGateway;
 import com.cbp7.payment.mapper.PaymentMapper;
 import com.cbp7.payment.repository.PaymentRepository;
@@ -27,7 +27,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -40,11 +39,11 @@ public class PaymentServiceImpl implements PaymentService {
     private final RegistrationFeeService registrationFeeService;
     private final PaymentValidator paymentValidator;
     private final PaymentMapper paymentMapper;
+    private final PaymentTransactionFactory paymentTransactionFactory;
 
     @Override
     @Transactional
     public PaymentResponse createPayment(User user, CreatePaymentRequest request) {
-        
         paymentValidator.validateStudentRole(user);
 
         CbpRegistration registration = findCbpRegistration(user);
@@ -54,16 +53,11 @@ public class PaymentServiceImpl implements PaymentService {
         );
         paymentValidator.validateNoSuccessfulPayment(hasSuccessfulPayment);
 
-        Payment payment = Payment.builder()
-                .registrationId(registration.getId())
-                .userId(user.getId())
-                .paymentMode(request.paymentMode())
-                .paymentStatus(PaymentStatus.PENDING)
-                .amount(registrationFeeService.getRegistrationFee())
-                .build();
+        Payment payment = paymentTransactionFactory.createPendingPayment(
+                user, registration, request.paymentMode(), registrationFeeService.getRegistrationFee()
+        );
 
-        Payment savedPayment = paymentRepository.save(payment);
-        return paymentMapper.toPaymentResponse(savedPayment);
+        return paymentMapper.toPaymentResponse(payment);
     }
 
     @Override
@@ -77,7 +71,9 @@ public class PaymentServiceImpl implements PaymentService {
         boolean hasSuccessful = payments.stream().anyMatch(p -> p.getPaymentStatus() == PaymentStatus.SUCCESS);
         paymentValidator.validateNoSuccessfulPayment(hasSuccessful);
 
-        Payment payment = findOrCreateInitiatedPayment(payments, registration, user);
+        Payment payment = paymentTransactionFactory.findOrCreateInitiatedPayment(
+                payments, registration, user, registrationFeeService.getRegistrationFee()
+        );
         String redirectUrl = paymentGateway.initiatePayment(payment);
 
         return paymentMapper.toPhonePePaymentResponse(payment, redirectUrl);
@@ -140,32 +136,6 @@ public class PaymentServiceImpl implements PaymentService {
     private Payment findPaymentByTransactionId(String transactionId) {
         return paymentRepository.findByTransactionId(transactionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Payment record not found for transaction: " + transactionId));
-    }
-
-    private Payment findOrCreateInitiatedPayment(List<Payment> payments, CbpRegistration registration, User user) {
-        Payment payment = payments.stream()
-                .filter(p -> p.getPaymentStatus() == PaymentStatus.PENDING 
-                        || p.getPaymentStatus() == PaymentStatus.INITIATED 
-                        || p.getPaymentStatus() == PaymentStatus.PROCESSING 
-                        || p.getPaymentStatus() == PaymentStatus.FAILED)
-                .findFirst()
-                .orElseGet(() -> {
-                    Payment newPayment = Payment.builder()
-                            .registrationId(registration.getId())
-                            .userId(user.getId())
-                            .paymentMode(PaymentMode.ONLINE)
-                            .paymentStatus(PaymentStatus.INITIATED)
-                            .amount(registrationFeeService.getRegistrationFee())
-                            .build();
-                    return paymentRepository.save(newPayment);
-                });
-
-        String newTxnId = "CBP_TXN_" + UUID.randomUUID().toString().replace("-", "");
-        payment.setTransactionId(newTxnId);
-        payment.setPaymentMode(PaymentMode.ONLINE);
-        payment.setPaymentStatus(PaymentStatus.INITIATED);
-
-        return paymentRepository.saveAndFlush(payment);
     }
 
     private String queryGatewayStatus(String transactionId, Payment verifiedPayment) {

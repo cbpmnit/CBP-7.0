@@ -6,19 +6,21 @@ import com.cbp7.auth.entity.User;
 import com.cbp7.auth.repository.UserRepository;
 import com.cbp7.cbp.entity.CbpRegistration;
 import com.cbp7.cbp.repository.CbpRegistrationRepository;
+import com.cbp7.certificate.calculator.CertificateEligibilityCalculator;
 import com.cbp7.certificate.dto.common.CertificateTemplateDto;
 import com.cbp7.certificate.dto.response.CertificateResponse;
 import com.cbp7.certificate.entity.Certificate;
 import com.cbp7.certificate.entity.CertificateStatus;
 import com.cbp7.certificate.entity.CertificateType;
 import com.cbp7.certificate.generator.PdfCertificateGenerator;
+import com.cbp7.certificate.helper.CertificateCsvExporter;
+import com.cbp7.certificate.helper.CertificateNumberGenerator;
 import com.cbp7.certificate.mapper.CertificateMapper;
 import com.cbp7.certificate.repository.CertificateRepository;
 import com.cbp7.certificate.service.CertificateService;
 import com.cbp7.certificate.service.CertificateTemplateService;
 import com.cbp7.certificate.validation.CertificateValidator;
 import com.cbp7.common.exception.ResourceNotFoundException;
-import com.cbp7.common.util.CsvExportUtil;
 import com.cbp7.notification.event.CertificateGeneratedEvent;
 import com.cbp7.notification.event.NotificationEventPublisher;
 import com.cbp7.payment.enums.PaymentStatus;
@@ -48,6 +50,9 @@ public class CertificateServiceImpl implements CertificateService {
     private final CertificateTemplateService certificateTemplateService;
     private final CertificateValidator certificateValidator;
     private final CertificateMapper certificateMapper;
+    private final CertificateEligibilityCalculator eligibilityCalculator;
+    private final CertificateNumberGenerator numberGenerator;
+    private final CertificateCsvExporter csvExporter;
 
     @Value("${certificate.minimum-attendance-percentage:75.0}")
     private double minimumAttendancePercentage;
@@ -76,7 +81,7 @@ public class CertificateServiceImpl implements CertificateService {
         User user = userRepository.findByStudentId(studentId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found for student ID: " + studentId));
 
-        String certNumber = generateUniqueCertificateNumber();
+        String certNumber = numberGenerator.generateUniqueCertificateNumber();
         String downloadUrl = "/api/v1/student/certificate";
 
         Certificate certificate = Certificate.builder()
@@ -158,7 +163,7 @@ public class CertificateServiceImpl implements CertificateService {
         }
 
         StudentAttendanceSummaryResponse summary = attendanceQueryService.getStudentAttendanceSummary(studentId);
-        if (summary.percentage() < minimumAttendancePercentage) {
+        if (!eligibilityCalculator.isEligible(summary.percentage(), true, minimumAttendancePercentage)) {
             throw new IllegalStateException("Attendance percentage (" + summary.percentage() + "%) is below minimum threshold (" + minimumAttendancePercentage + "%)");
         }
     }
@@ -190,39 +195,10 @@ public class CertificateServiceImpl implements CertificateService {
             }
         }
 
-        List<String> headers = List.of(
-                "Certificate Number", "Student ID", "Student Name",
-                "Certificate Type", "Status", "Issue Date"
-        );
-
-        List<List<String>> rows = new ArrayList<>();
-        for (Certificate cert : certificates) {
-            String sid = cert.getStudentId() != null ? cert.getStudentId() : "";
-            String sName = userNames.getOrDefault(sid.toLowerCase(), sid);
-
-            rows.add(List.of(
-                    cert.getCertificateNumber() != null ? cert.getCertificateNumber() : "",
-                    sid,
-                    sName,
-                    cert.getCertificateType() != null ? cert.getCertificateType().name() : "PARTICIPATION",
-                    cert.getStatus() != null ? cert.getStatus().name() : "GENERATED",
-                    cert.getGeneratedAt() != null ? cert.getGeneratedAt().toString() : ""
-            ));
-        }
-
-        return CsvExportUtil.generateCsv(headers, rows);
+        return csvExporter.exportCertificatesCsv(certificates, userNames);
     }
 
     // --- Private Helper Methods ---
-
-    private String generateUniqueCertificateNumber() {
-        long count = certificateRepository.count() + 1;
-        String number;
-        do {
-            number = "CBP-2026-" + String.format("%06d", count++);
-        } while (certificateRepository.existsByCertificateNumber(number));
-        return number;
-    }
 
     private void publishCertificateGeneratedEvent(Certificate cert, String studentName, String studentEmail) {
         try {

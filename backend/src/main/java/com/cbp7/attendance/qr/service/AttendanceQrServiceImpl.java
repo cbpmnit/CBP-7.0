@@ -5,6 +5,7 @@ import com.cbp7.attendance.qr.dto.response.QrGenerationStatusResponse;
 import com.cbp7.attendance.qr.dto.response.SessionQrCodeResponse;
 import com.cbp7.attendance.qr.dto.response.StudentSessionQrResponse;
 import com.cbp7.attendance.qr.entity.AttendanceQrCode;
+import com.cbp7.attendance.qr.generator.AttendanceQrTokenGenerator;
 import com.cbp7.attendance.qr.generator.QrImageGenerator;
 import com.cbp7.attendance.qr.repository.AttendanceQrRepository;
 import com.cbp7.attendance.session.entity.AttendanceSession;
@@ -34,6 +35,7 @@ public class AttendanceQrServiceImpl implements AttendanceQrService {
     private final UserRepository userRepository;
     private final QrImageGenerator qrImageGenerator;
     private final AttendanceQrMapper attendanceQrMapper;
+    private final AttendanceQrTokenGenerator tokenGenerator;
     private final Environment env;
 
     private static final String TOKEN_PREFIX = "CBP_STUDENT_QR_";
@@ -64,9 +66,7 @@ public class AttendanceQrServiceImpl implements AttendanceQrService {
         long generatedCount = 0;
 
         LocalDateTime now = LocalDateTime.now();
-        LocalDateTime expiresAt = session.getEndTime() != null
-                ? LocalDateTime.of(session.getSessionDate(), session.getEndTime())
-                : session.getSessionDate().atTime(23, 59, 59);
+        LocalDateTime expiresAt = tokenGenerator.calculateExpiry(session);
 
         for (String studentId : studentIds) {
             // Deactivate previous active QRs for this student and session (invalidate old tokens case-insensitively)
@@ -162,11 +162,9 @@ public class AttendanceQrServiceImpl implements AttendanceQrService {
             }
         }
 
-        String token = "CBP_SESSION_QR_" + UUID.randomUUID().toString().replace("-", "");
+        String token = tokenGenerator.generateSessionDefaultToken();
         LocalDateTime now = LocalDateTime.now();
-        LocalDateTime expiresAt = session.getEndTime() != null
-                ? LocalDateTime.of(session.getSessionDate(), session.getEndTime())
-                : session.getSessionDate().atTime(23, 59, 59);
+        LocalDateTime expiresAt = tokenGenerator.calculateExpiry(session);
 
         AttendanceQrCode qrCode = AttendanceQrCode.builder()
                 .sessionId(sessionId)

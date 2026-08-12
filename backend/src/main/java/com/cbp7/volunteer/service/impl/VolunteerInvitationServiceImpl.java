@@ -6,19 +6,20 @@ import com.cbp7.auth.repository.UserRepository;
 import com.cbp7.common.config.FrontendProperties;
 import com.cbp7.common.exception.InvalidCredentialsException;
 import com.cbp7.common.exception.ResourceNotFoundException;
-import com.cbp7.common.util.CsvExportUtil;
 import com.cbp7.volunteer.dto.request.*;
 import com.cbp7.volunteer.dto.response.*;
 import com.cbp7.volunteer.entity.VolunteerInvitation;
 import com.cbp7.volunteer.entity.VolunteerInvitationStatus;
+import com.cbp7.volunteer.helper.VolunteerAccountProvisioner;
+import com.cbp7.volunteer.helper.VolunteerCsvExporter;
 import com.cbp7.volunteer.helper.VolunteerEmailHelper;
 import com.cbp7.volunteer.mapper.VolunteerMapper;
 import com.cbp7.volunteer.repository.VolunteerInvitationRepository;
+import com.cbp7.volunteer.resolver.VolunteerIdentityResolver;
 import com.cbp7.volunteer.service.VolunteerInvitationService;
 import com.cbp7.volunteer.validation.VolunteerValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,11 +33,13 @@ public class VolunteerInvitationServiceImpl implements VolunteerInvitationServic
 
     private final VolunteerInvitationRepository invitationRepository;
     private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
     private final FrontendProperties frontendProperties;
     private final VolunteerEmailHelper volunteerEmailHelper;
     private final VolunteerValidator volunteerValidator;
     private final VolunteerMapper volunteerMapper;
+    private final VolunteerIdentityResolver identityResolver;
+    private final VolunteerAccountProvisioner accountProvisioner;
+    private final VolunteerCsvExporter csvExporter;
 
     private static final Set<String> DEFAULT_VOLUNTEER_PERMS = Set.of(
             "ATTENDANCE_VIEW",
@@ -66,9 +69,9 @@ public class VolunteerInvitationServiceImpl implements VolunteerInvitationServic
     @Transactional
     public VolunteerDetailResponse grantVolunteerAccess(GrantVolunteerAccessRequest request, String adminId) {
         String identifier = request.userIdOrEmail().trim().toLowerCase();
-        User user = findUserByIdentifier(identifier);
+        User user = identityResolver.findUserByIdentifier(identifier);
 
-        upgradeUserToVolunteer(user, request.name(), request.permissions());
+        accountProvisioner.upgradeUserToVolunteer(user, request.name(), resolvePermissions(request.permissions()));
         markPendingInvitationAccepted(user.getEmail(), user.getPermissions());
 
         log.info("Admin {} granted ROLE_VOLUNTEER to existing user {} with permissions {}", adminId, user.getEmail(), user.getPermissions());
@@ -109,8 +112,8 @@ public class VolunteerInvitationServiceImpl implements VolunteerInvitationServic
                 : new HashSet<>(DEFAULT_VOLUNTEER_PERMS);
 
         User user = existingUserOpt.isPresent()
-                ? activateExistingUser(existingUserOpt.get(), perms, request.password())
-                : createNewVolunteerUser(email, invitation.getName(), perms, request.password());
+                ? accountProvisioner.activateExistingUser(existingUserOpt.get(), perms, request.password())
+                : accountProvisioner.createNewVolunteerUser(email, invitation.getName(), perms, request.password());
 
         invitation.setStatus(VolunteerInvitationStatus.ACCEPTED);
         invitation.setAcceptedAt(LocalDateTime.now());
@@ -205,7 +208,7 @@ public class VolunteerInvitationServiceImpl implements VolunteerInvitationServic
     @Transactional
     public void disableVolunteer(String idOrEmail, String adminId) {
         String clean = idOrEmail.trim().toLowerCase();
-        Optional<User> userOpt = findOptionalUser(clean);
+        Optional<User> userOpt = identityResolver.findOptionalUser(clean);
 
         if (userOpt.isPresent()) {
             User user = userOpt.get();
@@ -241,12 +244,12 @@ public class VolunteerInvitationServiceImpl implements VolunteerInvitationServic
     public VolunteerDetailResponse getVolunteerById(String idOrEmail) {
         String clean = idOrEmail.trim().toLowerCase();
 
-        Optional<User> userOpt = findOptionalUser(clean);
+        Optional<User> userOpt = identityResolver.findOptionalUser(clean);
         if (userOpt.isPresent()) {
             return volunteerMapper.toVolunteerDetailResponse(userOpt.get(), DEFAULT_VOLUNTEER_PERMS, Set.of("All Active Workshop Sessions"));
         }
 
-        Optional<VolunteerInvitation> invOpt = findOptionalInvitation(clean);
+        Optional<VolunteerInvitation> invOpt = identityResolver.findOptionalInvitation(clean);
         if (invOpt.isPresent()) {
             return volunteerMapper.toVolunteerDetailResponse(invOpt.get(), DEFAULT_VOLUNTEER_PERMS);
         }
@@ -260,7 +263,7 @@ public class VolunteerInvitationServiceImpl implements VolunteerInvitationServic
         String clean = idOrEmail.trim().toLowerCase();
         Set<String> newPerms = request.permissions() != null ? request.permissions() : Set.of();
 
-        Optional<User> userOpt = findOptionalUser(clean);
+        Optional<User> userOpt = identityResolver.findOptionalUser(clean);
         if (userOpt.isPresent()) {
             User u = userOpt.get();
             u.setPermissions(new HashSet<>(newPerms));
@@ -274,7 +277,7 @@ public class VolunteerInvitationServiceImpl implements VolunteerInvitationServic
             return getVolunteerById(clean);
         }
 
-        Optional<VolunteerInvitation> invOpt = findOptionalInvitation(clean);
+        Optional<VolunteerInvitation> invOpt = identityResolver.findOptionalInvitation(clean);
         if (invOpt.isPresent()) {
             VolunteerInvitation inv = invOpt.get();
             inv.setPermissions(new HashSet<>(newPerms));
@@ -320,43 +323,7 @@ public class VolunteerInvitationServiceImpl implements VolunteerInvitationServic
     @Transactional(readOnly = true)
     public byte[] exportVolunteersCsv(String search, String statusFilter) {
         List<VolunteerListItemResponse> list = getAllVolunteers();
-
-        String q = search != null ? search.trim().toLowerCase() : "";
-        String sFilter = statusFilter != null && !statusFilter.isBlank() && !"ALL".equalsIgnoreCase(statusFilter)
-                ? statusFilter.trim().toUpperCase() : null;
-
-        List<String> headers = List.of(
-                "Volunteer ID / Student ID", "Name", "Email", "Role",
-                "Status", "Assigned Permissions", "Registered / Invited Date"
-        );
-
-        List<List<String>> rows = new ArrayList<>();
-        for (VolunteerListItemResponse v : list) {
-            if (!q.isEmpty()) {
-                boolean match = (v.name() != null && v.name().toLowerCase().contains(q))
-                        || (v.email() != null && v.email().toLowerCase().contains(q))
-                        || (v.id() != null && v.id().toLowerCase().contains(q));
-                if (!match) continue;
-            }
-
-            if (sFilter != null && !sFilter.equalsIgnoreCase(v.status())) {
-                continue;
-            }
-
-            String permsStr = v.permissions() != null ? String.join("; ", v.permissions()) : "NONE";
-
-            rows.add(List.of(
-                    v.id() != null ? v.id() : "",
-                    v.name() != null ? v.name() : "",
-                    v.email() != null ? v.email() : "",
-                    v.role() != null ? v.role() : "ROLE_VOLUNTEER",
-                    v.status() != null ? v.status() : "ACTIVE",
-                    permsStr,
-                    v.createdAt() != null ? v.createdAt().toString() : ""
-            ));
-        }
-
-        return CsvExportUtil.generateCsv(headers, rows);
+        return csvExporter.exportVolunteersCsv(list, search, statusFilter);
     }
 
     // --- Private Helper Methods ---
@@ -371,57 +338,10 @@ public class VolunteerInvitationServiceImpl implements VolunteerInvitationServic
         return UUID.randomUUID().toString().replace("-", "") + UUID.randomUUID().toString().replace("-", "").substring(0, 8);
     }
 
-    private User findUserByIdentifier(String identifier) {
-        Optional<User> userOpt = userRepository.findByEmailIgnoreCase(identifier);
-        if (userOpt.isEmpty()) {
-            userOpt = userRepository.findByStudentIdIgnoreCase(identifier);
-        }
-        if (userOpt.isEmpty()) {
-            try {
-                UUID uuid = UUID.fromString(identifier);
-                userOpt = userRepository.findById(uuid);
-            } catch (Exception ignored) {}
-        }
-        return userOpt.orElseThrow(() -> new ResourceNotFoundException("User account not found for identifier: " + identifier));
-    }
-
-    private Optional<User> findOptionalUser(String clean) {
-        Optional<User> userOpt = userRepository.findByEmailIgnoreCase(clean);
-        if (userOpt.isEmpty()) {
-            userOpt = userRepository.findByStudentIdIgnoreCase(clean);
-        }
-        if (userOpt.isEmpty()) {
-            try {
-                UUID uuid = UUID.fromString(clean);
-                userOpt = userRepository.findById(uuid);
-            } catch (Exception ignored) {}
-        }
-        return userOpt;
-    }
-
-    private Optional<VolunteerInvitation> findOptionalInvitation(String clean) {
-        try {
-            UUID uuid = UUID.fromString(clean);
-            Optional<VolunteerInvitation> invOpt = invitationRepository.findById(uuid);
-            if (invOpt.isPresent()) return invOpt;
-        } catch (Exception ignored) {}
-
-        return invitationRepository.findByEmailIgnoreCase(clean);
-    }
-
     private VolunteerInviteCheckResponse processExistingUserInvite(User existingUser, String email, String reqName, Set<String> perms, String adminId) {
         log.info("Existing user account found for volunteer invite: email={}, upgrading to ROLE_VOLUNTEER", email);
 
-        if (!existingUser.hasRole(Role.ROLE_ADMIN)) {
-            existingUser.setRole(Role.ROLE_VOLUNTEER);
-        }
-        existingUser.addRole(Role.ROLE_VOLUNTEER);
-        existingUser.setPermissions(new HashSet<>(perms));
-        existingUser.setEnabled(true);
-        if (reqName != null && !reqName.isBlank() && (existingUser.getName() == null || existingUser.getName().isBlank())) {
-            existingUser.setName(reqName.trim());
-        }
-        existingUser = userRepository.save(existingUser);
+        accountProvisioner.upgradeUserToVolunteer(existingUser, reqName, perms);
 
         VolunteerInvitation invitation = saveOrUpdateAcceptedInvitation(email, existingUser.getName(), perms, adminId);
         volunteerEmailHelper.sendVolunteerAccessGrantedEmail(existingUser.getEmail(), existingUser.getName(), perms);
@@ -461,19 +381,6 @@ public class VolunteerInvitationServiceImpl implements VolunteerInvitationServic
         return volunteerMapper.toNewUserInviteResponse(invitation, activationLink, emailSent);
     }
 
-    private void upgradeUserToVolunteer(User user, String name, Set<String> permissions) {
-        if (!user.hasRole(Role.ROLE_ADMIN)) {
-            user.setRole(Role.ROLE_VOLUNTEER);
-        }
-        user.addRole(Role.ROLE_VOLUNTEER);
-        user.setPermissions(resolvePermissions(permissions));
-        user.setEnabled(true);
-        if (name != null && !name.isBlank() && (user.getName() == null || user.getName().isBlank())) {
-            user.setName(name.trim());
-        }
-        userRepository.save(user);
-    }
-
     private void markPendingInvitationAccepted(String email, Set<String> perms) {
         invitationRepository.findByEmailIgnoreCase(email).ifPresent(inv -> {
             inv.setStatus(VolunteerInvitationStatus.ACCEPTED);
@@ -506,40 +413,5 @@ public class VolunteerInvitationServiceImpl implements VolunteerInvitationServic
                     .build();
         }
         return invitationRepository.save(invitation);
-    }
-
-    private User activateExistingUser(User user, Set<String> perms, String rawPassword) {
-        if (!user.hasRole(Role.ROLE_ADMIN)) {
-            user.setRole(Role.ROLE_VOLUNTEER);
-        }
-        user.addRole(Role.ROLE_VOLUNTEER);
-        user.setPermissions(perms);
-        if (rawPassword != null && !rawPassword.isBlank()) {
-            user.setPassword(passwordEncoder.encode(rawPassword.trim()));
-        }
-        user.setEnabled(true);
-        return userRepository.save(user);
-    }
-
-    private User createNewVolunteerUser(String email, String name, Set<String> perms, String rawPassword) {
-        String baseId = "vol_" + email.split("@")[0].replaceAll("[^a-zA-Z0-9]", "");
-        String studentId = baseId;
-        int count = 1;
-        while (userRepository.existsByStudentId(studentId)) {
-            studentId = baseId + count++;
-        }
-
-        User user = User.builder()
-                .studentId(studentId)
-                .email(email)
-                .name(name != null && !name.isBlank() ? name.trim() : email.split("@")[0])
-                .password(passwordEncoder.encode(rawPassword.trim()))
-                .role(Role.ROLE_VOLUNTEER)
-                .roles(new HashSet<>(List.of(Role.ROLE_VOLUNTEER)))
-                .enabled(true)
-                .permissions(perms)
-                .build();
-
-        return userRepository.save(user);
     }
 }

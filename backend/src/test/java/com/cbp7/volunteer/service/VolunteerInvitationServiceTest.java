@@ -10,9 +10,12 @@ import com.cbp7.volunteer.dto.request.*;
 import com.cbp7.volunteer.dto.response.*;
 import com.cbp7.volunteer.entity.VolunteerInvitation;
 import com.cbp7.volunteer.entity.VolunteerInvitationStatus;
+import com.cbp7.volunteer.helper.VolunteerAccountProvisioner;
+import com.cbp7.volunteer.helper.VolunteerCsvExporter;
 import com.cbp7.volunteer.helper.VolunteerEmailHelper;
 import com.cbp7.volunteer.mapper.VolunteerMapper;
 import com.cbp7.volunteer.repository.VolunteerInvitationRepository;
+import com.cbp7.volunteer.resolver.VolunteerIdentityResolver;
 import com.cbp7.volunteer.validation.VolunteerValidator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -66,15 +69,20 @@ class VolunteerInvitationServiceTest {
         VolunteerEmailHelper emailHelper = new VolunteerEmailHelper(emailSender, frontendProperties);
         VolunteerValidator validator = new VolunteerValidator();
         VolunteerMapper mapper = new VolunteerMapper(frontendProperties);
+        VolunteerIdentityResolver identityResolver = new VolunteerIdentityResolver(userRepository, invitationRepository);
+        VolunteerAccountProvisioner accountProvisioner = new VolunteerAccountProvisioner(userRepository, passwordEncoder);
+        VolunteerCsvExporter csvExporter = new VolunteerCsvExporter();
 
         volunteerInvitationService = new com.cbp7.volunteer.service.impl.VolunteerInvitationServiceImpl(
                 invitationRepository,
                 userRepository,
-                passwordEncoder,
                 frontendProperties,
                 emailHelper,
                 validator,
-                mapper
+                mapper,
+                identityResolver,
+                accountProvisioner,
+                csvExporter
         );
     }
 

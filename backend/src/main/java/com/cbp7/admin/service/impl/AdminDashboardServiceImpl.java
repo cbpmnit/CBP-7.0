@@ -3,7 +3,10 @@ package com.cbp7.admin.service.impl;
 import com.cbp7.admin.dto.response.AdminDashboardSummaryResponse;
 import com.cbp7.admin.dto.response.AdminPaymentOverviewResponse;
 import com.cbp7.admin.dto.response.AdminStudentDetailResponse;
+import com.cbp7.admin.helper.AdminPaymentCsvExporter;
+import com.cbp7.admin.mapper.AdminMapper;
 import com.cbp7.admin.service.AdminDashboardService;
+import com.cbp7.attendance.record.calculator.AttendanceCalculator;
 import com.cbp7.attendance.record.entity.AttendanceStatus;
 import com.cbp7.attendance.record.repository.AttendanceRecordRepository;
 import com.cbp7.attendance.session.repository.AttendanceSessionRepository;
@@ -14,7 +17,6 @@ import com.cbp7.cbp.entity.CbpRegistration;
 import com.cbp7.cbp.enums.RegistrationStatus;
 import com.cbp7.cbp.repository.CbpRegistrationRepository;
 import com.cbp7.certificate.repository.CertificateRepository;
-import com.cbp7.common.util.CsvExportUtil;
 import com.cbp7.payment.entity.Payment;
 import com.cbp7.payment.enums.PaymentStatus;
 import com.cbp7.payment.repository.PaymentRepository;
@@ -22,7 +24,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -36,6 +37,9 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
     private final AttendanceRecordRepository attendanceRecordRepository;
     private final AttendanceSessionRepository attendanceSessionRepository;
     private final CertificateRepository certificateRepository;
+    private final AdminMapper adminMapper;
+    private final AdminPaymentCsvExporter paymentCsvExporter;
+    private final AttendanceCalculator attendanceCalculator;
 
     @Override
     public AdminDashboardSummaryResponse getSummary() {
@@ -59,7 +63,7 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         long todayAttendance = attendanceRecordRepository.count();
         long certificatesIssued = certificateRepository.count();
 
-        return new AdminDashboardSummaryResponse(
+        return adminMapper.toDashboardSummaryResponse(
                 totalStudents,
                 registeredStudents,
                 paidStudents,
@@ -86,11 +90,11 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
                     long attended = attendanceRecordRepository.countByStudentIdAndStatus(
                             r.getStudentId(), AttendanceStatus.PRESENT
                     );
-                    double pct = totalSessions > 0 ? ((double) attended / totalSessions) * 100.0 : 0.0;
+                    double pct = attendanceCalculator.calculatePercentage(attended, totalSessions);
                     boolean isPaid = r.getRegistrationStatus() == RegistrationStatus.REGISTERED
                             || paymentRepository.existsByRegistrationIdAndPaymentStatus(r.getId(), PaymentStatus.SUCCESS);
 
-                    return new AdminStudentDetailResponse(
+                    return adminMapper.toStudentDetailResponse(
                             r.getStudentId(),
                             r.getFirstName(),
                             r.getLastName(),
@@ -143,7 +147,7 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
                 })
                 .toList();
 
-        return new AdminPaymentOverviewResponse(
+        return adminMapper.toPaymentOverviewResponse(
                 totalRegistrations,
                 successfulPayments,
                 pendingPayments,
@@ -155,42 +159,6 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
     @Override
     public byte[] exportPaymentsCsv(String search, String paymentStatus) {
         AdminPaymentOverviewResponse overview = getPaymentOverview();
-        List<AdminPaymentOverviewResponse.PaymentTransactionDto> list = overview.transactions();
-
-        String q = search != null ? search.trim().toLowerCase() : "";
-        String statusFilter = paymentStatus != null && !paymentStatus.isBlank() && !"ALL".equalsIgnoreCase(paymentStatus)
-                ? paymentStatus.trim().toUpperCase() : null;
-
-        List<String> headers = List.of(
-                "Student ID", "Student Name", "Amount (INR)", "Transaction ID",
-                "Registration Ref", "Payment Status", "Payment Date"
-        );
-
-        List<List<String>> rows = new ArrayList<>();
-        for (AdminPaymentOverviewResponse.PaymentTransactionDto tx : list) {
-            if (!q.isEmpty()) {
-                boolean match = (tx.studentName() != null && tx.studentName().toLowerCase().contains(q))
-                        || (tx.studentId() != null && tx.studentId().toLowerCase().contains(q))
-                        || (tx.transactionId() != null && tx.transactionId().toLowerCase().contains(q))
-                        || (tx.registrationId() != null && tx.registrationId().toLowerCase().contains(q));
-                if (!match) continue;
-            }
-
-            if (statusFilter != null && !statusFilter.equalsIgnoreCase(tx.paymentStatus())) {
-                continue;
-            }
-
-            rows.add(List.of(
-                    tx.studentId() != null ? tx.studentId() : "",
-                    tx.studentName() != null ? tx.studentName() : "",
-                    String.format("%.2f", tx.amount()),
-                    tx.transactionId() != null ? tx.transactionId() : "",
-                    tx.registrationId() != null ? tx.registrationId() : "",
-                    tx.paymentStatus() != null ? tx.paymentStatus() : "",
-                    tx.paymentTime() != null ? tx.paymentTime().toString() : ""
-            ));
-        }
-
-        return CsvExportUtil.generateCsv(headers, rows);
+        return paymentCsvExporter.exportPaymentsCsv(overview.transactions(), search, paymentStatus);
     }
 }

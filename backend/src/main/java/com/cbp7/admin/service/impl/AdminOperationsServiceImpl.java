@@ -1,7 +1,10 @@
 package com.cbp7.admin.service.impl;
 
 import com.cbp7.admin.dto.response.AdminOperationsOverviewResponse;
+import com.cbp7.admin.helper.AdminOperationsReadinessEvaluator;
+import com.cbp7.admin.mapper.AdminMapper;
 import com.cbp7.admin.service.AdminOperationsService;
+import com.cbp7.attendance.record.calculator.AttendanceCalculator;
 import com.cbp7.attendance.record.entity.AttendanceStatus;
 import com.cbp7.attendance.record.repository.AttendanceRecordRepository;
 import com.cbp7.attendance.session.entity.AttendanceSession;
@@ -15,8 +18,6 @@ import com.cbp7.cbp.repository.CbpRegistrationRepository;
 import com.cbp7.certificate.entity.Certificate;
 import com.cbp7.certificate.entity.CertificateStatus;
 import com.cbp7.certificate.repository.CertificateRepository;
-import com.cbp7.certificate.repository.CertificateTemplateRepository;
-import com.cbp7.notification.repository.NotificationTemplateRepository;
 import com.cbp7.payment.entity.Payment;
 import com.cbp7.payment.enums.PaymentStatus;
 import com.cbp7.payment.repository.PaymentRepository;
@@ -24,8 +25,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -42,8 +41,9 @@ public class AdminOperationsServiceImpl implements AdminOperationsService {
     private final AttendanceRecordRepository attendanceRecordRepository;
     private final AttendanceSessionRepository sessionRepository;
     private final CertificateRepository certificateRepository;
-    private final CertificateTemplateRepository certificateTemplateRepository;
-    private final NotificationTemplateRepository notificationTemplateRepository;
+    private final AdminMapper adminMapper;
+    private final AdminOperationsReadinessEvaluator readinessEvaluator;
+    private final AttendanceCalculator attendanceCalculator;
 
     @Override
     public AdminOperationsOverviewResponse getOverview() {
@@ -84,11 +84,8 @@ public class AdminOperationsServiceImpl implements AdminOperationsService {
 
         if (targetSession != null) {
             attendancePresentCount = attendanceRecordRepository.countBySessionIdAndStatus(targetSession.getId(), AttendanceStatus.PRESENT);
-            attendanceAbsentCount = Math.max(0, totalRegisteredStudents - attendancePresentCount);
-            double rawPercentage = totalRegisteredStudents > 0
-                    ? ((double) attendancePresentCount / totalRegisteredStudents) * 100.0
-                    : 0.0;
-            attendancePercentage = roundToTwoDecimals(rawPercentage);
+            attendanceAbsentCount = attendanceCalculator.calculateAbsentCount(totalRegisteredStudents, attendancePresentCount);
+            attendancePercentage = attendanceCalculator.calculatePercentage(attendancePresentCount, totalRegisteredStudents);
         }
 
         // 3. Certificates stats
@@ -98,9 +95,9 @@ public class AdminOperationsServiceImpl implements AdminOperationsService {
                     boolean paid = (reg.getRegistrationStatus() == RegistrationStatus.REGISTERED)
                             || paymentRepository.existsByRegistrationIdAndPaymentStatus(reg.getId(), PaymentStatus.SUCCESS);
                     if (!paid) return false;
-                    
+
                     if (totalSessions == 0) return false;
-                    
+
                     long attended = attendanceRecordRepository.countByStudentIdAndStatus(
                             reg.getStudentId(), AttendanceStatus.PRESENT
                     );
@@ -139,41 +136,36 @@ public class AdminOperationsServiceImpl implements AdminOperationsService {
         String upcomingSessionTime = upcomingSession != null ? formatSessionTime(upcomingSession.getStartTime(), upcomingSession.getEndTime()) : null;
 
         // 6. Readiness Checks
-        boolean registrationOpen = registeredCount > 0;
-        boolean paymentGatewayActive = paidCount > 0 || pendingPaymentCount > 0;
-        boolean sessionsConfigured = sessionsConfiguredCount > 0;
-        boolean attendanceSystemReady = sessionsConfiguredCount > 0;
-        boolean certificateTemplatePublished = certificateTemplateRepository.findFirstByStatusOrderByUpdatedAtDesc("PUBLISHED").isPresent();
-        boolean emailTemplatesReady = notificationTemplateRepository.count() > 0;
+        boolean registrationOpen = readinessEvaluator.isRegistrationOpen(registeredCount);
+        boolean paymentGatewayActive = readinessEvaluator.isPaymentGatewayActive(paidCount, pendingPaymentCount);
+        boolean sessionsConfigured = readinessEvaluator.isSessionsConfigured(sessionsConfiguredCount);
+        boolean attendanceSystemReady = readinessEvaluator.isAttendanceSystemReady(sessionsConfiguredCount);
+        boolean certificateTemplatePublished = readinessEvaluator.isCertificateTemplatePublished();
+        boolean emailTemplatesReady = readinessEvaluator.isEmailTemplatesReady();
 
-        return new AdminOperationsOverviewResponse(
+        return adminMapper.toOperationsOverviewResponse(
                 registrationOpen,
                 paymentGatewayActive,
                 sessionsConfigured,
                 attendanceSystemReady,
                 certificateTemplatePublished,
                 emailTemplatesReady,
-
                 registeredCount,
                 paidCount,
                 pendingPaymentCount,
                 failedPaymentCount,
                 sessionsConfiguredCount,
-
                 attendancePresentCount,
                 attendanceAbsentCount,
                 attendancePercentage,
-
                 certificatesEligibleCount,
                 certificatesGeneratedCount,
                 certificatesPublishedCount,
-
                 currentSessionId,
                 currentSessionTitle,
                 currentSessionDay,
                 currentSessionTime,
                 currentSessionStatus,
-
                 upcomingSessionTitle,
                 upcomingSessionDay,
                 upcomingSessionTime
@@ -184,11 +176,5 @@ public class AdminOperationsServiceImpl implements AdminOperationsService {
         if (start == null || end == null) return "Time not set";
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("hh:mm a");
         return start.format(formatter) + " - " + end.format(formatter);
-    }
-
-    private double roundToTwoDecimals(double value) {
-        return BigDecimal.valueOf(value)
-                .setScale(2, RoundingMode.HALF_UP)
-                .doubleValue();
     }
 }

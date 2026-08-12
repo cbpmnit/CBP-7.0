@@ -1,6 +1,10 @@
 package com.cbp7.admin.student.helper;
 
 import com.cbp7.admin.student.dto.response.AdminStudentListItemResponse;
+import com.cbp7.admin.student.mapper.AdminStudentMapper;
+import com.cbp7.admin.student.resolver.StudentIdentityResolver;
+import com.cbp7.admin.student.resolver.StudentPaymentStatusResolver;
+import com.cbp7.attendance.record.calculator.AttendanceCalculator;
 import com.cbp7.attendance.record.entity.AttendanceStatus;
 import com.cbp7.attendance.record.repository.AttendanceRecordRepository;
 import com.cbp7.attendance.session.repository.AttendanceSessionRepository;
@@ -8,17 +12,14 @@ import com.cbp7.auth.entity.Role;
 import com.cbp7.auth.entity.User;
 import com.cbp7.auth.repository.UserRepository;
 import com.cbp7.cbp.entity.CbpRegistration;
-import com.cbp7.cbp.enums.RegistrationStatus;
 import com.cbp7.cbp.repository.CbpRegistrationRepository;
 import com.cbp7.payment.entity.Payment;
-import com.cbp7.payment.enums.PaymentStatus;
 import com.cbp7.payment.repository.PaymentRepository;
 import com.cbp7.profile.entity.UserProfile;
 import com.cbp7.profile.repository.UserProfileRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
@@ -37,6 +38,11 @@ public class AdminStudentDirectoryAggregator {
     private final PaymentRepository paymentRepository;
     private final AttendanceRecordRepository attendanceRecordRepository;
     private final AttendanceSessionRepository sessionRepository;
+    private final StudentIdentityResolver identityResolver;
+    private final StudentPaymentStatusResolver paymentStatusResolver;
+    private final AdminStudentFilter studentFilter;
+    private final AdminStudentMapper studentMapper;
+    private final AttendanceCalculator attendanceCalculator;
 
     public Page<AdminStudentListItemResponse> getStudentsPaginated(
             String search,
@@ -93,75 +99,33 @@ public class AdminStudentDirectoryAggregator {
                 reg = regsByStudentId.get(user.getStudentId().toLowerCase().trim());
             }
 
-            String effectiveStudentId = user.getStudentId() != null && !user.getStudentId().isBlank()
-                    ? user.getStudentId()
-                    : (reg != null && reg.getStudentId() != null ? reg.getStudentId() : "-");
-
-            String effectiveName = user.getName() != null && !user.getName().isBlank()
-                    ? user.getName()
-                    : (reg != null ? reg.getFirstName() + " " + reg.getLastName()
-                    : (profile != null ? profile.getFirstName() + " " + profile.getLastName() : "Student"));
-
+            String effectiveStudentId = identityResolver.resolveEffectiveStudentId(user, reg);
+            String effectiveName = identityResolver.resolveEffectiveName(user, reg, profile);
             String effectiveEmail = user.getEmail();
-            String effectivePhone = user.getPhoneNumber() != null && !user.getPhoneNumber().isBlank()
-                    ? user.getPhoneNumber()
-                    : (reg != null && reg.getPhoneNumber() != null ? reg.getPhoneNumber()
-                    : (profile != null && profile.getPhoneNumber() != null ? profile.getPhoneNumber() : "-"));
-
-            String effectiveCourse = reg != null && reg.getCourse() != null && !reg.getCourse().isBlank()
-                    ? reg.getCourse()
-                    : (profile != null && profile.getCourse() != null ? profile.getCourse().name() : "-");
-
-            String effectiveBranch = reg != null && reg.getBranch() != null && !reg.getBranch().isBlank()
-                    ? reg.getBranch()
-                    : (profile != null && profile.getBranch() != null ? profile.getBranch().name() : "-");
-
-            String effectiveYear = reg != null && reg.getYear() != null
-                    ? reg.getYear().toString()
-                    : (profile != null && profile.getYear() != null ? profile.getYear().toString() : "-");
+            String effectivePhone = identityResolver.resolveEffectivePhone(user, reg, profile);
+            String effectiveCourse = identityResolver.resolveEffectiveCourse(reg, profile);
+            String effectiveBranch = identityResolver.resolveEffectiveBranch(reg, profile);
+            String effectiveYear = identityResolver.resolveEffectiveYear(reg, profile);
 
             String effectiveRegStatus = reg != null && reg.getRegistrationStatus() != null
                     ? reg.getRegistrationStatus().name()
                     : "REGISTERED";
 
-            boolean isPaid = false;
-            if (reg != null) {
-                isPaid = reg.getRegistrationStatus() == RegistrationStatus.REGISTERED
-                        || (paymentsByRegId.containsKey(reg.getId()) && paymentsByRegId.get(reg.getId()).stream().anyMatch(p -> p.getPaymentStatus() == PaymentStatus.SUCCESS));
-            }
-            if (!isPaid && paymentsByUserId.containsKey(user.getId())) {
-                isPaid = paymentsByUserId.get(user.getId()).stream().anyMatch(p -> p.getPaymentStatus() == PaymentStatus.SUCCESS);
-            }
-
-            boolean isFailed = false;
-            if (!isPaid) {
-                if (reg != null && paymentsByRegId.containsKey(reg.getId())) {
-                    isFailed = paymentsByRegId.get(reg.getId()).stream().anyMatch(p -> p.getPaymentStatus() == PaymentStatus.FAILED);
-                }
-                if (!isFailed && paymentsByUserId.containsKey(user.getId())) {
-                    isFailed = paymentsByUserId.get(user.getId()).stream().anyMatch(p -> p.getPaymentStatus() == PaymentStatus.FAILED);
-                }
-            }
-
-            String effectivePayStatus = isPaid ? "SUCCESS" : (isFailed ? "FAILED" : "PENDING");
+            List<Payment> regPayments = reg != null ? paymentsByRegId.get(reg.getId()) : null;
+            List<Payment> userPayments = paymentsByUserId.get(user.getId());
+            String effectivePayStatus = paymentStatusResolver.resolvePaymentStatus(reg, regPayments, userPayments);
 
             long attended = 0;
             if (!"-".equals(effectiveStudentId)) {
                 attended = attendanceRecordRepository.countByStudentIdAndStatus(effectiveStudentId, AttendanceStatus.PRESENT);
             }
-            double attendancePct = totalSessions > 0 ? ((double) attended / totalSessions) * 100.0 : 0.0;
+            double attendancePct = attendanceCalculator.calculatePercentage(attended, totalSessions);
+            int profilePct = identityResolver.calculateBasicProfileCompletion(effectiveEmail, effectivePhone, effectiveBranch, effectiveCourse);
 
-            int profilePct = (effectivePhone != null && !"-".equals(effectivePhone) ? 25 : 0)
-                    + (effectiveBranch != null && !"-".equals(effectiveBranch) ? 25 : 0)
-                    + (effectiveCourse != null && !"-".equals(effectiveCourse) ? 25 : 0)
-                    + (effectiveEmail != null && !effectiveEmail.isBlank() ? 25 : 0);
+            LocalDateTime createdAt = user.getCreatedAt() != null ? user.getCreatedAt() : LocalDateTime.now();
 
-            LocalDateTime createdAt = user.getCreatedAt() != null
-                    ? user.getCreatedAt()
-                    : (reg != null && reg.getCreatedAt() != null ? reg.getCreatedAt() : LocalDateTime.now());
-
-            allItems.add(new AdminStudentListItemResponse(
-                    user.getId().toString(),
+            allItems.add(studentMapper.toListItemResponse(
+                    user.getId(),
                     effectiveStudentId,
                     effectiveName,
                     effectiveEmail,
@@ -177,32 +141,45 @@ public class AdminStudentDirectoryAggregator {
             ));
         }
 
-        for (CbpRegistration r : cbpRegistrationRepository.findAll()) {
-            if (r.getUser() != null && processedUserIds.contains(r.getUser().getId())) continue;
-            if (r.getStudentId() != null && processedStudentIds.contains(r.getStudentId().toLowerCase().trim())) continue;
+        // Process registrations that do not have a User entity
+        List<CbpRegistration> allRegs = cbpRegistrationRepository.findAll();
+        for (CbpRegistration r : allRegs) {
+            boolean alreadyProcessed = (r.getUser() != null && processedUserIds.contains(r.getUser().getId()))
+                    || (r.getStudentId() != null && processedStudentIds.contains(r.getStudentId().toLowerCase().trim()));
 
-            boolean isPaid = r.getRegistrationStatus() == RegistrationStatus.REGISTERED
-                    || (paymentsByRegId.containsKey(r.getId()) && paymentsByRegId.get(r.getId()).stream().anyMatch(p -> p.getPaymentStatus() == PaymentStatus.SUCCESS));
+            if (alreadyProcessed) {
+                continue;
+            }
 
-            long attended = attendanceRecordRepository.countByStudentIdAndStatus(r.getStudentId(), AttendanceStatus.PRESENT);
-            double attendancePct = totalSessions > 0 ? ((double) attended / totalSessions) * 100.0 : 0.0;
+            String sid = r.getStudentId() != null && !r.getStudentId().isBlank() ? r.getStudentId() : "-";
+            String sName = (r.getFirstName() != null ? r.getFirstName() : "") + " " + (r.getLastName() != null ? r.getLastName() : "");
+            if (sName.isBlank()) sName = "Student";
+
+            List<Payment> regPayments = paymentsByRegId.get(r.getId());
+            String payStatus = paymentStatusResolver.resolvePaymentStatus(r, regPayments, null);
+
+            long attended = 0;
+            if (!"-".equals(sid)) {
+                attended = attendanceRecordRepository.countByStudentIdAndStatus(sid, AttendanceStatus.PRESENT);
+            }
+            double attendancePct = attendanceCalculator.calculatePercentage(attended, totalSessions);
 
             int profilePct = (r.getPhoneNumber() != null && !r.getPhoneNumber().isBlank() ? 25 : 0)
                     + (r.getBranch() != null && !r.getBranch().isBlank() ? 25 : 0)
                     + (r.getCourse() != null && !r.getCourse().isBlank() ? 25 : 0)
                     + (r.getEmail() != null && !r.getEmail().isBlank() ? 25 : 0);
 
-            allItems.add(new AdminStudentListItemResponse(
-                    r.getId().toString(),
-                    r.getStudentId(),
-                    r.getFirstName() + " " + r.getLastName(),
-                    r.getEmail(),
+            allItems.add(studentMapper.toListItemResponse(
+                    r.getId(),
+                    sid,
+                    sName.trim(),
+                    r.getEmail() != null ? r.getEmail() : "-",
                     r.getPhoneNumber() != null ? r.getPhoneNumber() : "-",
                     r.getCourse() != null ? r.getCourse() : "-",
                     r.getBranch() != null ? r.getBranch() : "-",
                     r.getYear() != null ? r.getYear().toString() : "-",
-                    r.getRegistrationStatus().name(),
-                    isPaid ? "SUCCESS" : "PENDING",
+                    r.getRegistrationStatus() != null ? r.getRegistrationStatus().name() : "REGISTERED",
+                    payStatus,
                     attendancePct,
                     profilePct,
                     r.getCreatedAt() != null ? r.getCreatedAt() : LocalDateTime.now()
@@ -210,59 +187,6 @@ public class AdminStudentDirectoryAggregator {
         }
 
         log.info("[AdminStudentDirectory] Total registered student entities assembled: {}", allItems.size());
-
-        List<AdminStudentListItemResponse> filtered = allItems.stream()
-                .filter(item -> {
-                    if (search != null && !search.isBlank()) {
-                        String q = search.trim().toLowerCase();
-                        String sid = item.studentId() != null ? item.studentId().toLowerCase() : "";
-                        String name = item.name() != null ? item.name().toLowerCase() : "";
-                        String email = item.email() != null ? item.email().toLowerCase() : "";
-                        String phone = item.phone() != null ? item.phone().toLowerCase() : "";
-                        if (!sid.contains(q) && !name.contains(q) && !email.contains(q) && !phone.contains(q)) {
-                            return false;
-                        }
-                    }
-
-                    if (registrationStatus != null && !registrationStatus.isBlank() && !"ALL".equalsIgnoreCase(registrationStatus)) {
-                        if (!item.registrationStatus().equalsIgnoreCase(registrationStatus)) {
-                            return false;
-                        }
-                    }
-
-                    if (paymentStatus != null && !paymentStatus.isBlank() && !"ALL".equalsIgnoreCase(paymentStatus)) {
-                        if (!item.paymentStatus().equalsIgnoreCase(paymentStatus)) {
-                            return false;
-                        }
-                    }
-
-                    boolean isEligible = item.attendancePercentage() >= 75.0;
-                    if (attendanceStatus != null && !attendanceStatus.isBlank() && !"ALL".equalsIgnoreCase(attendanceStatus)) {
-                        if ("ELIGIBLE".equalsIgnoreCase(attendanceStatus) && !isEligible) return false;
-                        if ("NOT_ELIGIBLE".equalsIgnoreCase(attendanceStatus) && isEligible) return false;
-                    }
-
-                    boolean isComplete = item.profileCompletion() >= 75;
-                    if (profileStatus != null && !profileStatus.isBlank() && !"ALL".equalsIgnoreCase(profileStatus)) {
-                        if ("COMPLETED".equalsIgnoreCase(profileStatus) && !isComplete) return false;
-                        if ("INCOMPLETE".equalsIgnoreCase(profileStatus) && isComplete) return false;
-                    }
-
-                    return true;
-                })
-                .sorted(Comparator.comparing(AdminStudentListItemResponse::createdAt, Comparator.nullsLast(Comparator.reverseOrder())))
-                .toList();
-
-        log.info("[AdminStudentDirectory] Filtered result count: {} matching students", filtered.size());
-
-        if (pageable.isUnpaged()) {
-            return new PageImpl<>(filtered);
-        }
-
-        int start = (int) pageable.getOffset();
-        int end = Math.min((start + pageable.getPageSize()), filtered.size());
-        List<AdminStudentListItemResponse> pageContent = start > filtered.size() ? List.of() : filtered.subList(start, end);
-
-        return new PageImpl<>(pageContent, pageable, filtered.size());
+        return studentFilter.filterAndPaginate(allItems, search, registrationStatus, paymentStatus, attendanceStatus, profileStatus, pageable);
     }
 }

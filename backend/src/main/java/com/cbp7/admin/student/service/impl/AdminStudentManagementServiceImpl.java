@@ -5,9 +5,13 @@ import com.cbp7.admin.student.dto.request.*;
 import com.cbp7.admin.student.dto.response.*;
 import com.cbp7.admin.student.entity.AdminPreferences;
 import com.cbp7.admin.student.generator.StudentProfilePdfGenerator;
+import com.cbp7.admin.student.helper.AdminStudentCsvExporter;
 import com.cbp7.admin.student.helper.AdminStudentDirectoryAggregator;
+import com.cbp7.admin.student.mapper.AdminStudentMapper;
 import com.cbp7.admin.student.repository.AdminPreferencesRepository;
+import com.cbp7.admin.student.resolver.StudentPaymentStatusResolver;
 import com.cbp7.admin.student.service.AdminStudentManagementService;
+import com.cbp7.attendance.record.calculator.AttendanceCalculator;
 import com.cbp7.attendance.record.entity.AttendanceStatus;
 import com.cbp7.attendance.record.repository.AttendanceRecordRepository;
 import com.cbp7.attendance.session.repository.AttendanceSessionRepository;
@@ -20,7 +24,6 @@ import com.cbp7.cbp.repository.CbpRegistrationRepository;
 import com.cbp7.certificate.entity.Certificate;
 import com.cbp7.certificate.repository.CertificateRepository;
 import com.cbp7.common.exception.ResourceNotFoundException;
-import com.cbp7.common.util.CsvExportUtil;
 import com.cbp7.payment.entity.Payment;
 import com.cbp7.payment.enums.PaymentStatus;
 import com.cbp7.payment.repository.PaymentRepository;
@@ -53,6 +56,10 @@ public class AdminStudentManagementServiceImpl implements AdminStudentManagement
     private final AdminPreferencesRepository adminPreferencesRepository;
     private final StudentProfilePdfGenerator pdfGenerator;
     private final AdminStudentDirectoryAggregator directoryAggregator;
+    private final AdminStudentMapper studentMapper;
+    private final AdminStudentCsvExporter studentCsvExporter;
+    private final AttendanceCalculator attendanceCalculator;
+    private final StudentPaymentStatusResolver paymentStatusResolver;
 
     @Override
     @Transactional(readOnly = true)
@@ -107,70 +114,13 @@ public class AdminStudentManagementServiceImpl implements AdminStudentManagement
 
         long totalSessions = sessionRepository.count();
         long attendedSessions = attendanceRecordRepository.countByStudentIdAndStatus(cleanStudentId, AttendanceStatus.PRESENT);
-        double attendancePct = totalSessions > 0 ? ((double) attendedSessions / totalSessions) * 100.0 : 0.0;
+        double attendancePct = attendanceCalculator.calculatePercentage(attendedSessions, totalSessions);
 
         Optional<Certificate> certOpt = certificateRepository.findByStudentId(cleanStudentId);
 
-        String idStr = user != null ? user.getId().toString() : (reg != null ? reg.getId().toString() : cleanStudentId);
-        String nameStr = user != null && user.getName() != null ? user.getName() : (reg != null ? reg.getFirstName() + " " + reg.getLastName() : "Student");
-        String emailStr = user != null ? user.getEmail() : (reg != null ? reg.getEmail() : cleanStudentId);
-        String phoneStr = user != null && user.getPhoneNumber() != null ? user.getPhoneNumber() : (reg != null ? reg.getPhoneNumber() : "-");
-
-        var basic = new AdminFullStudentDetailResponse.StudentBasicDto(
-                idStr,
-                cleanStudentId,
-                nameStr,
-                emailStr,
-                phoneStr
+        return studentMapper.toFullStudentDetailResponse(
+                user, reg, profileOpt, paymentOpt, totalSessions, attendedSessions, attendancePct, certOpt, cleanStudentId
         );
-
-        String fName = reg != null ? reg.getFirstName() : (profileOpt.map(UserProfile::getFirstName).orElse("Student"));
-        String lName = reg != null ? reg.getLastName() : (profileOpt.map(UserProfile::getLastName).orElse(""));
-        String gender = profileOpt.map(p -> p.getGender() != null ? p.getGender().name() : "MALE").orElse("MALE");
-        String dob = profileOpt.map(p -> p.getDateOfBirth() != null ? p.getDateOfBirth().toString() : "Not specified").orElse("Not specified");
-        String institute = reg != null && reg.getInstitute() != null ? reg.getInstitute() : profileOpt.map(UserProfile::getInstitute).orElse("MNIT Jaipur");
-        String course = reg != null ? reg.getCourse() : profileOpt.map(p -> p.getCourse() != null ? p.getCourse().name() : "-").orElse("-");
-        String branch = reg != null ? reg.getBranch() : profileOpt.map(p -> p.getBranch() != null ? p.getBranch().name() : "-").orElse("-");
-        String year = reg != null && reg.getYear() != null ? reg.getYear().toString() : profileOpt.map(p -> p.getYear() != null ? p.getYear().toString() : "1").orElse("1");
-        String section = profileOpt.map(UserProfile::getSection).orElse(reg != null && reg.getSection() != null ? reg.getSection() : "A");
-        boolean hosteller = profileOpt.map(UserProfile::getHosteller).orElse(reg != null && reg.getHosteller() != null ? reg.getHosteller() : false);
-        String room = profileOpt.map(UserProfile::getRoomNumber).orElse(reg != null && reg.getRoomNumber() != null ? reg.getRoomNumber() : "-");
-        String city = profileOpt.map(UserProfile::getCity).orElse(reg != null && reg.getCity() != null ? reg.getCity() : "Jaipur");
-        String state = profileOpt.map(UserProfile::getState).orElse(reg != null && reg.getState() != null ? reg.getState() : "Rajasthan");
-
-        var profileDto = new AdminFullStudentDetailResponse.ProfileDetailDto(
-                fName, lName, gender, dob, institute, course, branch, year, section, hosteller, room, city, state
-        );
-
-        var regDto = new AdminFullStudentDetailResponse.RegistrationDetailDto(
-                reg != null ? reg.getRegistrationId() : "REG_PENDING",
-                reg != null ? reg.getRegistrationStatus().name() : "REGISTERED",
-                reg != null ? reg.getCreatedAt() : (user != null ? user.getCreatedAt() : LocalDateTime.now())
-        );
-
-        boolean isPaid = (reg != null && reg.getRegistrationStatus() == RegistrationStatus.REGISTERED)
-                || paymentOpt.map(p -> p.getPaymentStatus() == PaymentStatus.SUCCESS).orElse(false);
-
-        var payDto = new AdminFullStudentDetailResponse.PaymentDetailDto(
-                isPaid ? "SUCCESS" : "PENDING",
-                paymentOpt.map(p -> p.getAmount() != null ? p.getAmount().doubleValue() : 500.0).orElse(500.0),
-                paymentOpt.map(Payment::getTransactionId).orElse("TXN_MNIT_CBP7"),
-                paymentOpt.map(Payment::getCreatedAt).orElse(user != null ? user.getCreatedAt() : LocalDateTime.now())
-        );
-
-        var attDto = new AdminFullStudentDetailResponse.AttendanceDetailDto(
-                totalSessions,
-                attendedSessions,
-                attendancePct
-        );
-
-        var certDto = new AdminFullStudentDetailResponse.CertificateDetailDto(
-                certOpt.isPresent() ? "ISSUED" : (attendancePct >= 75.0 ? "ELIGIBLE" : "NOT_ELIGIBLE"),
-                certOpt.map(Certificate::getCertificateNumber).orElse("-"),
-                certOpt.map(Certificate::getCreatedAt).orElse(null)
-        );
-
-        return new AdminFullStudentDetailResponse(basic, profileDto, regDto, payDto, attDto, certDto);
     }
 
     @Override
@@ -199,75 +149,58 @@ public class AdminStudentManagementServiceImpl implements AdminStudentManagement
 
         Optional<User> userOpt = userRepository.findByStudentId(cleanStudentId);
         if (userOpt.isPresent()) {
-            User user = userOpt.get();
-            if (request.firstName() != null) user.setName(request.firstName() + " " + (request.lastName() != null ? request.lastName() : ""));
-            if (request.email() != null) user.setEmail(request.email().trim());
-            if (request.phone() != null) user.setPhoneNumber(request.phone().trim());
-            userRepository.save(user);
+            User u = userOpt.get();
+            if (request.firstName() != null || request.lastName() != null) {
+                String fullName = ((request.firstName() != null ? request.firstName().trim() : "") + " " +
+                        (request.lastName() != null ? request.lastName().trim() : "")).trim();
+                if (!fullName.isBlank()) u.setName(fullName);
+            }
+            if (request.phone() != null) u.setPhoneNumber(request.phone().trim());
+            if (request.email() != null) u.setEmail(request.email().trim());
+            userRepository.save(u);
+
+            Optional<UserProfile> profileOpt = userProfileRepository.findByUserId(u.getId());
+            if (profileOpt.isPresent()) {
+                UserProfile prof = profileOpt.get();
+                if (request.firstName() != null) prof.setFirstName(request.firstName().trim());
+                if (request.lastName() != null) prof.setLastName(request.lastName().trim());
+                if (request.phone() != null) prof.setPhoneNumber(request.phone().trim());
+                if (request.gender() != null) {
+                    try {
+                        prof.setGender(Gender.valueOf(request.gender().toUpperCase()));
+                    } catch (Exception ignored) {}
+                }
+                if (request.dob() != null) {
+                    try {
+                        prof.setDateOfBirth(LocalDate.parse(request.dob()));
+                    } catch (Exception ignored) {}
+                }
+                if (request.section() != null) prof.setSection(request.section().trim());
+                if (request.hosteller() != null) prof.setHosteller(request.hosteller());
+                if (request.roomNumber() != null) prof.setRoomNumber(request.roomNumber().trim());
+                if (request.city() != null) prof.setCity(request.city().trim());
+                if (request.state() != null) prof.setState(request.state().trim());
+                userProfileRepository.save(prof);
+            }
         }
 
-        Optional<UserProfile> profileOpt = userProfileRepository.findByUserStudentIdIgnoreCase(cleanStudentId);
-        if (profileOpt.isPresent()) {
-            UserProfile profile = profileOpt.get();
-            if (request.gender() != null) {
-                try {
-                    profile.setGender(Gender.valueOf(request.gender().toUpperCase()));
-                } catch (Exception ignored) {}
-            }
-            if (request.dob() != null) {
-                try {
-                    profile.setDateOfBirth(LocalDate.parse(request.dob()));
-                } catch (Exception ignored) {}
-            }
-            if (request.section() != null) profile.setSection(request.section());
-            if (request.hosteller() != null) profile.setHosteller(request.hosteller());
-            if (request.roomNumber() != null) profile.setRoomNumber(request.roomNumber());
-            if (request.city() != null) profile.setCity(request.city());
-            if (request.state() != null) profile.setState(request.state());
-
-            userProfileRepository.save(profile);
-        }
-
-        log.info("Admin updated student profile for studentId: {}", cleanStudentId);
         return getStudentFullDetail(cleanStudentId);
     }
 
     @Override
     @Transactional(readOnly = true)
     public byte[] generateStudentPdf(String studentId) {
-        AdminFullStudentDetailResponse detail = getStudentFullDetail(studentId);
-        return pdfGenerator.generateStudentProfilePdf(detail);
+        AdminFullStudentDetailResponse student = getStudentFullDetail(studentId);
+        return pdfGenerator.generateStudentProfilePdf(student);
     }
 
     @Override
     @Transactional(readOnly = true)
     public byte[] exportStudentsCsv(String search, String registrationStatus, String paymentStatus, String attendanceStatus, String profileStatus) {
-        Page<AdminStudentListItemResponse> pageRes = getStudentsPaginated(
+        Page<AdminStudentListItemResponse> page = getStudentsPaginated(
                 search, registrationStatus, paymentStatus, attendanceStatus, profileStatus, Pageable.unpaged()
         );
-
-        List<String> headers = List.of(
-                "Student ID", "Name", "Email", "Phone", "Course", "Branch", "Year",
-                "Registration Status", "Payment Status", "Attendance %"
-        );
-
-        List<List<String>> rows = new ArrayList<>();
-        for (AdminStudentListItemResponse item : pageRes.getContent()) {
-            rows.add(List.of(
-                    item.studentId() != null ? item.studentId() : "",
-                    item.name() != null ? item.name() : "",
-                    item.email() != null ? item.email() : "",
-                    item.phone() != null ? item.phone() : "",
-                    item.course() != null ? item.course() : "",
-                    item.branch() != null ? item.branch() : "",
-                    item.year() != null ? item.year() : "",
-                    item.registrationStatus() != null ? item.registrationStatus() : "",
-                    item.paymentStatus() != null ? item.paymentStatus() : "",
-                    String.format("%.1f%%", item.attendancePercentage())
-            ));
-        }
-
-        return CsvExportUtil.generateCsv(headers, rows);
+        return studentCsvExporter.exportStudentsCsv(page.getContent());
     }
 
     @Override
@@ -305,7 +238,7 @@ public class AdminStudentManagementServiceImpl implements AdminStudentManagement
             for (User u : studentUsers) {
                 if (u.getStudentId() != null && !u.getStudentId().isBlank()) {
                     long attended = attendanceRecordRepository.countByStudentIdAndStatus(u.getStudentId(), AttendanceStatus.PRESENT);
-                    double pct = ((double) attended / totalSessions) * 100.0;
+                    double pct = attendanceCalculator.calculatePercentage(attended, totalSessions);
                     sumPct += pct;
                     if (pct >= 75.0) certificateEligible++;
                 }
@@ -313,7 +246,7 @@ public class AdminStudentManagementServiceImpl implements AdminStudentManagement
             avgAttendance = sumPct / totalStudents;
         }
 
-        return new AdminDashboardStatsResponse(
+        return studentMapper.toDashboardStatsResponse(
                 totalStudents,
                 registered,
                 paymentCompleted,

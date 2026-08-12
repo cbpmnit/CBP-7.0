@@ -17,7 +17,7 @@ public class AttendanceMarkerResolver {
 
     public MarkedByInfo resolveMarker(UUID markedByUserId) {
         if (markedByUserId == null) {
-            return new MarkedByInfo("system", "SYSTEM", "Automated / System Scanner");
+            return new MarkedByInfo("system", "System", "SYSTEM");
         }
 
         Optional<User> markerUserOpt = userRepository.findById(markedByUserId);
@@ -32,5 +32,24 @@ public class AttendanceMarkerResolver {
         }
 
         return new MarkedByInfo(markedByUserId.toString(), "Authorized Staff", "ROLE_VOLUNTEER");
+    }
+
+    public MarkedByInfo resolveMarker(String markedBy) {
+        if (markedBy == null || markedBy.isBlank()) {
+            return new MarkedByInfo("system", "System", "SYSTEM");
+        }
+        if (markedBy.equalsIgnoreCase("system") || markedBy.equalsIgnoreCase("admin") || markedBy.equalsIgnoreCase("volunteer")) {
+            String role = markedBy.equalsIgnoreCase("admin") ? "ROLE_ADMIN" : 
+                         markedBy.equalsIgnoreCase("volunteer") ? "ROLE_VOLUNTEER" : "SYSTEM";
+            String name = markedBy.equalsIgnoreCase("admin") ? "Admin" : 
+                         markedBy.equalsIgnoreCase("volunteer") ? "Volunteer" : "System";
+            return new MarkedByInfo(markedBy, name, role);
+        }
+        try {
+            UUID userUuid = UUID.fromString(markedBy);
+            return resolveMarker(userUuid);
+        } catch (IllegalArgumentException e) {
+            return new MarkedByInfo(markedBy, markedBy, "ROLE_VOLUNTEER");
+        }
     }
 }

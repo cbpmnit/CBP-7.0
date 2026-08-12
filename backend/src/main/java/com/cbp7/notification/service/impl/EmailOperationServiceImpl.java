@@ -1,11 +1,6 @@
 package com.cbp7.notification.service.impl;
 
-import com.cbp7.admin.student.dto.response.AdminStudentListItemResponse;
-import com.cbp7.admin.student.service.AdminStudentManagementService;
-import com.cbp7.auth.entity.User;
-import com.cbp7.auth.repository.UserRepository;
 import com.cbp7.common.exception.ResourceNotFoundException;
-import com.cbp7.common.util.CsvExportUtil;
 import com.cbp7.notification.dto.request.CreateEmailOperationRequest;
 import com.cbp7.notification.dto.response.EmailLogDto;
 import com.cbp7.notification.dto.response.EmailOperationDto;
@@ -13,11 +8,13 @@ import com.cbp7.notification.email.EmailSender;
 import com.cbp7.notification.entity.EmailLog;
 import com.cbp7.notification.entity.EmailOperation;
 import com.cbp7.notification.entity.NotificationTemplate;
+import com.cbp7.notification.helper.EmailLogCsvExporter;
 import com.cbp7.notification.mapper.NotificationMapper;
 import com.cbp7.notification.processor.TemplateProcessorService;
 import com.cbp7.notification.repository.EmailLogRepository;
 import com.cbp7.notification.repository.EmailOperationRepository;
 import com.cbp7.notification.repository.NotificationTemplateRepository;
+import com.cbp7.notification.resolver.EmailRecipientResolver;
 import com.cbp7.notification.service.EmailOperationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,11 +34,11 @@ public class EmailOperationServiceImpl implements EmailOperationService {
     private final EmailOperationRepository emailOperationRepository;
     private final EmailLogRepository emailLogRepository;
     private final NotificationTemplateRepository notificationTemplateRepository;
-    private final AdminStudentManagementService studentManagementService;
     private final TemplateProcessorService templateProcessorService;
     private final EmailSender emailSender;
-    private final UserRepository userRepository;
     private final NotificationMapper notificationMapper;
+    private final EmailRecipientResolver recipientResolver;
+    private final EmailLogCsvExporter csvExporter;
 
     @Override
     @Transactional(readOnly = true)
@@ -84,7 +81,7 @@ public class EmailOperationServiceImpl implements EmailOperationService {
         NotificationTemplate template = notificationTemplateRepository.findById(request.templateId())
                 .orElseThrow(() -> new ResourceNotFoundException("Template not found with id: " + request.templateId()));
 
-        List<String> targetRecipients = resolveRecipients(request);
+        List<String> targetRecipients = recipientResolver.resolveRecipients(request);
 
         EmailOperation operation = EmailOperation.builder()
                 .name(request.name())
@@ -155,66 +152,6 @@ public class EmailOperationServiceImpl implements EmailOperationService {
     @Transactional(readOnly = true)
     public byte[] exportEmailLogsCsv() {
         List<EmailLog> allLogs = emailLogRepository.findAll();
-        List<String> headers = List.of(
-                "Log ID", "Operation ID", "Recipient", "Template Name",
-                "Status", "Dispatched At", "Error / Detail"
-        );
-
-        List<List<String>> rows = new ArrayList<>();
-        for (EmailLog log : allLogs) {
-            rows.add(List.of(
-                    log.getId() != null ? log.getId().toString() : "",
-                    log.getOperationId() != null ? log.getOperationId().toString() : "",
-                    log.getRecipient() != null ? log.getRecipient() : "",
-                    log.getTemplateName() != null ? log.getTemplateName() : "",
-                    log.getStatus() != null ? log.getStatus() : "",
-                    log.getCreatedAt() != null ? log.getCreatedAt().toString() : "",
-                    log.getErrorMessage() != null ? log.getErrorMessage() : ""
-            ));
-        }
-
-        return CsvExportUtil.generateCsv(headers, rows);
-    }
-
-    // --- Private Helper Methods ---
-
-    private List<String> resolveRecipients(CreateEmailOperationRequest request) {
-        String rType = request.recipientType() != null ? request.recipientType().toUpperCase() : "INDIVIDUAL";
-
-        if ("INDIVIDUAL".equals(rType)) {
-            return request.individualRecipients() != null ? request.individualRecipients() : List.of();
-        }
-
-        if ("PAID_STUDENTS".equals(rType)) {
-            Page<AdminStudentListItemResponse> paid = studentManagementService.getStudentsPaginated(
-                    null, null, "SUCCESS", null, null, Pageable.unpaged()
-            );
-            return paid.getContent().stream()
-                    .map(AdminStudentListItemResponse::email)
-                    .filter(e -> e != null && !e.isBlank())
-                    .distinct()
-                    .toList();
-        }
-
-        if ("ALL_STUDENTS".equals(rType)) {
-            return userRepository.findAll().stream()
-                    .map(User::getEmail)
-                    .filter(e -> e != null && !e.isBlank())
-                    .distinct()
-                    .toList();
-        }
-
-        if ("CUSTOM_FILTER".equals(rType)) {
-            Page<AdminStudentListItemResponse> filtered = studentManagementService.getStudentsPaginated(
-                    request.filters(), null, null, null, null, Pageable.unpaged()
-            );
-            return filtered.getContent().stream()
-                    .map(AdminStudentListItemResponse::email)
-                    .filter(e -> e != null && !e.isBlank())
-                    .distinct()
-                    .toList();
-        }
-
-        return List.of();
+        return csvExporter.exportEmailLogsCsv(allLogs);
     }
 }
