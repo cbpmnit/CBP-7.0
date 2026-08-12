@@ -1,14 +1,14 @@
 package com.cbp7.payment.service.impl;
 
-import com.cbp7.auth.entity.User;
-import com.cbp7.auth.repository.UserRepository;
-import com.cbp7.cbp.entity.CbpRegistration;
-import com.cbp7.cbp.enums.RegistrationStatus;
-import com.cbp7.cbp.repository.CbpRegistrationRepository;
+import com.cbp7.identity.auth.entity.User;
+import com.cbp7.identity.auth.repository.UserRepository;
+import com.cbp7.program.registration.entity.CbpRegistration;
+import com.cbp7.program.registration.enums.RegistrationStatus;
+import com.cbp7.program.registration.repository.CbpRegistrationRepository;
 import com.cbp7.common.exception.PhonePeBadRequestException;
 import com.cbp7.common.exception.ResourceNotFoundException;
-import com.cbp7.notification.event.NotificationEventPublisher;
-import com.cbp7.notification.event.PaymentSuccessfulEvent;
+import com.cbp7.platform.notification.event.NotificationEventPublisher;
+import com.cbp7.platform.notification.event.PaymentSuccessfulEvent;
 import com.cbp7.payment.dto.response.PhonePeStatusResponse;
 import com.cbp7.payment.entity.Payment;
 import com.cbp7.payment.enums.PaymentStatus;

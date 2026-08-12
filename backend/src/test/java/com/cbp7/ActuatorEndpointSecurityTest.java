@@ -1,9 +1,9 @@
 package com.cbp7;
 
-import com.cbp7.auth.entity.Role;
-import com.cbp7.auth.entity.User;
-import com.cbp7.auth.repository.UserRepository;
-import com.cbp7.auth.security.JwtProvider;
+import com.cbp7.identity.auth.entity.Role;
+import com.cbp7.identity.auth.entity.User;
+import com.cbp7.identity.auth.repository.UserRepository;
+import com.cbp7.identity.auth.security.JwtProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

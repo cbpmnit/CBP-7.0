@@ -1,6 +1,6 @@
 package com.cbp7.payment.service;
 
-import com.cbp7.auth.entity.User;
+import com.cbp7.identity.auth.entity.User;
 import com.cbp7.payment.dto.request.CreatePaymentRequest;
 import com.cbp7.payment.dto.response.PaymentDetailResponse;
 import com.cbp7.payment.dto.response.PaymentResponse;

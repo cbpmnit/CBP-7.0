@@ -1,6 +1,6 @@
 package com.cbp7.payment.entity;
 
-import com.cbp7.auth.entity.BaseEntity;
+import com.cbp7.identity.auth.entity.BaseEntity;
 import com.cbp7.payment.enums.PaymentMode;
 import com.cbp7.payment.enums.PaymentStatus;
 import jakarta.persistence.*;

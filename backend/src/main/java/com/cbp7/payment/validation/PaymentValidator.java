@@ -1,7 +1,7 @@
 package com.cbp7.payment.validation;
 
-import com.cbp7.auth.entity.Role;
-import com.cbp7.auth.entity.User;
+import com.cbp7.identity.auth.entity.Role;
+import com.cbp7.identity.auth.entity.User;
 import com.cbp7.common.exception.ForbiddenException;
 import com.cbp7.common.exception.PaymentAlreadyExistsException;
 import com.cbp7.common.exception.PhonePeBadRequestException;

@@ -1,0 +1,12 @@
+package com.cbp7.platform.volunteer.dto.request;
+
+import jakarta.validation.constraints.NotBlank;
+import java.util.Set;
+
+public record GrantVolunteerAccessRequest(
+    @NotBlank(message = "User ID or Email is required")
+    String userIdOrEmail,
+    String name,
+    Set<String> permissions,
+    Set<String> assignedSessions
+) {}

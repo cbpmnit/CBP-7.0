@@ -1,9 +1,9 @@
 package com.cbp7.payment.service.impl;
 
-import com.cbp7.auth.entity.User;
-import com.cbp7.cbp.entity.CbpRegistration;
-import com.cbp7.cbp.repository.CbpRegistrationRepository;
-import com.cbp7.cbp.service.RegistrationFeeService;
+import com.cbp7.identity.auth.entity.User;
+import com.cbp7.program.registration.entity.CbpRegistration;
+import com.cbp7.program.registration.repository.CbpRegistrationRepository;
+import com.cbp7.program.registration.service.RegistrationFeeService;
 import com.cbp7.common.exception.CbpRegistrationRequiredException;
 import com.cbp7.common.exception.ResourceNotFoundException;
 import com.cbp7.payment.dto.request.CreatePaymentRequest;

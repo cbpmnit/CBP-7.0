@@ -1,6 +1,6 @@
 package com.cbp7.payment.controller;
 
-import com.cbp7.auth.entity.User;
+import com.cbp7.identity.auth.entity.User;
 import com.cbp7.common.response.ApiResponse;
 import com.cbp7.payment.dto.request.CreatePaymentRequest;
 import com.cbp7.payment.dto.request.PhonePeCallbackRequest;

@@ -1,7 +1,7 @@
 package com.cbp7.payment.factory;
 
-import com.cbp7.auth.entity.User;
-import com.cbp7.cbp.entity.CbpRegistration;
+import com.cbp7.identity.auth.entity.User;
+import com.cbp7.program.registration.entity.CbpRegistration;
 import com.cbp7.payment.entity.Payment;
 import com.cbp7.payment.enums.PaymentMode;
 import com.cbp7.payment.enums.PaymentStatus;
