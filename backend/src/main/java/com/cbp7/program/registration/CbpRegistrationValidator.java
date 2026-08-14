@@ -28,6 +28,13 @@ public class CbpRegistrationValidator {
         }
     }
 
+    public void validateAccountSetup(User user) {
+        validateStudentRole(user);
+        if (user.getStudentId() == null || user.getStudentId().isBlank() || !Boolean.TRUE.equals(user.getAccountSetupCompleted())) {
+            throw new ProfileIncompleteException("Please complete your account setup before registration.");
+        }
+    }
+
     public void validateRegistrationPreconditions(boolean alreadyExists, UserProfile profile) {
         if (alreadyExists) {
             throw new RegistrationAlreadyExistsException("You are already registered for CBP.");

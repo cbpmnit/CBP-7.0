@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation"
 import ProfileAvatar from "@/components/navbar/ProfileAvatar"
 import {
   FiUser,
+  FiShield,
   FiSettings,
   FiLogOut,
 } from "react-icons/fi"
@@ -52,18 +53,21 @@ export default function ProfileDropdown({
 
   let menuItems = [
     { label: "Profile", href: "/profile", icon: <FiUser /> },
+    { label: "Account Settings", href: "/account/settings", icon: <FiShield /> },
     { label: "Dashboard", href: "/dashboard", icon: <FiSettings /> },
   ]
 
   if (normalizedRole === "ROLE_ADMIN" || normalizedRole === "ADMIN") {
     menuItems = [
       { label: "Admin Dashboard", href: "/admin/dashboard", icon: <FiSettings /> },
+      { label: "Account Settings", href: "/account/settings", icon: <FiShield /> },
       { label: "Student Directory", href: "/admin/students", icon: <FiUser /> },
       { label: "Volunteers", href: "/admin/volunteers", icon: <FiUser /> },
     ]
   } else if (normalizedRole === "ROLE_VOLUNTEER" || normalizedRole === "VOLUNTEER") {
     menuItems = [
       { label: "Volunteer Dashboard", href: "/volunteer/dashboard", icon: <FiSettings /> },
+      { label: "Account Settings", href: "/account/settings", icon: <FiShield /> },
       { label: "My Profile", href: "/volunteer/profile", icon: <FiUser /> },
       { label: "Attendance Scanner", href: "/volunteer/scanner", icon: <FiSettings /> },
     ]

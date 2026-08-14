@@ -1,8 +1,11 @@
 package com.cbp7.identity.auth.service.impl;
 
+import com.cbp7.identity.auth.dto.request.ChangePasswordRequest;
+import com.cbp7.identity.auth.dto.request.CompleteAccountRequest;
 import com.cbp7.identity.auth.dto.request.LoginRequest;
 import com.cbp7.identity.auth.dto.request.ProfileUpdateRequest;
 import com.cbp7.identity.auth.dto.request.RegisterRequest;
+import com.cbp7.identity.auth.dto.request.SetupPasswordRequest;
 import com.cbp7.identity.auth.dto.response.LoginResponse;
 import com.cbp7.identity.auth.dto.response.UserResponse;
 import com.cbp7.identity.auth.entity.AuthProvider;
@@ -99,6 +102,110 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    @Transactional
+    public LoginResponse completeAccount(User currentUser, CompleteAccountRequest request) {
+        authValidator.validateAuthenticatedUser(currentUser);
+
+        if (request.studentId() == null || request.studentId().isBlank()) {
+            throw new InvalidCredentialsException("Student ID is required");
+        }
+        if (request.password() == null || request.password().isBlank()) {
+            throw new InvalidCredentialsException("Password is required");
+        }
+        if (!request.password().trim().equals(request.confirmPassword() != null ? request.confirmPassword().trim() : "")) {
+            throw new InvalidCredentialsException("Passwords do not match");
+        }
+
+        String cleanStudentId = request.studentId().trim().toLowerCase();
+
+        Optional<User> existingWithStudentId = userRepository.findByStudentIdIgnoreCase(cleanStudentId);
+        if (existingWithStudentId.isPresent()) {
+            User otherUser = existingWithStudentId.get();
+            if (currentUser.getId() == null || !otherUser.getId().equals(currentUser.getId())) {
+                if (otherUser.getEmail() != null && currentUser.getEmail() != null && otherUser.getEmail().equalsIgnoreCase(currentUser.getEmail())) {
+                    log.info("Merging duplicate student ID user record for email: {}", currentUser.getEmail());
+                    otherUser.setStudentId(null);
+                    userRepository.save(otherUser);
+                } else {
+                    throw new DuplicateResourceException("This Student ID is already linked with another account.");
+                }
+            }
+        }
+
+        User user = currentUser.getId() != null
+                ? userRepository.findById(currentUser.getId()).orElse(currentUser)
+                : currentUser;
+
+        user.setStudentId(cleanStudentId);
+        user.setPassword(passwordEncoder.encode(request.password().trim()));
+        user.setAccountSetupCompleted(true);
+
+        User savedUser = userRepository.save(user);
+        log.info("Completed account setup for user email={}: studentId={}", savedUser.getEmail(), cleanStudentId);
+
+        String token = jwtProvider.generateToken(savedUser);
+        return authMapper.toLoginResponse(savedUser, token);
+    }
+
+    @Override
+    @Transactional
+    public LoginResponse setupPassword(User currentUser, SetupPasswordRequest request) {
+        authValidator.validateAuthenticatedUser(currentUser);
+
+        if (request.password() == null || request.password().isBlank()) {
+            throw new InvalidCredentialsException("Password is required");
+        }
+        if (!request.password().trim().equals(request.confirmPassword() != null ? request.confirmPassword().trim() : "")) {
+            throw new InvalidCredentialsException("Passwords do not match");
+        }
+
+        User user = currentUser.getId() != null
+                ? userRepository.findById(currentUser.getId()).orElse(currentUser)
+                : currentUser;
+
+        user.setPassword(passwordEncoder.encode(request.password().trim()));
+        user.setAccountSetupCompleted(user.getStudentId() != null && !user.getStudentId().isBlank());
+
+        User savedUser = userRepository.save(user);
+        log.info("Created password for user email={}", savedUser.getEmail());
+
+        String token = jwtProvider.generateToken(savedUser);
+        return authMapper.toLoginResponse(savedUser, token);
+    }
+
+    @Override
+    @Transactional
+    public String changePassword(User currentUser, ChangePasswordRequest request) {
+        authValidator.validateAuthenticatedUser(currentUser);
+
+        User user = currentUser.getId() != null
+                ? userRepository.findById(currentUser.getId()).orElse(currentUser)
+                : currentUser;
+
+        if (user.getPassword() == null || user.getPassword().isBlank()) {
+            throw new InvalidCredentialsException("No existing password found. Please create a password first.");
+        }
+
+        if (!passwordEncoder.matches(request.currentPassword().trim(), user.getPassword())) {
+            throw new InvalidCredentialsException("Current password is incorrect.");
+        }
+
+        if (request.newPassword() == null || request.newPassword().isBlank()) {
+            throw new InvalidCredentialsException("New password is required");
+        }
+
+        if (!request.newPassword().trim().equals(request.confirmPassword() != null ? request.confirmPassword().trim() : "")) {
+            throw new InvalidCredentialsException("Passwords do not match");
+        }
+
+        user.setPassword(passwordEncoder.encode(request.newPassword().trim()));
+        userRepository.save(user);
+
+        log.info("Password changed successfully for user email={}", user.getEmail());
+        return "Password updated successfully.";
+    }
+
+    @Override
     public String logout() {
         return "Logged out successfully";
     }
@@ -131,6 +238,9 @@ public class AuthServiceImpl implements AuthService {
         if (request.phoneNumber() != null && !request.phoneNumber().isBlank()) {
             currentUser.setPhoneNumber(request.phoneNumber().trim());
         }
+        if (currentUser.getStudentId() != null && currentUser.getPassword() != null) {
+            currentUser.setAccountSetupCompleted(true);
+        }
 
         User updatedUser = userRepository.save(currentUser);
         log.info("Profile updated for user email={}: studentId={}", updatedUser.getEmail(), cleanStudentId);
@@ -154,6 +264,7 @@ public class AuthServiceImpl implements AuthService {
                 .password(passwordEncoder.encode(password))
                 .role(Role.ROLE_STUDENT)
                 .enabled(true)
+                .accountSetupCompleted(true)
                 .build();
 
         User savedUser = userRepository.save(user);
@@ -189,8 +300,12 @@ public class AuthServiceImpl implements AuthService {
         if (user.getProviderId() == null || user.getProviderId().isBlank()) {
             user.setProviderId(sub);
         }
+
+        boolean hasSetup = user.getStudentId() != null && !user.getStudentId().isBlank() && user.getPassword() != null && !user.getPassword().isBlank();
+        user.setAccountSetupCompleted(hasSetup);
+
         User updated = userRepository.save(user);
-        log.info("Existing CBP user authenticated through Google: {}", cleanEmail);
+        log.info("Existing CBP user authenticated through Google: {} (setupCompleted={})", cleanEmail, hasSetup);
         return updated;
     }
 
@@ -206,11 +321,12 @@ public class AuthServiceImpl implements AuthService {
                 .authProvider(AuthProvider.GOOGLE)
                 .providerId(sub)
                 .password(null)
+                .accountSetupCompleted(false)
                 .permissions(defaultPermissions)
                 .build();
 
         User savedUser = userRepository.save(user);
-        log.info("Creating new CBP student account from Google: email={}", cleanEmail);
+        log.info("Creating new CBP student account from Google: email={}, setupCompleted=false", cleanEmail);
 
         publishStudentRegistrationEvent(savedUser, cleanEmail, cleanEmail);
         return savedUser;

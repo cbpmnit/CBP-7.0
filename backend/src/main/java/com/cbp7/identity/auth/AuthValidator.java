@@ -9,10 +9,12 @@ import com.cbp7.common.exception.DuplicateResourceException;
 import com.cbp7.common.exception.ForbiddenException;
 import com.cbp7.common.exception.InvalidCredentialsException;
 import com.cbp7.common.exception.UnauthorizedException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 @Component
+@Slf4j
 public class AuthValidator {
 
     public void validateRegistration(RegisterRequest request, boolean studentIdExists, boolean emailExists) {
@@ -52,15 +54,20 @@ public class AuthValidator {
     }
 
     public void validateUserForLogin(User user, String rawPassword, PasswordEncoder passwordEncoder) {
-        if (user.getAuthProvider() == AuthProvider.GOOGLE || user.getPassword() == null) {
-            throw new InvalidCredentialsException("This account uses Google authentication. Please continue with Google login.");
+        String identifierLog = user.getStudentId() != null ? user.getStudentId() : user.getEmail();
+
+        if (user.getPassword() == null || user.getPassword().isBlank()) {
+            log.warn("Login failed: identifier={} reason=no_password_set authProvider={}", identifierLog, user.getAuthProvider());
+            throw new InvalidCredentialsException("Invalid Student ID/email or password");
         }
 
         if (!passwordEncoder.matches(rawPassword, user.getPassword())) {
+            log.warn("Login failed: identifier={} reason=password_mismatch", identifierLog);
             throw new InvalidCredentialsException("Invalid Student ID/email or password");
         }
 
         if (!Boolean.TRUE.equals(user.getEnabled())) {
+            log.warn("Login failed: identifier={} reason=account_disabled", identifierLog);
             throw new ForbiddenException("Account is disabled");
         }
     }

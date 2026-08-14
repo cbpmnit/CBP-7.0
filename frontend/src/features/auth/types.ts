@@ -13,6 +13,25 @@ export interface LoginResponse {
   role: string
   roles?: string[]
   permissions?: string[]
+  accountSetupCompleted?: boolean
+  profileCompleted?: boolean
+}
+
+export interface CompleteAccountRequest {
+  studentId: string
+  password: string
+  confirmPassword: string
+}
+
+export interface SetupPasswordRequest {
+  password: string
+  confirmPassword: string
+}
+
+export interface ChangePasswordRequest {
+  currentPassword: string
+  newPassword: string
+  confirmPassword: string
 }
 
 export interface RegisterRequest {
@@ -35,4 +54,6 @@ export interface UserResponse {
   role: string
   roles?: string[]
   permissions?: string[]
+  accountSetupCompleted?: boolean
+  profileCompleted?: boolean
 }

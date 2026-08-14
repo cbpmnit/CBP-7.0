@@ -28,10 +28,15 @@ export function StudentSelectionTable({
   const [page, setPage] = useState(0)
 
   const loadStudents = useCallback(async () => {
+    if (!selectedSessionId || selectedSessionId.trim() === "") {
+      setDataPage(null)
+      setLoading(false)
+      return
+    }
     setLoading(true)
     try {
       const data = await attendanceService.getEligibleStudentsForSessionQr(
-        selectedSessionId || "",
+        selectedSessionId,
         search,
         "ALL",
         page,

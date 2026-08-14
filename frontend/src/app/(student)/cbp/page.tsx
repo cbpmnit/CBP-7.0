@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { useAppSelector } from "@/store/hooks"
 import { cbpService } from "@/services/cbpService"
 import { profileService } from "@/services/profileService"
 import { CbpRegistrationDetailResponse } from "@/types/cbp"
@@ -21,6 +22,7 @@ import {
 
 export default function CbpPage() {
   const router = useRouter()
+  const auth = useAppSelector((state) => state.auth)
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -50,6 +52,15 @@ export default function CbpPage() {
     setError(null)
 
     try {
+      // 0. Verify account setup credentials (Student ID)
+      if (!auth.studentId || auth.studentId.trim() === "") {
+        setError("Please complete your account setup before registration.")
+        setTimeout(() => {
+          router.push("/complete-account")
+        }, 1500)
+        return
+      }
+
       // 1. Verify required profile details before triggering backend registration
       const comp = await profileService.getCompletion().catch(() => null)
       if (comp && !comp.completed && comp.registrationEligible === false) {
@@ -66,13 +77,20 @@ export default function CbpPage() {
       // 2. Submit CBP registration
       const response = await cbpService.register()
       if (response) {
-        // Immediately load detail view from returned response or backend query
+        // Immediately load detail view from returned response
         await fetchRegistrationDetails()
       }
     } catch (err: any) {
       const msg = err?.message || ""
-      if (msg.toLowerCase().includes("profile") || err?.status === 400 || err?.status === 422) {
-        setError("Profile information incomplete. Please complete your profile before registering.")
+      if (msg.toLowerCase().includes("already registered")) {
+        await fetchRegistrationDetails()
+      } else if (msg.toLowerCase().includes("account setup")) {
+        setError("Please complete your account setup before registration.")
+        setTimeout(() => {
+          router.push("/profile/setup")
+        }, 1500)
+      } else if (msg.toLowerCase().includes("profile") || err?.status === 400 || err?.status === 422) {
+        setError("Please complete your profile before registration.")
         setTimeout(() => {
           router.push("/profile")
         }, 1500)

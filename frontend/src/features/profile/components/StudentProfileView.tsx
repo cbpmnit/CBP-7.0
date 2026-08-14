@@ -2,11 +2,13 @@
 
 import React from "react"
 import Link from "next/link"
+import { useAppSelector } from "@/store/hooks"
 import { useStudentProfile } from "../hooks/useStudentProfile"
 import ProfileAvatar from "@/components/navbar/ProfileAvatar"
 import PageTransition from "@/components/animations/PageTransition"
 import {
   FiUser,
+  FiUserCheck,
   FiBookOpen,
   FiEdit,
   FiChevronDown,
@@ -37,6 +39,7 @@ const BRANCHES = [
 ]
 
 export default function StudentProfileView() {
+  const auth = useAppSelector((state) => state.auth)
   const {
     loading,
     saveLoading,
@@ -194,6 +197,40 @@ export default function StudentProfileView() {
 
               {openSections.identity && (
                 <div className="p-6 grid gap-4 sm:grid-cols-3">
+                  <div className="sm:col-span-3 pb-2 mb-1 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="w-full">
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        Student ID / Roll Number <span className="text-red-500">*</span>
+                      </label>
+                      {auth.studentId ? (
+                        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-slate-100 border border-slate-200 text-xs font-mono font-bold text-cyan-900">
+                          <FiUserCheck className="text-cyan-600 text-sm" />
+                          <span>{auth.studentId.toUpperCase()}</span>
+                          <span className="text-[10px] text-slate-500 font-sans font-normal">(Linked &amp; Read-Only)</span>
+                        </div>
+                      ) : (
+                        <div>
+                          <input
+                            type="text"
+                            name="studentId"
+                            disabled={!isEditing}
+                            required
+                            value={formData.studentId}
+                            onChange={handleChange}
+                            placeholder="e.g. 2023ucp2001"
+                            className="w-full sm:w-1/2 rounded-xl bg-slate-50 border border-slate-200 px-3 py-2 text-xs font-mono text-slate-900 focus:border-cyan-600 focus:outline-none disabled:opacity-80 font-medium uppercase"
+                          />
+                          <p className="text-[11px] text-slate-500 mt-1">
+                            Enter your official institute student ID (e.g. 2023ucp2001).
+                          </p>
+                          {errors.studentId && (
+                            <span className="text-[11px] font-bold text-rose-600 mt-0.5 block">{errors.studentId}</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">
                       First Name <span className="text-red-500">*</span>

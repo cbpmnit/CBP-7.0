@@ -30,6 +30,7 @@ export function useStudentProfile() {
   })
 
   const [formData, setFormData] = useState({
+    studentId: auth.studentId || "",
     firstName: "",
     middleName: "",
     lastName: "",
@@ -80,9 +81,10 @@ export function useStudentProfile() {
         setHasProfile(true)
         const data = profData.value
 
-        // If not user-edited yet, initialize from profile data
         if (!hasInitializedRef.current) {
-          setFormData({
+          setFormData((prev) => ({
+            ...prev,
+            studentId: auth.studentId || "",
             firstName: data.firstName || "",
             middleName: data.middleName || "",
             lastName: data.lastName || "",
@@ -101,11 +103,10 @@ export function useStudentProfile() {
             roomNumber: data.roomNumber || "",
             city: data.city || "",
             state: data.state || "",
-          })
+          }))
           hasInitializedRef.current = true
         }
 
-        // Synchronize Redux identity with verified profile name if available
         const verifiedFullName = [data.firstName, data.middleName, data.lastName].filter(Boolean).join(" ").trim()
         if (verifiedFullName && verifiedFullName !== auth.name) {
           dispatch(updateUserIdentity({ name: verifiedFullName, phoneNumber: data.phoneNumber }))
@@ -113,7 +114,6 @@ export function useStudentProfile() {
       } else {
         setHasProfile(false)
 
-        // AUTO-PREFILL: Fallback to existing User entity / registration identity
         if (!hasInitializedRef.current) {
           const rawName = (auth.name || (typeof window !== "undefined" && localStorage.getItem("cbp-name")) || "").trim()
           let prefilledFirst = ""
@@ -127,6 +127,7 @@ export function useStudentProfile() {
 
           setFormData((prev) => ({
             ...prev,
+            studentId: auth.studentId || "",
             firstName: prefilledFirst,
             lastName: prefilledLast,
           }))
@@ -145,7 +146,7 @@ export function useStudentProfile() {
     } finally {
       setLoading(false)
     }
-  }, [auth.name, dispatch])
+  }, [auth.name, auth.studentId, dispatch])
 
   useEffect(() => {
     fetchProfileData()
@@ -220,6 +221,7 @@ export function useStudentProfile() {
     setMessage(null)
 
     const newErrors: Record<string, string> = {}
+
     if (!formData.firstName.trim()) newErrors.firstName = "First name is required"
     if (!formData.lastName.trim()) newErrors.lastName = "Last name is required"
     if (!formData.phoneNumber.trim()) {
@@ -253,22 +255,19 @@ export function useStudentProfile() {
         await profileApi.createProfile(payload)
       }
 
-      // Compute synchronized full name
       const newFullName = [formData.firstName, formData.middleName, formData.lastName]
         .filter(Boolean)
         .join(" ")
         .trim()
 
-      // Immediately synchronize global Redux auth state & localStorage
       dispatch(updateUserIdentity({ name: newFullName, phoneNumber: formData.phoneNumber }))
       if (typeof window !== "undefined") {
         localStorage.setItem("cbp-name", newFullName)
       }
 
-      // Background sync with backend session
-      validateAndSyncSession()
+      await validateAndSyncSession()
 
-      setMessage("Profile saved successfully!")
+      setMessage("Profile details saved successfully!")
       setHasProfile(true)
       setIsEditing(false)
       hasInitializedRef.current = false

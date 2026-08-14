@@ -15,6 +15,7 @@ import com.cbp7.common.exception.DuplicateResourceException;
 import com.cbp7.common.exception.InvalidCredentialsException;
 import com.cbp7.common.exception.UnauthorizedException;
 import com.cbp7.platform.notification.events.NotificationEventPublisher;
+import com.cbp7.identity.profile.repository.UserProfileRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -43,6 +44,11 @@ class AuthServiceTest {
         passwordEncoder = new BCryptPasswordEncoder();
         jwtProvider = mock(JwtProvider.class);
         notificationEventPublisher = mock(NotificationEventPublisher.class);
+
+        UserProfileRepository userProfileRepository = mock(UserProfileRepository.class);
+        com.cbp7.identity.profile.ProfileEligibilityValidator eligibilityValidator = mock(com.cbp7.identity.profile.ProfileEligibilityValidator.class);
+        AuthMapper authMapper = new AuthMapper(userProfileRepository, eligibilityValidator);
+
         authService = new com.cbp7.identity.auth.service.impl.AuthServiceImpl(
                 userRepository,
                 userIdentityResolver,
@@ -50,7 +56,7 @@ class AuthServiceTest {
                 jwtProvider,
                 notificationEventPublisher,
                 new com.cbp7.identity.auth.AuthValidator(),
-                new com.cbp7.identity.auth.AuthMapper()
+                authMapper
         );
     }
 

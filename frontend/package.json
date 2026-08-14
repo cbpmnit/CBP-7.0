@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --webpack",
+    "dev:turbo": "next dev --turbo",
+    "clean": "powershell -Command \"Remove-Item -Recurse -Force .next\"",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"

@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { useAppDispatch } from "@/store/hooks"
 import { loginSuccess } from "@/store/slices/authSlice"
 import { api } from "@/utils/api"
+import { profileApi } from "@/features/profile/services/profileApi"
 import { UserResponse } from "@/types/auth"
 import Reveal from "@/components/animations/RevealOnScroll"
 import PageTransition from "@/components/animations/PageTransition"
@@ -81,9 +82,18 @@ function OAuthCallbackContent() {
 
       let redirectPath = "/dashboard"
 
-      if (!userRes.studentId || userRes.studentId.trim() === "") {
-        console.info("Profile setup required: studentId is missing")
-        redirectPath = "/profile/setup?reason=incomplete_profile"
+      const comp = await profileApi.getProfile().catch(() => null)
+      const compStatus = await profileApi.getCompletion().catch(() => null)
+
+      const isSetupIncomplete = userRes.accountSetupCompleted === false || !userRes.studentId
+      const isProfileIncomplete = userRes.profileCompleted === false
+
+      if (isSetupIncomplete) {
+        console.info("CASE 1: Account setup incomplete -> Redirecting to /profile/setup")
+        redirectPath = "/profile/setup"
+      } else if (isProfileIncomplete) {
+        console.info("CASE 2: Profile incomplete -> Redirecting to /profile")
+        redirectPath = "/profile"
       } else if (userRole === "ROLE_ADMIN" || userRole === "ADMIN") {
         redirectPath = "/admin/dashboard"
       } else if (userRole === "ROLE_VOLUNTEER" || userRole === "VOLUNTEER") {

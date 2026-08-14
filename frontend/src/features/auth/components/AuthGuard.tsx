@@ -20,6 +20,7 @@ const PUBLIC_EXACT_ROUTES = [
   "/faq",
   "/schedule",
   "/auth/callback",
+  "/complete-account",
 ]
 
 const ROLE_HOME_ROUTES: Record<string, string> = {
@@ -39,7 +40,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
   const dispatch = useAppDispatch()
-  const { isAuthenticated, role, isValidatingSession } = useAppSelector((state) => state.auth)
+  const { isAuthenticated, role, accountSetupCompleted, isValidatingSession } = useAppSelector((state) => state.auth)
   const [loading, setLoading] = useState(true)
   const hasSynced = useRef(false)
 
@@ -51,6 +52,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       const storedName = typeof window !== "undefined" ? localStorage.getItem("cbp-name") || "" : ""
       const storedPermissionsRaw = typeof window !== "undefined" ? localStorage.getItem("cbp-permissions") : null
       const storedUserId = typeof window !== "undefined" ? localStorage.getItem("cbp-userId") || "" : ""
+      const storedAccountSetupCompleted = typeof window !== "undefined" ? localStorage.getItem("cbp-accountSetupCompleted") === "true" : false
 
       let storedPermissions: string[] = []
       if (storedPermissionsRaw) {
@@ -71,6 +73,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
             role: storedRole,
             name: storedName,
             permissions: storedPermissions,
+            accountSetupCompleted: storedAccountSetupCompleted,
           })
         )
       }
@@ -146,9 +149,10 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         }
       }
 
-      // 8. Student Routes (Permit STUDENT only)
+      // 8. Student & Account Routes (Permit STUDENT / All Authenticated Users)
       const isStudentRoute =
         pathname === "/dashboard" ||
+        pathname.startsWith("/account") ||
         pathname.startsWith("/profile") ||
         pathname.startsWith("/attendance") ||
         pathname.startsWith("/payment") ||
@@ -163,8 +167,24 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
           currentRole !== "ROLE_VOLUNTEER" &&
           currentRole !== "VOLUNTEER"
 
-        if (!isStudent) {
+        if (!isStudent && !pathname.startsWith("/account")) {
           router.replace(homeRoute)
+          return
+        }
+
+        const isSetupCompleted =
+          accountSetupCompleted === true ||
+          (typeof window !== "undefined" && localStorage.getItem("cbp-accountSetupCompleted") === "true")
+
+        const isSetupPage = pathname === "/profile/setup" || pathname === "/complete-account" || pathname.startsWith("/account")
+
+        if (!isSetupCompleted && !isSetupPage) {
+          router.replace("/profile/setup")
+          return
+        }
+
+        if (isSetupCompleted && (pathname === "/profile/setup" || pathname === "/complete-account")) {
+          router.replace("/profile")
           return
         }
       }

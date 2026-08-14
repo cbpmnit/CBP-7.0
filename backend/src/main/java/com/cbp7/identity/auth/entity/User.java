@@ -74,6 +74,10 @@ public class User extends BaseEntity implements java.security.Principal {
     @Column(nullable = false)
     private Boolean enabled;
 
+    @Column(name = "account_setup_completed", nullable = false)
+    @Builder.Default
+    private Boolean accountSetupCompleted = false;
+
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(
         name = "user_permissions",
@@ -120,6 +124,9 @@ public class User extends BaseEntity implements java.security.Principal {
         }
         if (this.enabled == null) {
             this.enabled = true;
+        }
+        if (this.accountSetupCompleted == null) {
+            this.accountSetupCompleted = (this.studentId != null && !this.studentId.isBlank() && this.password != null && !this.password.isBlank());
         }
         if (this.authProvider == null) {
             this.authProvider = AuthProvider.LOCAL;

@@ -9,6 +9,7 @@ export interface AuthState {
   roles: string[]
   name: string | null
   permissions: string[]
+  accountSetupCompleted: boolean
   isAuthenticated: boolean
   isValidatingSession: boolean
   loading: boolean
@@ -24,6 +25,7 @@ const initialState: AuthState = {
   roles: [],
   name: null,
   permissions: [],
+  accountSetupCompleted: false,
   isAuthenticated: false,
   isValidatingSession: true,
   loading: false,
@@ -45,6 +47,7 @@ export const authSlice = createSlice({
         roles?: string[]
         name: string
         permissions?: string[]
+        accountSetupCompleted?: boolean
       }>
     ) => {
       state.token = action.payload.token
@@ -55,6 +58,7 @@ export const authSlice = createSlice({
       state.roles = action.payload.roles || (action.payload.role ? [action.payload.role] : [])
       state.name = action.payload.name
       state.permissions = action.payload.permissions || []
+      state.accountSetupCompleted = action.payload.accountSetupCompleted ?? true
       state.isAuthenticated = true
       state.isValidatingSession = false
       state.loading = false
@@ -62,10 +66,11 @@ export const authSlice = createSlice({
 
       if (typeof window !== "undefined") {
         localStorage.setItem("cbp-token", action.payload.token)
-        localStorage.setItem("cbp-studentId", action.payload.studentId)
+        localStorage.setItem("cbp-studentId", action.payload.studentId || "")
         localStorage.setItem("cbp-role", action.payload.role)
         localStorage.setItem("cbp-name", action.payload.name)
         localStorage.setItem("cbp-permissions", JSON.stringify(action.payload.permissions || []))
+        localStorage.setItem("cbp-accountSetupCompleted", String(state.accountSetupCompleted))
         if (action.payload.userId) localStorage.setItem("cbp-userId", action.payload.userId)
         if (action.payload.roles) localStorage.setItem("cbp-roles", JSON.stringify(action.payload.roles))
         if (action.payload.email) localStorage.setItem("cbp-email", action.payload.email)
@@ -82,6 +87,7 @@ export const authSlice = createSlice({
         roles?: string[]
         name?: string
         permissions: string[]
+        accountSetupCompleted?: boolean
       }>
     ) => {
       if (action.payload.permissions) {
@@ -96,7 +102,7 @@ export const authSlice = createSlice({
       if (action.payload.name) {
         state.name = action.payload.name
       }
-      if (action.payload.studentId) {
+      if (action.payload.studentId !== undefined) {
         state.studentId = action.payload.studentId
       }
       if (action.payload.userId) {
@@ -104,6 +110,9 @@ export const authSlice = createSlice({
       }
       if (action.payload.email) {
         state.email = action.payload.email
+      }
+      if (action.payload.accountSetupCompleted !== undefined) {
+        state.accountSetupCompleted = action.payload.accountSetupCompleted
       }
       state.isValidatingSession = false
       state.isAuthenticated = true
@@ -115,6 +124,7 @@ export const authSlice = createSlice({
         if (state.name) localStorage.setItem("cbp-name", state.name)
         if (state.studentId) localStorage.setItem("cbp-studentId", state.studentId)
         if (state.userId) localStorage.setItem("cbp-userId", state.userId)
+        localStorage.setItem("cbp-accountSetupCompleted", String(state.accountSetupCompleted))
       }
     },
 
@@ -125,6 +135,7 @@ export const authSlice = createSlice({
         studentId?: string
         email?: string
         phoneNumber?: string
+        accountSetupCompleted?: boolean
       }>
     ) => {
       if (action.payload.name) {
@@ -145,6 +156,12 @@ export const authSlice = createSlice({
           localStorage.setItem("cbp-email", action.payload.email)
         }
       }
+      if (action.payload.accountSetupCompleted !== undefined) {
+        state.accountSetupCompleted = action.payload.accountSetupCompleted
+        if (typeof window !== "undefined") {
+          localStorage.setItem("cbp-accountSetupCompleted", String(action.payload.accountSetupCompleted))
+        }
+      }
     },
 
     restoreAuth: (
@@ -158,6 +175,7 @@ export const authSlice = createSlice({
         roles?: string[]
         name: string
         permissions?: string[]
+        accountSetupCompleted?: boolean
       }>
     ) => {
       state.token = action.payload.token
@@ -168,6 +186,7 @@ export const authSlice = createSlice({
       state.roles = action.payload.roles || (action.payload.role ? [action.payload.role] : [])
       state.name = action.payload.name
       state.permissions = action.payload.permissions || []
+      state.accountSetupCompleted = action.payload.accountSetupCompleted ?? false
       state.isAuthenticated = true
       state.loading = false
       state.error = null
@@ -186,6 +205,7 @@ export const authSlice = createSlice({
       state.roles = []
       state.name = null
       state.permissions = []
+      state.accountSetupCompleted = false
       state.isAuthenticated = false
       state.isValidatingSession = false
       state.loading = false
@@ -200,6 +220,7 @@ export const authSlice = createSlice({
         localStorage.removeItem("cbp-roles")
         localStorage.removeItem("cbp-name")
         localStorage.removeItem("cbp-permissions")
+        localStorage.removeItem("cbp-accountSetupCompleted")
       }
     },
 

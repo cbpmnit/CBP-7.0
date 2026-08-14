@@ -62,6 +62,7 @@ export async function validateAndSyncSession(): Promise<UserResponse | null> {
           role: userData.role,
           roles: roles,
           permissions: perms,
+          accountSetupCompleted: userData.accountSetupCompleted,
         })
       )
 

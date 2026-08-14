@@ -11,13 +11,15 @@ public record UserResponse(
         String phoneNumber,
         String role,
         Set<String> roles,
-        Set<String> permissions
+        Set<String> permissions,
+        Boolean accountSetupCompleted,
+        Boolean profileCompleted
 ) {
     public UserResponse(String studentId, String email, String name, String phoneNumber, String role) {
-        this(null, null, studentId, email, name, phoneNumber, role, role != null ? Set.of(role) : Set.of(), Set.of());
+        this(null, null, studentId, email, name, phoneNumber, role, role != null ? Set.of(role) : Set.of(), Set.of(), true, false);
     }
 
     public UserResponse(String studentId, String email, String name, String phoneNumber, String role, Set<String> permissions) {
-        this(null, null, studentId, email, name, phoneNumber, role, role != null ? Set.of(role) : Set.of(), permissions != null ? permissions : Set.of());
+        this(null, null, studentId, email, name, phoneNumber, role, role != null ? Set.of(role) : Set.of(), permissions != null ? permissions : Set.of(), true, false);
     }
 }

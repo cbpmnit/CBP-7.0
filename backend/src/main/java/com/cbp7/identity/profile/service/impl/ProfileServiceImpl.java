@@ -45,7 +45,7 @@ public class ProfileServiceImpl implements ProfileService {
     public ProfileResponse getProfile(User user) {
         profileValidator.validateAuthenticatedUser(user);
 
-        UserProfile profile = userProfileRepository.findByUserStudentIdIgnoreCase(user.getStudentId())
+        UserProfile profile = findUserProfileForUser(user)
                 .orElseThrow(() -> new ResourceNotFoundException("Profile not found for current user"));
 
         return profileMapper.toProfileResponse(profile);
@@ -56,7 +56,7 @@ public class ProfileServiceImpl implements ProfileService {
     public ProfileResponse createProfile(User user, CreateProfileRequest request) {
         profileValidator.validateAuthenticatedUser(user);
 
-        if (userProfileRepository.existsByUserStudentIdIgnoreCase(user.getStudentId())) {
+        if (existsProfileForUser(user)) {
             throw new DuplicateResourceException("Profile already exists for current user");
         }
 
@@ -88,7 +88,7 @@ public class ProfileServiceImpl implements ProfileService {
     public ProfileResponse updateProfile(User user, UpdateProfileRequest request) {
         profileValidator.validateAuthenticatedUser(user);
 
-        UserProfile profile = userProfileRepository.findByUserStudentIdIgnoreCase(user.getStudentId())
+        UserProfile profile = findUserProfileForUser(user)
                 .orElseThrow(() -> new ResourceNotFoundException("Profile not found for current user"));
 
         profileValidator.validateProfileFields(
@@ -130,7 +130,7 @@ public class ProfileServiceImpl implements ProfileService {
             );
         }
 
-        UserProfile profile = userProfileRepository.findByUserStudentIdIgnoreCase(user.getStudentId()).orElse(null);
+        UserProfile profile = findUserProfileForUser(user).orElse(null);
 
         boolean isEligible = eligibilityValidator.isProfileComplete(profile);
         List<String> missingRequired = eligibilityValidator.getMissingRequiredFields(profile);
@@ -240,8 +240,10 @@ public class ProfileServiceImpl implements ProfileService {
     }
 
     private void updateProfileCompletion(User user, UserProfile profile) {
-        ProfileCompletion completion = profileCompletionRepository.findByUserStudentIdIgnoreCase(user.getStudentId())
-                .orElseGet(() -> ProfileCompletion.builder().user(user).build());
+        ProfileCompletion completion = (user.getStudentId() != null && !user.getStudentId().isBlank())
+                ? profileCompletionRepository.findByUserStudentIdIgnoreCase(user.getStudentId())
+                        .orElseGet(() -> ProfileCompletion.builder().user(user).build())
+                : ProfileCompletion.builder().user(user).build();
 
         ProfileCompletion calculated = completionCalculator.calculateAndBuildCompletion(user, profile);
         completion.setProfileCompleted(calculated.getProfileCompleted());
@@ -249,5 +251,23 @@ public class ProfileServiceImpl implements ProfileService {
         completion.setLastCompletedStep(calculated.getLastCompletedStep());
 
         profileCompletionRepository.save(completion);
+    }
+
+    private java.util.Optional<UserProfile> findUserProfileForUser(User user) {
+        if (user == null) return java.util.Optional.empty();
+        if (user.getId() != null) {
+            java.util.Optional<UserProfile> byId = userProfileRepository.findByUserId(user.getId());
+            if (byId.isPresent()) return byId;
+        }
+        if (user.getStudentId() != null && !user.getStudentId().isBlank()) {
+            return userProfileRepository.findByUserStudentIdIgnoreCase(user.getStudentId());
+        }
+        return java.util.Optional.empty();
+    }
+
+    private boolean existsProfileForUser(User user) {
+        if (user == null) return false;
+        if (user.getId() != null && userProfileRepository.existsByUserId(user.getId())) return true;
+        return user.getStudentId() != null && !user.getStudentId().isBlank() && userProfileRepository.existsByUserStudentIdIgnoreCase(user.getStudentId());
     }
 }

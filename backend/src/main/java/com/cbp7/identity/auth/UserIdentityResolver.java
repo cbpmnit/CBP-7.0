@@ -39,7 +39,22 @@ public class UserIdentityResolver {
         if (rawIdentifier == null || rawIdentifier.isBlank()) {
             return Optional.empty();
         }
-        AuthenticationIdentifier authIdentifier = AuthenticationIdentifier.parse(rawIdentifier);
-        return resolveUser(authIdentifier);
+        String clean = rawIdentifier.trim().toLowerCase();
+
+        if (clean.contains("@")) {
+            log.debug("Searching user by email: {}", clean);
+            Optional<User> byEmail = userRepository.findByEmailIgnoreCase(clean);
+            if (byEmail.isPresent()) {
+                return byEmail;
+            }
+            return userRepository.findByStudentIdIgnoreCase(clean);
+        } else {
+            log.debug("Searching user by student ID: {}", clean);
+            Optional<User> byStudentId = userRepository.findByStudentIdIgnoreCase(clean);
+            if (byStudentId.isPresent()) {
+                return byStudentId;
+            }
+            return userRepository.findByEmailIgnoreCase(clean);
+        }
     }
 }
