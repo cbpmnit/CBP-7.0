@@ -46,6 +46,7 @@ steps:
       - '--memory=512Mi'
       - '--cpu=1'
       - '--timeout=300'
+      - '--update-env-vars=TZ=Asia/Kolkata'
 
 images:
   - 'asia-south1-docker.pkg.dev/$PROJECT_ID/cbp-backend/cbp-backend:$COMMIT_SHA'
