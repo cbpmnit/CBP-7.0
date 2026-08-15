@@ -2,6 +2,8 @@ server:
   forward-headers-strategy: framework
 
 spring:
+  jackson:
+    time-zone: Asia/Kolkata
   devtools:
     restart:
       enabled: false
@@ -9,8 +11,15 @@ spring:
       enabled: false
   jpa:
     show-sql: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: Asia/Kolkata
 
 logging:
+  pattern:
+    dateformat: "yyyy-MM-dd HH:mm:ss.SSS,Asia/Kolkata"
+    console: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS,Asia/Kolkata}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}"
   level:
     root: INFO
     org.springframework.security.oauth2: DEBUG

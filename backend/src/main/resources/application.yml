@@ -35,12 +35,16 @@ spring:
     schemas: identity, program, platform, registration, public
     create-schemas: true
     baseline-on-migrate: true
+  jackson:
+    time-zone: Asia/Kolkata
   jpa:
     hibernate:
       ddl-auto: update
     properties:
       hibernate:
         default-schema: identity
+        jdbc:
+          time_zone: Asia/Kolkata
   devtools:
     restart:
       enabled: true
@@ -102,6 +106,11 @@ management:
   info:
     env:
       enabled: true
+
+logging:
+  pattern:
+    dateformat: "yyyy-MM-dd HH:mm:ss.SSS,Asia/Kolkata"
+    console: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS,Asia/Kolkata}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}"
 
 
 
