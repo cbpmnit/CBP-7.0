@@ -12,18 +12,24 @@ function PaymentSuccessContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const registrationId = searchParams.get("id") || searchParams.get("registrationId")
+  const merchantOrderId = searchParams.get("orderId") || searchParams.get("merchantOrderId") || searchParams.get("transactionId")
   const [data, setData] = useState<PublicRegistrationStatusResponse | null>(null)
   const [loading, setLoading] = useState<boolean>(true)
 
   useEffect(() => {
-    if (!registrationId) {
+    if (!registrationId && !merchantOrderId) {
       setLoading(false)
       return
     }
 
     const fetchStatus = async () => {
       try {
-        const response = await publicRegistrationApi.getStatus(registrationId)
+        let response: PublicRegistrationStatusResponse
+        if (merchantOrderId) {
+          response = await publicRegistrationApi.getPaymentStatus(merchantOrderId)
+        } else {
+          response = await publicRegistrationApi.getStatus(registrationId!)
+        }
         setData(response)
       } catch (err) {
         console.warn("Could not load registration confirmation", err)
@@ -33,7 +39,7 @@ function PaymentSuccessContent() {
     }
 
     fetchStatus()
-  }, [registrationId])
+  }, [registrationId, merchantOrderId])
 
   if (loading) {
     return (

@@ -103,10 +103,6 @@ management:
     env:
       enabled: true
 
-public-registration:
-  payment:
-    amount: 100
-    currency: INR
 
 
 

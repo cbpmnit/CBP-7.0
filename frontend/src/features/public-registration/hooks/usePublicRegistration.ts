@@ -119,14 +119,13 @@ export function usePublicRegistration() {
     setErrorMessage(null)
 
     try {
-      if (orderData.redirectUrl) {
-        if (orderData.redirectUrl.startsWith("http")) {
-          window.location.href = orderData.redirectUrl
-        } else {
-          router.push(orderData.redirectUrl)
-        }
+      if (orderData.redirectUrl && (orderData.redirectUrl.startsWith("http://") || orderData.redirectUrl.startsWith("https://"))) {
+        window.location.assign(orderData.redirectUrl)
+      } else if (orderData.redirectUrl && orderData.redirectUrl.startsWith("/")) {
+        router.push(orderData.redirectUrl)
       } else {
-        router.push(`/payment/status/${orderData.merchantOrderId}`)
+        setErrorMessage("Unable to redirect to payment gateway. Valid checkout URL was not provided.")
+        setLoading(false)
       }
     } catch (err) {
       setErrorMessage("Unable to redirect to payment gateway. Please try again.")

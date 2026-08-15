@@ -13,9 +13,10 @@ const PUBLIC_EXACT_ROUTES = [
   "/registration",
   "/registration/success",
   "/registration/payment-failed",
+  "/payment/status",
   "/payment/success",
   "/payment/failure",
-  "/payment-success",
+  "/payment-status",
   "/payment-failure",
   "/forgot-password",
   "/unauthorized",
@@ -87,8 +88,10 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       const isPublicRoute =
         pathname.startsWith("/volunteer/setup-password") ||
         pathname.startsWith("/registration") ||
+        pathname.startsWith("/payment/status") ||
         pathname.startsWith("/payment/success") ||
         pathname.startsWith("/payment/failure") ||
+        pathname.startsWith("/payment-status") ||
         PUBLIC_EXACT_ROUTES.includes(pathname)
 
       // 2. If on a public route without token, allow immediately without session validation or login redirects

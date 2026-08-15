@@ -75,4 +75,20 @@ public class PublicRegistrationController {
         PublicRegistrationStatusResponse response = publicRegistrationService.getRegistrationStatus(id);
         return ResponseEntity.ok(ApiResponse.success("Registration status retrieved successfully", response));
     }
+
+    @GetMapping("/payment/{merchantOrderId}/status")
+    public ResponseEntity<ApiResponse<PublicRegistrationStatusResponse>> getPaymentStatusByMerchantOrderId(
+            @PathVariable("merchantOrderId") String merchantOrderId
+    ) {
+        PublicRegistrationStatusResponse response = publicRegistrationService.getPaymentStatusByMerchantOrderId(merchantOrderId);
+        return ResponseEntity.ok(ApiResponse.success("Payment status retrieved successfully", response));
+    }
+
+    @GetMapping("/payment/status/{merchantOrderId}")
+    public ResponseEntity<ApiResponse<PublicRegistrationStatusResponse>> getPaymentStatusByMerchantOrderIdAlias(
+            @PathVariable("merchantOrderId") String merchantOrderId
+    ) {
+        PublicRegistrationStatusResponse response = publicRegistrationService.getPaymentStatusByMerchantOrderId(merchantOrderId);
+        return ResponseEntity.ok(ApiResponse.success("Payment status retrieved successfully", response));
+    }
 }

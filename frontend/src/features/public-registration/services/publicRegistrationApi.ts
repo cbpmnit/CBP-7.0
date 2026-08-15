@@ -29,6 +29,9 @@ export const publicRegistrationApi = {
 
   getStatus: (registrationId: string) =>
     apiClient.get<PublicRegistrationStatusResponse>(`/api/v1/public/registration/status/${registrationId}`),
+
+  getPaymentStatus: (merchantOrderId: string) =>
+    apiClient.get<PublicRegistrationStatusResponse>(`/api/v1/public/registration/payment/${merchantOrderId}/status`),
 }
 
 export default publicRegistrationApi

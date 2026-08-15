@@ -31,6 +31,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtProvider jwtProvider;
     private final UserRepository userRepository;
 
+    private static final org.springframework.util.AntPathMatcher pathMatcher = new org.springframework.util.AntPathMatcher();
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+        String path = request.getServletPath();
+        if (!StringUtils.hasText(path)) {
+            path = request.getRequestURI();
+        }
+        return pathMatcher.match("/api/v1/public/registration/**", path)
+                || pathMatcher.match("/api/v1/public/**", path)
+                || pathMatcher.match("/api/public/**", path);
+    }
+
     @Override
     protected void doFilterInternal(
             HttpServletRequest request,

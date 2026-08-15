@@ -63,5 +63,6 @@ export interface PublicRegistrationStatusResponse {
   studentType: string
   paymentStatus: string
   paymentTransactionId: string
+  amount?: number
   createdAt: string
 }

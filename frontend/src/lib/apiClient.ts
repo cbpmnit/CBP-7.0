@@ -81,9 +81,18 @@ async function request<T>(
       }
     }
 
-    // Auto-logout ONLY on 401 Unauthorized (session expired or invalid token), not on 403 Forbidden
+    const isPublicApiPath =
+      path.includes("/public/") ||
+      path.includes("/payment/") ||
+      path.startsWith("/api/v1/payment") ||
+      path.startsWith("/api/payment") ||
+      path.startsWith("/api/v1/public") ||
+      path.startsWith("/api/public")
+
+    // Auto-logout ONLY on 401 Unauthorized for protected APIs (session expired or invalid token), not on public APIs
     if (
       response.status === 401 &&
+      !isPublicApiPath &&
       !path.endsWith("/auth/login") &&
       typeof window !== "undefined"
     ) {

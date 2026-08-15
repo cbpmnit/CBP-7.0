@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useCallback } from "react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
+import { publicRegistrationApi } from "@/features/public-registration/services/publicRegistrationApi"
 import { paymentApi } from "../services/paymentApi"
 import { PaymentStatusResponse } from "../types"
 import PageTransition from "@/components/animations/PageTransition"
@@ -24,7 +25,7 @@ export default function PaymentVerification() {
   const transactionId = (params?.transactionId as string) || ""
 
   const [status, setStatus] = useState<StatusState>("PENDING")
-  const [paymentDetails, setPaymentDetails] = useState<PaymentStatusResponse | null>(null)
+  const [paymentDetails, setPaymentDetails] = useState<any>(null)
   const [pollCount, setPollCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [copied, setCopied] = useState(false)
@@ -38,12 +39,18 @@ export default function PaymentVerification() {
 
     setLoading(true)
     try {
-      const result = await paymentApi.getPaymentStatus(transactionId)
+      let result: any
+      try {
+        result = await publicRegistrationApi.getPaymentStatus(transactionId)
+      } catch {
+        result = await paymentApi.getPaymentStatus(transactionId)
+      }
       setPaymentDetails(result)
       
-      if (result.paymentStatus === "SUCCESS") {
+      const st = result.paymentStatus
+      if (st === "SUCCESS" || st === "REGISTERED" || st === "COMPLETED") {
         setStatus("SUCCESS")
-      } else if (result.paymentStatus === "FAILED") {
+      } else if (st === "FAILED") {
         setStatus("FAILED")
       } else {
         setStatus("PENDING")
@@ -76,13 +83,22 @@ export default function PaymentVerification() {
           return nextCount;
         }
 
-        paymentApi.getPaymentStatus(transactionId)
-          .then((result) => {
+        const fetchStatus = async () => {
+          try {
+            return await publicRegistrationApi.getPaymentStatus(transactionId)
+          } catch {
+            return await paymentApi.getPaymentStatus(transactionId)
+          }
+        }
+
+        fetchStatus()
+          .then((result: any) => {
             setPaymentDetails(result)
-            if (result.paymentStatus === "SUCCESS") {
+            const st = result.paymentStatus
+            if (st === "SUCCESS" || st === "REGISTERED" || st === "COMPLETED") {
               setStatus("SUCCESS")
               clearInterval(intervalId)
-            } else if (result.paymentStatus === "FAILED") {
+            } else if (st === "FAILED") {
               setStatus("FAILED")
               clearInterval(intervalId)
             }
@@ -148,10 +164,10 @@ export default function PaymentVerification() {
           {/* Header Link */}
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <Link
-              href="/dashboard"
+              href="/registration"
               className="inline-flex items-center gap-1.5 text-slate-600 hover:text-slate-900 text-xs font-bold transition"
             >
-              <FiArrowLeft className="text-xs" /> Dashboard
+              <FiArrowLeft className="text-xs" /> Registration Portal
             </Link>
             <span className="text-[10px] font-mono font-extrabold text-cyan-800 bg-cyan-50 px-2.5 py-0.5 rounded-full border border-cyan-200 tracking-wider uppercase">
               Secure Checkout
@@ -190,7 +206,7 @@ export default function PaymentVerification() {
                 Payment Verification
               </h2>
               <p className="text-2xl font-black text-slate-900 tracking-tight font-mono">
-                {paymentDetails ? formatCurrency(paymentDetails.amount) : "₹1,000"}
+                {formatCurrency(paymentDetails?.amount ?? 100)}
               </p>
               <div className="text-xs font-semibold text-slate-500">
                 {status === "PENDING" && "Payment verification in progress"}
@@ -295,7 +311,7 @@ export default function PaymentVerification() {
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-3 pt-2">
             <Link
-              href="/payment"
+              href="/registration"
               className="flex-1 py-3 bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition inline-flex items-center justify-center gap-1.5 shadow-3xs text-center cursor-pointer"
             >
               <FiCreditCard />

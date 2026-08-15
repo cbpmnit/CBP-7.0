@@ -16,4 +16,5 @@ public interface PublicRegistrationService {
     PublicRegistrationStatusResponse completeRegistration(CompletePublicRegistrationRequest request);
     PublicRegistrationStatusResponse processPaymentCallback(PublicPaymentCallbackRequest request);
     PublicRegistrationStatusResponse getRegistrationStatus(UUID registrationId);
+    PublicRegistrationStatusResponse getPaymentStatusByMerchantOrderId(String merchantOrderId);
 }

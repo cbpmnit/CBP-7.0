@@ -41,6 +41,10 @@ public class PublicRegistrationMapper {
     }
 
     public PublicRegistrationStatusResponse toStatusResponse(PublicRegistration registration) {
+        return toStatusResponse(registration, new java.math.BigDecimal("100.00"));
+    }
+
+    public PublicRegistrationStatusResponse toStatusResponse(PublicRegistration registration, java.math.BigDecimal amount) {
         if (registration == null) {
             return null;
         }
@@ -57,6 +61,7 @@ public class PublicRegistrationMapper {
                 registration.getStudentType() != null ? registration.getStudentType().name() : "DAY_SCHOLAR",
                 registration.getPaymentStatus() != null ? registration.getPaymentStatus().name() : "PENDING",
                 registration.getPaymentTransactionId(),
+                amount != null ? amount : new java.math.BigDecimal("100.00"),
                 registration.getCreatedAt()
         );
     }

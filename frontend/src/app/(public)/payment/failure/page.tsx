@@ -33,7 +33,7 @@ function PaymentFailureContent() {
           router.push(order.redirectUrl)
         }
       } else {
-        router.push(`/payment/status/${order.merchantOrderId}`)
+        router.push(`/registration`)
       }
     } catch (err: any) {
       setErrorMsg(err.message || "Failed to create new payment order. Please try again.")
