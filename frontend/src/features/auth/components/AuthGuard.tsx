@@ -1,36 +1,51 @@
 "use client"
 
-import { useEffect, useState, useRef } from "react"
+import React, { useEffect, useState, useRef } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { useAppDispatch, useAppSelector } from "@/store/hooks"
 import { restoreAuth } from "@/store/slices/authSlice"
 import { validateAndSyncSession } from "../services/authSync"
 
-const PUBLIC_EXACT_ROUTES = [
-  "/",
-  "/login",
-  "/register",
-  "/register/status",
-  "/registration",
-  "/registration/status",
-  "/registration/success",
-  "/registration/payment-failed",
-  "/payment/status",
-  "/payment/success",
-  "/payment/failure",
-  "/payment-status",
-  "/payment-failure",
-  "/forgot-password",
-  "/unauthorized",
-  "/about",
-  "/contact",
-  "/speakers",
-  "/gallery",
-  "/faq",
-  "/schedule",
-  "/auth/callback",
-  "/complete-account",
-]
+/**
+ * Determines whether a given pathname is completely public and requires no authentication.
+ */
+export const isPublicRoute = (pathname: string): boolean => {
+  if (!pathname) return true
+  const path = pathname.toLowerCase().split("?")[0].replace(/\/+$/, "") || "/"
+
+  // Public home & single page routes
+  if (
+    path === "/" ||
+    path === "/login" ||
+    path === "/forgot-password" ||
+    path === "/unauthorized" ||
+    path === "/auth/callback" ||
+    path === "/complete-account"
+  ) {
+    return true
+  }
+
+  // Public section prefixes
+  if (
+    path.startsWith("/about") ||
+    path.startsWith("/schedule") ||
+    path.startsWith("/speakers") ||
+    path.startsWith("/gallery") ||
+    path.startsWith("/faq") ||
+    path.startsWith("/contact") ||
+    path.startsWith("/register") ||
+    path.startsWith("/registration") ||
+    path.startsWith("/check-registration") ||
+    path.startsWith("/payment") ||
+    path.startsWith("/payment-status") ||
+    path.startsWith("/payment-failure") ||
+    path.startsWith("/volunteer/setup-password")
+  ) {
+    return true
+  }
+
+  return false
+}
 
 const ROLE_HOME_ROUTES: Record<string, string> = {
   ADMIN: "/admin/dashboard",
@@ -39,10 +54,10 @@ const ROLE_HOME_ROUTES: Record<string, string> = {
 }
 
 const getHomeRoute = (role: string): string => {
-  const norm = (role || "").toUpperCase().replace("ROLE_", "");
-  if (norm === "ADMIN") return ROLE_HOME_ROUTES.ADMIN;
-  if (norm === "VOLUNTEER") return ROLE_HOME_ROUTES.VOLUNTEER;
-  return ROLE_HOME_ROUTES.STUDENT;
+  const norm = (role || "").toUpperCase().replace("ROLE_", "")
+  if (norm === "ADMIN") return ROLE_HOME_ROUTES.ADMIN
+  if (norm === "VOLUNTEER") return ROLE_HOME_ROUTES.VOLUNTEER
+  return ROLE_HOME_ROUTES.STUDENT
 }
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
@@ -55,6 +70,9 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const initAuth = async () => {
+      const path = pathname.toLowerCase().split("?")[0].replace(/\/+$/, "") || "/"
+      const isPublic = isPublicRoute(pathname)
+
       const storedToken = typeof window !== "undefined" ? localStorage.getItem("cbp-token") : null
       const storedStudentId = typeof window !== "undefined" ? localStorage.getItem("cbp-studentId") || "" : ""
       const storedRole = typeof window !== "undefined" ? localStorage.getItem("cbp-role") || "" : ""
@@ -72,7 +90,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         }
       }
 
-      // 1. Initial fast restore from localStorage to prevent blank flicker
+      // 1. Initial fast restore from localStorage to prevent UI flicker
       if (storedToken && !isAuthenticated) {
         dispatch(
           restoreAuth({
@@ -87,29 +105,18 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         )
       }
 
-      const isPublicRoute =
-        pathname.startsWith("/volunteer/setup-password") ||
-        pathname.startsWith("/register") ||
-        pathname.startsWith("/registration") ||
-        pathname.startsWith("/payment/status") ||
-        pathname.startsWith("/payment/success") ||
-        pathname.startsWith("/payment/failure") ||
-        pathname.startsWith("/payment-status") ||
-        PUBLIC_EXACT_ROUTES.includes(pathname)
-
-      // 2. If on a public route without token, allow immediately without session validation or login redirects
-      if (isPublicRoute && !storedToken) {
+      // 2. If on ANY public route without a token, allow access immediately
+      if (isPublic && !storedToken) {
         setLoading(false)
         return
       }
 
-      // 3. For any session with a token (or protected route), synchronize live permissions from DB
+      // 3. For sessions with a token, synchronize live permissions in the background
       if (storedToken && !hasSynced.current) {
         hasSynced.current = true
         await validateAndSyncSession()
       }
 
-      // Check current credentials after sync
       const currentToken = typeof window !== "undefined" ? localStorage.getItem("cbp-token") : null
       const currentRole = (
         role ||
@@ -117,23 +124,20 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         ""
       ).toUpperCase()
 
-      // 4. If on public auth page (e.g. /login) and already authenticated, redirect to home
-      if (isPublicRoute) {
-        if (currentToken && ["/login", "/register"].includes(pathname)) {
-          if (currentRole === "ROLE_ADMIN" || currentRole === "ADMIN") {
-            router.replace("/admin/dashboard")
-          } else if (currentRole === "ROLE_VOLUNTEER" || currentRole === "VOLUNTEER") {
-            router.replace("/volunteer/dashboard")
-          } else {
-            router.replace("/dashboard")
-          }
+      // 4. If on public route:
+      if (isPublic) {
+        // Only redirect already-authenticated users if they land specifically on /login
+        if (currentToken && path === "/login") {
+          const targetHome = getHomeRoute(currentRole)
+          router.replace(targetHome)
           return
         }
+        // All other public routes (/register, /about, /schedule, /speakers, /gallery, etc.) remain open
         setLoading(false)
         return
       }
 
-      // 5. Unauthenticated user on protected route -> redirect to login
+      // 5. Unauthenticated user attempting to access a PROTECTED route -> redirect to /login
       if (!currentToken) {
         router.replace("/login")
         return
@@ -142,11 +146,8 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       const homeRoute = getHomeRoute(currentRole)
 
       // 6. Admin Routes: /admin/* (Permit ADMIN only)
-      if (pathname.startsWith("/admin")) {
-        const isAdmin =
-          currentRole === "ROLE_ADMIN" ||
-          currentRole === "ADMIN"
-
+      if (path.startsWith("/admin")) {
+        const isAdmin = currentRole === "ROLE_ADMIN" || currentRole === "ADMIN"
         if (!isAdmin) {
           router.replace(homeRoute)
           return
@@ -154,10 +155,8 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       }
 
       // 7. Volunteer Routes: /volunteer/* (Permit VOLUNTEER only)
-      if (pathname.startsWith("/volunteer") && !pathname.startsWith("/volunteer/setup-password")) {
-        const isVolunteer =
-          currentRole === "ROLE_VOLUNTEER" ||
-          currentRole === "VOLUNTEER"
+      if (path.startsWith("/volunteer") && !path.startsWith("/volunteer/setup-password")) {
+        const isVolunteer = currentRole === "ROLE_VOLUNTEER" || currentRole === "VOLUNTEER"
         if (!isVolunteer) {
           router.replace(homeRoute)
           return
@@ -166,12 +165,12 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
       // 8. Student & Account Routes (Permit STUDENT / All Authenticated Users)
       const isStudentRoute =
-        pathname === "/dashboard" ||
-        pathname.startsWith("/account") ||
-        pathname.startsWith("/profile") ||
-        pathname.startsWith("/attendance") ||
-        pathname.startsWith("/certificate") ||
-        pathname.startsWith("/cbp")
+        path === "/dashboard" ||
+        path.startsWith("/account") ||
+        path.startsWith("/profile") ||
+        path.startsWith("/attendance") ||
+        path.startsWith("/certificate") ||
+        path.startsWith("/cbp")
 
       if (isStudentRoute) {
         const isStudent =
@@ -180,7 +179,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
           currentRole !== "ROLE_VOLUNTEER" &&
           currentRole !== "VOLUNTEER"
 
-        if (!isStudent && !pathname.startsWith("/account")) {
+        if (!isStudent && !path.startsWith("/account")) {
           router.replace(homeRoute)
           return
         }
@@ -189,14 +188,14 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
           accountSetupCompleted === true ||
           (typeof window !== "undefined" && localStorage.getItem("cbp-accountSetupCompleted") === "true")
 
-        const isSetupPage = pathname === "/profile/setup" || pathname === "/complete-account" || pathname.startsWith("/account")
+        const isSetupPage = path === "/profile/setup" || path === "/complete-account" || path.startsWith("/account")
 
         if (!isSetupCompleted && !isSetupPage) {
           router.replace("/profile/setup")
           return
         }
 
-        if (isSetupCompleted && (pathname === "/profile/setup" || pathname === "/complete-account")) {
+        if (isSetupCompleted && (path === "/profile/setup" || path === "/complete-account")) {
           router.replace("/profile")
           return
         }
@@ -206,7 +205,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     }
 
     initAuth()
-  }, [pathname, isAuthenticated, role, router, dispatch])
+  }, [pathname, isAuthenticated, role, router, dispatch, accountSetupCompleted])
 
   if (loading) {
     return (
