@@ -17,7 +17,7 @@ function PaymentFailedContent() {
 
   const handleRetryPayment = async () => {
     if (!registrationId) {
-      router.push("/registration")
+      router.push("/register")
       return
     }
 
@@ -33,7 +33,7 @@ function PaymentFailedContent() {
           router.push(order.redirectUrl)
         }
       } else {
-        router.push(`/registration`)
+        router.push(`/register`)
       }
     } catch (err: any) {
       setErrorMsg(err.message || "Failed to create new payment order. Please try again.")
@@ -61,7 +61,7 @@ function PaymentFailedContent() {
       <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
         <Button
           type="button"
-          onClick={() => router.push("/registration")}
+          onClick={() => router.push("/register")}
           variant="outline"
           className="font-bold w-full sm:w-auto"
         >

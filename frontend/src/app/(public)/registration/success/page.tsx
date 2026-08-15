@@ -90,7 +90,7 @@ function RegistrationSuccessContent() {
       <div className="pt-2">
         <Button
           type="button"
-          onClick={() => router.push("/registration")}
+          onClick={() => router.push("/register")}
           variant="outline"
           className="font-bold w-full"
         >

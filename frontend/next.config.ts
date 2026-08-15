@@ -11,6 +11,15 @@ const nextConfig: NextConfig = {
     "172.22.10.101:3000",
     "172.22.10.101",
   ],
+  async redirects() {
+    return [
+      {
+        source: "/registration",
+        destination: "/register",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

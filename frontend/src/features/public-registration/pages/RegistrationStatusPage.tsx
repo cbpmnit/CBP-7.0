@@ -82,7 +82,7 @@ export function RegistrationStatusPage() {
         {/* Navigation & Header */}
         <div className="text-center space-y-2">
           <Link
-            href="/registration"
+            href="/register"
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-cyan-800 hover:text-cyan-900 transition-colors mb-2"
           >
             <FiArrowLeft className="h-3.5 w-3.5" /> Back to Registration
@@ -245,7 +245,7 @@ export function RegistrationStatusPage() {
                   </div>
 
                   <div className="text-center">
-                    <Link href="/registration">
+                    <Link href="/register">
                       <Button variant="outline" className="w-full text-xs font-semibold">
                         Return to Registration Portal
                       </Button>
@@ -267,7 +267,7 @@ export function RegistrationStatusPage() {
                     Please double-check your Student ID or Mobile Number. If you haven&apos;t registered yet, proceed below.
                   </p>
 
-                  <Link href="/registration" className="block">
+                  <Link href="/register" className="block">
                     <Button className="w-full bg-cyan-800 hover:bg-cyan-900 text-white font-bold py-2.5">
                       Register for CBP 7.0 <FiArrowRight className="ml-2" />
                     </Button>

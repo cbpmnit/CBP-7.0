@@ -26,7 +26,7 @@ function CTASectionComponent() {
 
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link
-              href="/registration"
+              href="/register"
               className="inline-flex items-center justify-center rounded-xl neon-button-cyan px-9 py-4 text-sm font-extrabold uppercase tracking-wider group"
             >
               Register for CBP 7.0

@@ -10,7 +10,7 @@ const footerLinks = {
   QuickLinks: [
     { name: "FAQ", href: "/faq" },
     { name: "Contact", href: "/contact" },
-    { name: "Register", href: "/registration" },
+    { name: "Register", href: "/register" },
   ],
 }
 

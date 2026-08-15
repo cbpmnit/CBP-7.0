@@ -124,7 +124,7 @@ function CountdownSectionComponent() {
         <Reveal variant="up" delay={200}>
           <div className="mt-10">
             <a
-              href="/registration"
+              href="/register"
               className="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white px-8 py-4 text-sm font-extrabold uppercase tracking-wider shadow-lg shadow-cyan-600/30 transition duration-300 transform hover:-translate-y-0.5"
             >
               Go to Registration

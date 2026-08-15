@@ -10,6 +10,7 @@ const PUBLIC_EXACT_ROUTES = [
   "/",
   "/login",
   "/register",
+  "/register/status",
   "/registration",
   "/registration/status",
   "/registration/success",
@@ -88,6 +89,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
       const isPublicRoute =
         pathname.startsWith("/volunteer/setup-password") ||
+        pathname.startsWith("/register") ||
         pathname.startsWith("/registration") ||
         pathname.startsWith("/payment/status") ||
         pathname.startsWith("/payment/success") ||

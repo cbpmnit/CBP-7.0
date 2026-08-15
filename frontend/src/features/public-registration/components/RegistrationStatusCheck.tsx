@@ -66,7 +66,7 @@ export function RegistrationStatusCheck() {
         {/* Header */}
         <div className="text-center space-y-2">
           <Link
-            href="/registration"
+            href="/register"
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-cyan-800 hover:text-cyan-900 transition-colors mb-2"
           >
             <FiArrowLeft className="h-3.5 w-3.5" /> Back to Registration
@@ -200,7 +200,7 @@ export function RegistrationStatusCheck() {
                   </div>
 
                   <div className="text-center">
-                    <Link href="/registration">
+                    <Link href="/register">
                       <Button variant="outline" className="w-full text-xs font-semibold">
                         Register Another Participant
                       </Button>
@@ -221,7 +221,7 @@ export function RegistrationStatusCheck() {
                     Please double-check your Student ID or Mobile Number. If you have not registered yet, you can register now.
                   </p>
 
-                  <Link href="/registration" className="block">
+                  <Link href="/register" className="block">
                     <Button className="w-full bg-cyan-800 hover:bg-cyan-900 text-white font-bold py-2.5">
                       Proceed to Registration <FiArrowRight className="ml-2" />
                     </Button>

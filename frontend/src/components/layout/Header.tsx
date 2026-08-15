@@ -182,7 +182,7 @@ function HeaderComponent() {
               ) : (
                 <>
                   <Link
-                    href="/registration"
+                    href="/register"
                     className="rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white px-5 py-2 text-xs font-bold tracking-wider uppercase shadow-sm transition"
                   >
                     PUBLIC REGISTRATION
@@ -205,7 +205,7 @@ function HeaderComponent() {
                 </>
               ) : (
                 <Link
-                  href="/registration"
+                  href="/register"
                   className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 text-white px-3 py-1.5 text-xs font-bold uppercase tracking-wider shadow-sm"
                 >
                   <FiAward className="h-3.5 w-3.5" />
@@ -398,7 +398,7 @@ function HeaderComponent() {
         ) : (
           <div className="border-t border-slate-100 p-5 bg-slate-50 flex flex-col gap-2 shrink-0">
             <Link
-              href="/registration"
+              href="/register"
               onClick={handleCloseMobileMenu}
               className="block w-full rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 text-white text-center py-2.5 text-xs font-bold uppercase tracking-wider shadow-sm active-press"
             >

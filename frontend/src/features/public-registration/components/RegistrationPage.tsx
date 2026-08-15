@@ -46,7 +46,7 @@ export function RegistrationPage() {
                 <span className="font-bold text-slate-800">Already registered?</span> Verify your registration and payment status using Student ID or Mobile Number.
               </div>
               <Link
-                href="/registration/status"
+                href="/register/status"
                 className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-cyan-900 font-bold text-xs rounded-xl border border-slate-200 transition-colors shrink-0"
               >
                 <FiSearch className="h-3.5 w-3.5" /> Check Registration Status

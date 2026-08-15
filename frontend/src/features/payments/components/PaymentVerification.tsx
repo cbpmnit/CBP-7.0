@@ -154,7 +154,7 @@ export default function PaymentVerification() {
           {/* Header Link */}
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <Link
-              href="/registration"
+              href="/register"
               className="inline-flex items-center gap-1.5 text-slate-600 hover:text-slate-900 text-xs font-bold transition"
             >
               <FiArrowLeft className="text-xs" /> Registration Portal
@@ -303,14 +303,14 @@ export default function PaymentVerification() {
             {status === "SUCCESS" ? (
               <div className="space-y-2">
                 <Link
-                  href="/registration/status"
+                  href="/register/status"
                   className="w-full py-3 bg-cyan-800 hover:bg-cyan-900 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition inline-flex items-center justify-center gap-1.5 shadow-sm text-center"
                 >
                   <FiCheckCircle />
                   <span>Check Registration Status</span>
                 </Link>
                 <Link
-                  href="/registration"
+                  href="/register"
                   className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition inline-flex items-center justify-center gap-1.5 text-center"
                 >
                   <FiArrowLeft />
@@ -320,14 +320,14 @@ export default function PaymentVerification() {
             ) : status === "FAILED" ? (
               <div className="space-y-2">
                 <Link
-                  href="/registration"
+                  href="/register"
                   className="w-full py-3 bg-cyan-800 hover:bg-cyan-900 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition inline-flex items-center justify-center gap-1.5 shadow-sm text-center"
                 >
                   <FiCreditCard />
                   <span>Retry Payment</span>
                 </Link>
                 <Link
-                  href="/registration/status"
+                  href="/register/status"
                   className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition inline-flex items-center justify-center gap-1.5 text-center"
                 >
                   <span>Check Existing Status</span>
@@ -344,7 +344,7 @@ export default function PaymentVerification() {
                   <span>{loading ? "Verifying..." : "Refresh Status"}</span>
                 </button>
                 <Link
-                  href="/registration/status"
+                  href="/register/status"
                   className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition inline-flex items-center justify-center gap-1.5 text-center"
                 >
                   <span>Lookup Status</span>

@@ -78,7 +78,7 @@ function HeroComponent() {
 
           <div className="mt-9 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-center">
             <Link
-              href="/registration"
+              href="/register"
               className="group inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white px-8 py-4 text-sm font-bold uppercase tracking-wider shadow-lg shadow-cyan-600/30 transition-all duration-300 transform hover:-translate-y-0.5"
             >
               <span>Register Now</span>
