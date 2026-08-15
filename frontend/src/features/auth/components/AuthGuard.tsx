@@ -11,6 +11,12 @@ const PUBLIC_EXACT_ROUTES = [
   "/login",
   "/register",
   "/registration",
+  "/registration/success",
+  "/registration/payment-failed",
+  "/payment/success",
+  "/payment/failure",
+  "/payment-success",
+  "/payment-failure",
   "/forgot-password",
   "/unauthorized",
   "/about",
@@ -40,7 +46,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
   const dispatch = useAppDispatch()
-  const { isAuthenticated, role, accountSetupCompleted, isValidatingSession } = useAppSelector((state) => state.auth)
+  const { isAuthenticated, role, accountSetupCompleted } = useAppSelector((state) => state.auth)
   const [loading, setLoading] = useState(true)
   const hasSynced = useRef(false)
 
@@ -79,9 +85,13 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       }
 
       const isPublicRoute =
-        pathname.startsWith("/volunteer/setup-password") || PUBLIC_EXACT_ROUTES.includes(pathname)
+        pathname.startsWith("/volunteer/setup-password") ||
+        pathname.startsWith("/registration") ||
+        pathname.startsWith("/payment/success") ||
+        pathname.startsWith("/payment/failure") ||
+        PUBLIC_EXACT_ROUTES.includes(pathname)
 
-      // 2. If on a public route without token, allow immediately
+      // 2. If on a public route without token, allow immediately without session validation or login redirects
       if (isPublicRoute && !storedToken) {
         setLoading(false)
         return
@@ -103,7 +113,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
       // 4. If on public auth page (e.g. /login) and already authenticated, redirect to home
       if (isPublicRoute) {
-        if (currentToken && ["/login", "/register", "/registration"].includes(pathname)) {
+        if (currentToken && ["/login", "/register"].includes(pathname)) {
           if (currentRole === "ROLE_ADMIN" || currentRole === "ADMIN") {
             router.replace("/admin/dashboard")
           } else if (currentRole === "ROLE_VOLUNTEER" || currentRole === "VOLUNTEER") {
@@ -142,7 +152,6 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         const isVolunteer =
           currentRole === "ROLE_VOLUNTEER" ||
           currentRole === "VOLUNTEER"
-
         if (!isVolunteer) {
           router.replace(homeRoute)
           return
@@ -155,10 +164,8 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         pathname.startsWith("/account") ||
         pathname.startsWith("/profile") ||
         pathname.startsWith("/attendance") ||
-        pathname.startsWith("/payment") ||
         pathname.startsWith("/certificate") ||
-        pathname.startsWith("/cbp") ||
-        pathname.startsWith("/registration")
+        pathname.startsWith("/cbp")
 
       if (isStudentRoute) {
         const isStudent =

@@ -182,22 +182,10 @@ function HeaderComponent() {
               ) : (
                 <>
                   <Link
-                    href="/login"
-                    className={`inline-flex items-center gap-1.5 rounded-xl border border-cyan-600/30 bg-cyan-50 px-4 py-2 text-xs font-bold tracking-wider text-cyan-800 uppercase transition duration-200 hover:bg-cyan-100 ${
-                      pathname === "/login"
-                        ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white border-transparent"
-                        : ""
-                    }`}
-                  >
-                    <FiUser className="h-3.5 w-3.5" />
-                    <span>LOGIN</span>
-                  </Link>
-
-                  <Link
                     href="/registration"
                     className="rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white px-5 py-2 text-xs font-bold tracking-wider uppercase shadow-sm transition"
                   >
-                    REGISTER NOW
+                    PUBLIC REGISTRATION
                   </Link>
                 </>
               )}
@@ -217,11 +205,11 @@ function HeaderComponent() {
                 </>
               ) : (
                 <Link
-                  href="/login"
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-cyan-600/30 bg-cyan-50 text-cyan-800 px-3 py-1.5 text-xs font-bold uppercase tracking-wider"
+                  href="/registration"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 text-white px-3 py-1.5 text-xs font-bold uppercase tracking-wider shadow-sm"
                 >
-                  <FiUser className="h-3.5 w-3.5" />
-                  <span>LOGIN</span>
+                  <FiAward className="h-3.5 w-3.5" />
+                  <span>REGISTER</span>
                 </Link>
               )}
 
@@ -410,19 +398,11 @@ function HeaderComponent() {
         ) : (
           <div className="border-t border-slate-100 p-5 bg-slate-50 flex flex-col gap-2 shrink-0">
             <Link
-              href="/login"
-              onClick={handleCloseMobileMenu}
-              className="inline-flex items-center justify-center gap-2 w-full rounded-xl border border-cyan-600/30 bg-cyan-50 text-cyan-800 text-center py-2.5 text-xs font-bold uppercase tracking-wider active-press"
-            >
-              <FiUser className="h-4 w-4" />
-              <span>Login</span>
-            </Link>
-            <Link
               href="/registration"
               onClick={handleCloseMobileMenu}
-              className="block w-full rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 text-white text-center py-2.5 text-xs font-bold uppercase tracking-wider shadow-sm text-center active-press"
+              className="block w-full rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 text-white text-center py-2.5 text-xs font-bold uppercase tracking-wider shadow-sm active-press"
             >
-              Register Now
+              REGISTER FOR CBP 7.0
             </Link>
           </div>
         )}

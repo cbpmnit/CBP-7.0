@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation"
 
-export default function RegistrationRedirect() {
+export default function AccountRegistrationRedirect() {
   redirect("/register")
 }

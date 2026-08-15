@@ -5,10 +5,10 @@ spring:
     password: 
     driver-class-name: org.h2.Driver
     hikari:
-      connection-init-sql: CREATE SCHEMA IF NOT EXISTS identity; CREATE SCHEMA IF NOT EXISTS program; CREATE SCHEMA IF NOT EXISTS platform;
+      connection-init-sql: CREATE SCHEMA IF NOT EXISTS identity; CREATE SCHEMA IF NOT EXISTS program; CREATE SCHEMA IF NOT EXISTS platform; CREATE SCHEMA IF NOT EXISTS registration;
   flyway:
     enabled: true
-    schemas: identity, program, platform, public
+    schemas: identity, program, platform, registration, public
     create-schemas: true
     baseline-on-migrate: true
   jpa:
@@ -47,3 +47,8 @@ phonepe:
 cbp:
   registration:
     fee: 100
+
+public-registration:
+  payment:
+    amount: 100
+    currency: INR
