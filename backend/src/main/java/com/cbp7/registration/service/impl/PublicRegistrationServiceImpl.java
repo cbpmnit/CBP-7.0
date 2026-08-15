@@ -17,9 +17,11 @@ import com.cbp7.registration.entity.PublicPaymentTransaction;
 import com.cbp7.registration.entity.PublicRegistration;
 import com.cbp7.registration.enums.PublicPaymentStatus;
 import com.cbp7.registration.enums.PublicRegistrationStatus;
+import com.cbp7.registration.enums.PublicRegistrationAuditEventType;
 import com.cbp7.registration.mapper.PublicRegistrationMapper;
 import com.cbp7.registration.repository.PublicPaymentTransactionRepository;
 import com.cbp7.registration.repository.PublicRegistrationRepository;
+import com.cbp7.registration.service.PublicRegistrationAuditService;
 import com.cbp7.registration.service.PublicRegistrationService;
 import com.cbp7.registration.validator.PublicRegistrationValidator;
 import lombok.RequiredArgsConstructor;
@@ -41,6 +43,7 @@ public class PublicRegistrationServiceImpl implements PublicRegistrationService 
     private final PublicRegistrationMapper publicRegistrationMapper;
     private final PublicRegistrationProperties publicRegistrationProperties;
     private final PaymentGateway paymentGateway;
+    private final PublicRegistrationAuditService auditService;
 
     @Override
     public PaymentConfigResponse getPaymentConfig() {
@@ -58,15 +61,21 @@ public class PublicRegistrationServiceImpl implements PublicRegistrationService 
         String studentId = request.studentId().trim().toUpperCase();
 
         if (publicRegistrationRepository.existsByEmailIgnoreCaseAndPaymentStatus(email, PublicRegistrationStatus.REGISTERED)) {
+            auditService.logEvent(null, null, null, PublicRegistrationAuditEventType.DUPLICATE_REQUEST, "Duplicate registration request for email: " + email);
             throw new DuplicateResourceException("Registration already completed for email: " + email);
         }
 
         if (publicRegistrationRepository.existsByStudentIdIgnoreCaseAndPaymentStatus(studentId, PublicRegistrationStatus.REGISTERED)) {
+            auditService.logEvent(null, null, null, PublicRegistrationAuditEventType.DUPLICATE_REQUEST, "Duplicate registration request for student ID: " + studentId);
             throw new DuplicateResourceException("Registration already completed for student ID: " + studentId);
         }
 
         PublicRegistration registration = publicRegistrationRepository.findByEmailIgnoreCase(email)
-                .orElseGet(() -> publicRegistrationRepository.save(publicRegistrationMapper.toEntity(request)));
+                .orElseGet(() -> {
+                    PublicRegistration saved = publicRegistrationRepository.save(publicRegistrationMapper.toEntity(request));
+                    auditService.logEvent(saved.getId(), null, null, PublicRegistrationAuditEventType.REGISTRATION_CREATED, "Public registration created");
+                    return saved;
+                });
 
         return initiateOrderForRegistration(registration);
     }
@@ -82,7 +91,7 @@ public class PublicRegistrationServiceImpl implements PublicRegistrationService 
 
     private PublicOrderResponse initiateOrderForRegistration(PublicRegistration registration) {
         if (registration.getPaymentStatus() == PublicRegistrationStatus.REGISTERED) {
-            log.info("[PUBLIC_PAYMENT] Registration {} is already completed and paid.", registration.getId());
+            auditService.logEvent(registration.getId(), null, null, PublicRegistrationAuditEventType.DUPLICATE_REQUEST, "Registration already completed and paid");
             throw new DuplicateResourceException("Public registration has already been completed and paid.");
         }
 
@@ -93,23 +102,25 @@ public class PublicRegistrationServiceImpl implements PublicRegistrationService 
 
         String merchantOrderId;
         BigDecimal configuredAmount = publicRegistrationProperties.getAmount();
+        PublicPaymentTransaction transaction;
 
         if (existingTx != null) {
             merchantOrderId = existingTx.getMerchantOrderId();
-            log.info("[PUBLIC_PAYMENT] Reusing existing pending merchant order ID: {} for registration: {}",
-                    merchantOrderId, registration.getId());
+            transaction = existingTx;
+            auditService.logEvent(registration.getId(), transaction.getId(), merchantOrderId, PublicRegistrationAuditEventType.DUPLICATE_REQUEST, "Reusing existing pending merchant order ID: " + merchantOrderId);
         } else {
             merchantOrderId = "PUB_ORD_" + UUID.randomUUID().toString().replace("-", "").substring(0, 16).toUpperCase();
-            PublicPaymentTransaction transaction = PublicPaymentTransaction.builder()
+            PublicPaymentTransaction newTx = PublicPaymentTransaction.builder()
                     .registration(registration)
                     .merchantOrderId(merchantOrderId)
                     .amount(configuredAmount)
                     .status(PublicPaymentStatus.INITIATED)
                     .build();
 
-            publicPaymentTransactionRepository.save(transaction);
-            log.info("[PUBLIC_PAYMENT] Created new merchant order ID: {} for registration: {}",
-                    merchantOrderId, registration.getId());
+            PublicPaymentTransaction savedTx = publicPaymentTransactionRepository.save(newTx);
+            transaction = savedTx != null ? savedTx : newTx;
+            UUID txId = transaction != null ? transaction.getId() : null;
+            auditService.logEvent(registration.getId(), txId, merchantOrderId, PublicRegistrationAuditEventType.PAYMENT_ORDER_CREATED, "Payment order created successfully");
         }
 
         Payment payment = Payment.builder()
@@ -123,9 +134,9 @@ public class PublicRegistrationServiceImpl implements PublicRegistrationService 
         String checkoutUrl;
         try {
             checkoutUrl = paymentGateway.initiatePayment(payment);
-            log.info("[PUBLIC_PAYMENT] PhonePe checkout URL obtained for order {}: {}", merchantOrderId, checkoutUrl);
+            auditService.logEvent(registration.getId(), transaction.getId(), merchantOrderId, PublicRegistrationAuditEventType.PAYMENT_REDIRECTED, "User redirected to payment gateway");
         } catch (Exception e) {
-            log.warn("[PUBLIC_PAYMENT] PhonePe gateway initiation fallback for order {}: {}", merchantOrderId, e.getMessage());
+            auditService.logEvent(registration.getId(), transaction.getId(), merchantOrderId, PublicRegistrationAuditEventType.PAYMENT_ERROR, "Payment initiation gateway error: " + e.getMessage());
             checkoutUrl = "/payment/status/" + merchantOrderId;
         }
 
@@ -155,9 +166,12 @@ public class PublicRegistrationServiceImpl implements PublicRegistrationService 
 
         registration.setPaymentStatus(PublicRegistrationStatus.REGISTERED);
         registration.setPaymentTransactionId(request.merchantOrderId());
+        registration.setAccountVerified(true);
         PublicRegistration saved = publicRegistrationRepository.save(registration);
 
-        log.info("[PUBLIC_PAYMENT] Public registration completed successfully: registrationId={}, studentId={}", saved.getId(), saved.getStudentId());
+        auditService.logEvent(saved.getId(), transaction.getId(), request.merchantOrderId(), PublicRegistrationAuditEventType.PAYMENT_SUCCESS, "Payment verified successfully");
+        auditService.logEvent(saved.getId(), transaction.getId(), request.merchantOrderId(), PublicRegistrationAuditEventType.REGISTRATION_COMPLETED, "Public registration marked as registered");
+        auditService.logEvent(saved.getId(), transaction.getId(), request.merchantOrderId(), PublicRegistrationAuditEventType.ACCOUNT_VERIFIED, "accountVerified changed to TRUE");
 
         return publicRegistrationMapper.toStatusResponse(saved, transaction.getAmount());
     }
@@ -170,6 +184,8 @@ public class PublicRegistrationServiceImpl implements PublicRegistrationService 
 
         PublicRegistration registration = transaction.getRegistration();
 
+        auditService.logEvent(registration.getId(), transaction.getId(), request.merchantOrderId(), PublicRegistrationAuditEventType.PAYMENT_CALLBACK_RECEIVED, "Payment gateway callback received");
+
         boolean isSuccess = "SUCCESS".equalsIgnoreCase(request.status()) || "COMPLETED".equalsIgnoreCase(request.status());
 
         if (isSuccess) {
@@ -179,12 +195,16 @@ public class PublicRegistrationServiceImpl implements PublicRegistrationService 
             }
             registration.setPaymentStatus(PublicRegistrationStatus.REGISTERED);
             registration.setPaymentTransactionId(request.merchantOrderId());
-            log.info("[PUBLIC_PAYMENT] Payment transaction state transition: -> SUCCESS for order {}", request.merchantOrderId());
-            log.info("[PUBLIC_PAYMENT] Registration state transition: -> REGISTERED for registration {}", registration.getId());
+            registration.setAccountVerified(true);
+
+            auditService.logEvent(registration.getId(), transaction.getId(), request.merchantOrderId(), PublicRegistrationAuditEventType.PAYMENT_SUCCESS, "Payment verified successfully");
+            auditService.logEvent(registration.getId(), transaction.getId(), request.merchantOrderId(), PublicRegistrationAuditEventType.REGISTRATION_COMPLETED, "Public registration marked as registered");
+            auditService.logEvent(registration.getId(), transaction.getId(), request.merchantOrderId(), PublicRegistrationAuditEventType.ACCOUNT_VERIFIED, "accountVerified changed to TRUE");
         } else {
             transaction.setStatus(PublicPaymentStatus.FAILED);
             registration.setPaymentStatus(PublicRegistrationStatus.FAILED);
-            log.info("[PUBLIC_PAYMENT] Payment transaction state transition: -> FAILED for order {}", request.merchantOrderId());
+
+            auditService.logEvent(registration.getId(), transaction.getId(), request.merchantOrderId(), PublicRegistrationAuditEventType.PAYMENT_FAILED, "Payment processing failed");
         }
 
         publicPaymentTransactionRepository.save(transaction);
@@ -210,38 +230,38 @@ public class PublicRegistrationServiceImpl implements PublicRegistrationService 
 
         PublicRegistration registration = transaction.getRegistration();
 
-        // Terminal check: if already REGISTERED / SUCCESS, return immediately
         if (transaction.getStatus() == PublicPaymentStatus.SUCCESS || registration.getPaymentStatus() == PublicRegistrationStatus.REGISTERED) {
-            log.info("[PUBLIC_PAYMENT] Status query for order {}: Terminal status SUCCESS / REGISTERED.", merchantOrderId);
             return publicRegistrationMapper.toStatusResponse(registration, transaction.getAmount());
         }
 
-        // On-demand gateway status reconciliation if INITIATED
         if (transaction.getStatus() == PublicPaymentStatus.INITIATED) {
-            log.info("[PUBLIC_PAYMENT] Reconciling PhonePe gateway status for merchant order: {}", merchantOrderId);
+            auditService.logEvent(registration.getId(), transaction.getId(), merchantOrderId, PublicRegistrationAuditEventType.PAYMENT_STATUS_CHECKED, "Payment status reconciled with gateway");
             try {
                 com.cbp7.payment.dto.response.PhonePeStatusResponse statusResponse = paymentGateway.checkPaymentStatus(merchantOrderId);
-                log.info("[PUBLIC_PAYMENT] PhonePe gateway response for {}: state={}, success={}",
-                        merchantOrderId, statusResponse.state(), statusResponse.success());
 
                 if (statusResponse.success() || "COMPLETED".equalsIgnoreCase(statusResponse.state())) {
                     transaction.setStatus(PublicPaymentStatus.SUCCESS);
                     registration.setPaymentStatus(PublicRegistrationStatus.REGISTERED);
                     registration.setPaymentTransactionId(merchantOrderId);
+                    registration.setAccountVerified(true);
 
                     publicPaymentTransactionRepository.save(transaction);
                     registration = publicRegistrationRepository.save(registration);
-                    log.info("[PUBLIC_PAYMENT] Reconciled state: PENDING -> SUCCESS for order {}", merchantOrderId);
+
+                    auditService.logEvent(registration.getId(), transaction.getId(), merchantOrderId, PublicRegistrationAuditEventType.PAYMENT_SUCCESS, "Payment verified successfully");
+                    auditService.logEvent(registration.getId(), transaction.getId(), merchantOrderId, PublicRegistrationAuditEventType.REGISTRATION_COMPLETED, "Public registration marked as registered");
+                    auditService.logEvent(registration.getId(), transaction.getId(), merchantOrderId, PublicRegistrationAuditEventType.ACCOUNT_VERIFIED, "accountVerified changed to TRUE");
                 } else if ("FAILED".equalsIgnoreCase(statusResponse.state()) || "EXPIRED".equalsIgnoreCase(statusResponse.state())) {
                     transaction.setStatus(PublicPaymentStatus.FAILED);
                     registration.setPaymentStatus(PublicRegistrationStatus.FAILED);
 
                     publicPaymentTransactionRepository.save(transaction);
                     registration = publicRegistrationRepository.save(registration);
-                    log.info("[PUBLIC_PAYMENT] Reconciled state: PENDING -> FAILED for order {}", merchantOrderId);
+
+                    auditService.logEvent(registration.getId(), transaction.getId(), merchantOrderId, PublicRegistrationAuditEventType.PAYMENT_FAILED, "Payment processing failed");
                 }
             } catch (Exception e) {
-                log.warn("[PUBLIC_PAYMENT] PhonePe gateway status check for order {} encountered error: {}", merchantOrderId, e.getMessage());
+                log.warn("[PUBLIC_REGISTRATION] PhonePe gateway status check for order {} encountered error: {}", merchantOrderId, e.getMessage());
             }
         }
 

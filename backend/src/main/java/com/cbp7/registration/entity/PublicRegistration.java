@@ -70,4 +70,8 @@ public class PublicRegistration extends BaseEntity {
 
     @Column(name = "payment_transaction_id")
     private String paymentTransactionId;
+
+    @Column(name = "account_verified", nullable = false)
+    @Builder.Default
+    private boolean accountVerified = false;
 }

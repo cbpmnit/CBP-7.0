@@ -44,6 +44,9 @@ class PublicRegistrationServiceTest {
     @Mock
     private com.cbp7.payment.gateway.PaymentGateway paymentGateway;
 
+    @Mock
+    private com.cbp7.registration.service.PublicRegistrationAuditService auditService;
+
     private PublicRegistrationProperties publicRegistrationProperties;
     private PublicRegistrationServiceImpl publicRegistrationService;
 
@@ -58,7 +61,8 @@ class PublicRegistrationServiceTest {
                 new PublicRegistrationValidator(),
                 new PublicRegistrationMapper(),
                 publicRegistrationProperties,
-                paymentGateway
+                paymentGateway,
+                auditService
         );
     }
 
