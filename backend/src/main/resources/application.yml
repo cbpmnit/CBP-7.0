@@ -88,7 +88,7 @@ certificate:
 
 cbp:
   registration:
-    fee: 100
+    fee: 1
 
 management:
   endpoints:
