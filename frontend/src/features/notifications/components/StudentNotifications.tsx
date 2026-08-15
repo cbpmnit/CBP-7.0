@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect } from "react"
 import Link from "next/link"
-import { cbpService } from "@/services/cbpService"
+import { apiClient } from "@/lib/apiClient"
 import PageTransition from "@/components/animations/PageTransition"
-import NotificationPanel from "@/components/dashboard/NotificationPanel"
+import NotificationPanel from "./NotificationPanel"
 import { FiBell, FiArrowLeft } from "react-icons/fi"
 
 export default function StudentNotifications() {
@@ -21,7 +21,7 @@ export default function StudentNotifications() {
   const fetchData = async () => {
     setLoading(true)
     try {
-      const cbpRes = await cbpService.getMyRegistration().catch(() => null)
+      const cbpRes = await apiClient.get<any>("/api/v1/cbp/me").catch(() => null)
       if (cbpRes) {
         setIsRegistered(true)
         if (cbpRes.paymentCompleted || cbpRes.registrationStatus === "REGISTERED") {

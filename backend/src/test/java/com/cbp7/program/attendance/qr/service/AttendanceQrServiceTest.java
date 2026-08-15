@@ -139,7 +139,7 @@ class AttendanceQrServiceTest {
         assertThat(response.alreadyAttendedCount()).isEqualTo(1); // Student A protected & skipped
         assertThat(response.skippedCount()).isEqualTo(1);
 
-        verify(attendanceQrRepository, times(1)).save(argThat(qr -> qr.getStudentId().equals("student_b")));
+        verify(attendanceQrRepository, times(1)).save(argThat(qr -> qr.getStudentId().equals("student_b") && qr.isActive()));
     }
 
     @Test

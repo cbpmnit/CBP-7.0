@@ -45,9 +45,11 @@ export interface VolunteerDetail {
 
 export interface VolunteerInviteCheckResult {
   exists: boolean
+  valid?: boolean
   userId?: string
   name?: string
   email: string
+  role?: string
   currentRoles?: string[]
   currentPermissions?: string[]
   invitationId?: string
@@ -61,14 +63,20 @@ export interface VolunteerInviteCheckResult {
 export interface CreateVolunteerPayload {
   email: string
   name?: string
+  role?: string
   permissions?: string[]
   assignedSessions?: string[]
 }
 
 export interface GrantAccessPayload {
-  userIdOrEmail: string
+  userIdOrEmail?: string
+  volunteerId?: string
+  invitationId?: string
+  token?: string
   name?: string
-  permissions: string[]
+  password?: string
+  confirmPassword?: string
+  permissions?: string[]
   assignedSessions?: string[]
 }
 
@@ -287,13 +295,13 @@ export const volunteerApi = {
     }
 
     return {
-      id: payload.userIdOrEmail,
-      name: payload.name || "Volunteer",
-      email: payload.userIdOrEmail,
+      id: payload.userIdOrEmail ?? ("v-" + Date.now()),
+      name: payload.name ?? "Volunteer",
+      email: payload.userIdOrEmail ?? "volunteer@mnit.ac.in",
       role: "ROLE_VOLUNTEER",
       status: "ACTIVE",
-      permissions: payload.permissions,
-      assignedSessions: payload.assignedSessions || ["All Workshop Sessions"],
+      permissions: payload.permissions ?? [],
+      assignedSessions: payload.assignedSessions ?? ["All Workshop Sessions"],
       createdAt: new Date().toISOString(),
     }
   },
@@ -396,6 +404,33 @@ export const volunteerApi = {
     }
 
     return "Invitation cancelled and revoked"
+  },
+
+  verifyInvitation: async (token: string): Promise<{ valid: boolean; email?: string; name?: string; message?: string }> => {
+    try {
+      const res = await apiClient.get<any>(`/api/v1/auth/volunteer/verify-invitation?token=${encodeURIComponent(token)}`)
+      return { valid: true, email: res?.email || res?.data?.email, name: res?.name || res?.data?.name }
+    } catch (err: any) {
+      return { valid: false, message: err?.message || "Invalid or expired invitation token" }
+    }
+  },
+
+  setupPassword: async (payload: { token: string; password: string }): Promise<string> => {
+    try {
+      const res = await apiClient.post<any>("/api/v1/auth/volunteer/setup-password", payload)
+      return res?.message || "Password setup successful"
+    } catch (err: any) {
+      if (err?.message) throw err
+      return "Password set successfully"
+    }
+  },
+
+  getProfile: async () => {
+    return apiClient.get<any>("/api/v1/volunteer/profile")
+  },
+
+  updateProfile: async (payload: any) => {
+    return apiClient.put<any>("/api/v1/volunteer/profile", payload)
   },
 }
 

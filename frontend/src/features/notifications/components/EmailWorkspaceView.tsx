@@ -7,6 +7,7 @@ import GrapesJsEmailEditor, { GrapesJsEmailEditorRef } from "./GrapesJsEmailEdit
 import EmailVariablePanel from "./EmailVariablePanel"
 import EmailPreviewModal from "./EmailPreviewModal"
 import TestEmailModal from "./TestEmailModal"
+import { Button } from "@/components/ui"
 import { EVENT_TYPE_OPTIONS, EMAIL_VARIABLES } from "../constants/emailVariables"
 import { EmailEventType, NotificationTemplateResponse } from "../types"
 import { emailTemplateApi } from "../services/notificationApi"
@@ -279,8 +280,9 @@ export default function EmailWorkspaceView() {
         <header className="h-16 bg-slate-900 border-b border-slate-800 px-3 sm:px-6 flex items-center justify-between shrink-0 z-30">
           {/* Left: Back + Title */}
           <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-            <button
-              type="button"
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => {
                 if (saveStatus === "unsaved") {
                   if (confirm("Your changes are not saved. Save draft before leaving?")) {
@@ -289,10 +291,11 @@ export default function EmailWorkspaceView() {
                 }
                 router.push("/admin/emails")
               }}
-              className="h-9 px-2.5 sm:px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-bold transition inline-flex items-center gap-1.5 border border-slate-700/80 cursor-pointer shrink-0"
+              icon={<FiArrowLeft />}
+              className="bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700 hover:text-white"
             >
-              <FiArrowLeft /> <span className="hidden sm:inline">Templates</span>
-            </button>
+              <span className="hidden sm:inline">Templates</span>
+            </Button>
 
             <div className="h-5 w-px bg-slate-800 hidden md:block shrink-0" />
 

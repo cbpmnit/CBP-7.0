@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { attendanceService } from "@/services/attendanceService"
+import { attendanceApi } from "@/features/attendance/services/attendanceApi"
 import { StudentQrSelectionTable } from "./StudentQrSelectionTable"
 import {
   EligibleStudentQrItem,
@@ -54,7 +54,7 @@ export function QrOperationsPanel({
     if (!selectedSessionId) return
     setLoading(true)
     try {
-      const data = await attendanceService.getEligibleStudentsForSessionQr(
+      const data = await attendanceApi.getEligibleStudentsForSessionQr(
         selectedSessionId,
         search,
         qrFilter,
@@ -114,7 +114,7 @@ export function QrOperationsPanel({
     setActionMessage(null)
     setErrorMessage(null)
     try {
-      const res = await attendanceService.generateStudentQrsForSession(selectedSessionId, "MISSING_ONLY")
+      const res = await attendanceApi.generateStudentQrsForSession(selectedSessionId, "MISSING_ONLY")
       setGenerationResult(res)
       await refreshData()
     } catch (err: any) {
@@ -137,7 +137,7 @@ export function QrOperationsPanel({
     setErrorMessage(null)
     try {
       const targetIds = Array.from(selectedStudentIds)
-      const res = await attendanceService.generateSelectedQrs(selectedSessionId, targetIds)
+      const res = await attendanceApi.generateSelectedQrs(selectedSessionId, targetIds)
       setGenerationResult(res)
       await refreshData()
     } catch (err: any) {
@@ -179,7 +179,7 @@ export function QrOperationsPanel({
 
     try {
       const targetIds = Array.from(selectedStudentIds)
-      const res = await attendanceService.regenerateSelectedQrs(selectedSessionId, targetIds, force)
+      const res = await attendanceApi.regenerateSelectedQrs(selectedSessionId, targetIds, force)
       setGenerationResult(res)
       await refreshData()
     } catch (err: any) {

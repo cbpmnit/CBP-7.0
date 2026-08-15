@@ -50,6 +50,17 @@ export interface AttendanceSessionDto {
   attendanceCount?: number
 }
 
+export interface CreateAttendanceSessionRequest {
+  dayNumber: number
+  title: string
+  description?: string
+  sessionDate: string
+  startTime?: string
+  endTime?: string
+  venue?: string
+  status?: string
+}
+
 export interface SessionSummaryResponse {
   sessionId: string
   dayNumber: number

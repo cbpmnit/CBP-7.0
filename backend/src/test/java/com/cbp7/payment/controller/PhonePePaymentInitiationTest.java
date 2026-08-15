@@ -5,7 +5,6 @@ import com.cbp7.identity.auth.dto.request.RegisterRequest;
 import com.cbp7.identity.auth.entity.Role;
 import com.cbp7.identity.auth.entity.User;
 import com.cbp7.identity.auth.repository.UserRepository;
-import com.cbp7.program.registration.entity.RegistrationStatus;
 import com.cbp7.program.registration.repository.CbpRegistrationRepository;
 import com.cbp7.payment.entity.Payment;
 import com.cbp7.payment.entity.PaymentMode;
@@ -36,11 +35,9 @@ import org.springframework.web.context.WebApplicationContext;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.UUID;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;

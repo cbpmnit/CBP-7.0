@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { attendanceService } from "@/services/attendanceService"
+import { attendanceApi } from "../services/attendanceApi"
 import {
   AttendanceSessionDto,
   StudentAttendanceSummaryResponse,
@@ -51,10 +51,10 @@ export default function StudentAttendanceView() {
     setErrorMessage(null)
     try {
       const [upcomingRes, historyRes, qrsRes, singleQrRes] = await Promise.allSettled([
-        attendanceService.getUpcomingSession(),
-        attendanceService.getMyAttendance(),
-        attendanceService.getMyActiveAttendanceQrs(),
-        attendanceService.getMyActiveAttendanceQr(),
+        attendanceApi.getUpcomingSession(),
+        attendanceApi.getMyAttendance(),
+        attendanceApi.getMyActiveAttendanceQrs(),
+        attendanceApi.getMyActiveAttendanceQr(),
       ])
 
       if (upcomingRes.status === "fulfilled") {

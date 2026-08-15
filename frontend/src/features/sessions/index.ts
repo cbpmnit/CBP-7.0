@@ -1,3 +1,8 @@
 export { default as SessionManagement } from "./components/SessionManagement"
+export { SessionCard } from "./components/SessionCard"
+export { CreateSessionModal } from "./components/CreateSessionModal"
+export { EditSessionModal } from "./components/EditSessionModal"
+export { DeleteSessionModal } from "./components/DeleteSessionModal"
+export { useSessions } from "./hooks/useSessions"
 export { sessionApi } from "./services/sessionApi"
 export * from "./types"

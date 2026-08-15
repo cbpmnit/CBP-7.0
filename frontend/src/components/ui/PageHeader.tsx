@@ -51,7 +51,20 @@ export function PageHeader({
 
       {(actions || children) && (
         <div className="flex flex-wrap items-center gap-2 shrink-0 self-start sm:self-auto">
-          {actions}
+          {Array.isArray(actions)
+            ? actions.map((act, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={act.onClick}
+                  disabled={act.disabled || act.loading}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-900 text-white hover:bg-slate-800 transition"
+                >
+                  {act.icon}
+                  <span>{act.label}</span>
+                </button>
+              ))
+            : actions}
           {children}
         </div>
       )}

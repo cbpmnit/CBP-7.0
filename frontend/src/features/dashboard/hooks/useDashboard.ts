@@ -2,22 +2,21 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useAppSelector } from "@/store/hooks"
-import { profileService } from "@/services/profileService"
-import { cbpService } from "@/services/cbpService"
-import { paymentService } from "@/services/paymentService"
-import { attendanceService } from "@/services/attendanceService"
-import { certificateService } from "@/services/certificateService"
+import { profileApi } from "@/features/profile/services/profileApi"
+import { paymentApi } from "@/features/payments/services/paymentApi"
+import { attendanceApi } from "@/features/attendance/services/attendanceApi"
+import { certificateApi } from "@/features/certificates/services/certificateApi"
 import { apiClient } from "@/lib/apiClient"
-import { UserProfileResponse } from "@/types/profile"
+import { UserProfileResponse } from "@/features/profile/types"
 import { CbpRegistrationDetailResponse } from "@/types/cbp"
-import { PaymentDetailResponse } from "@/types/payment"
-import { StudentAttendanceSummaryResponse } from "@/types/attendance"
-import { CertificateResponse } from "@/types/certificate"
+import { PaymentDetailResponse } from "@/features/payments/types"
+import { StudentAttendanceSummaryResponse } from "@/features/attendance/types"
+import { CertificateResponse } from "@/features/certificates/types"
 
 export function useDashboard() {
   const { studentId, name } = useAppSelector((state) => state.auth)
-  const [loading, setLoading] = useState(true)
 
+  const [loading, setLoading] = useState<boolean>(true)
   const [profile, setProfile] = useState<UserProfileResponse | null>(null)
   const [cbpReg, setCbpReg] = useState<CbpRegistrationDetailResponse | null>(null)
   const [payment, setPayment] = useState<PaymentDetailResponse | null>(null)
@@ -29,11 +28,11 @@ export function useDashboard() {
     setLoading(true)
     try {
       const [profData, cbpData, payData, attData, certData, configData] = await Promise.allSettled([
-        profileService.getProfile(),
-        cbpService.getMyRegistration(),
-        paymentService.getMyPayment(),
-        attendanceService.getMyAttendance(),
-        certificateService.getMyCertificate(),
+        profileApi.getProfile(),
+        apiClient.get<CbpRegistrationDetailResponse>("/api/v1/cbp/me"),
+        paymentApi.getMyPayment(),
+        attendanceApi.getMyAttendance(),
+        certificateApi.getMyCertificate(),
         apiClient.get<{ registrationFee: number }>("/api/v1/config/public"),
       ])
 
@@ -56,11 +55,11 @@ export function useDashboard() {
     fetchDashboardData()
   }, [fetchDashboardData])
 
-  const isProfileComplete = Boolean(profile && profile.firstName)
-  const isCbpRegistered = Boolean(cbpReg && (cbpReg.registrationStatus === "REGISTERED" || cbpReg.registrationId))
-  const isPaymentSuccess = Boolean(cbpReg?.paymentCompleted || (payment && payment.paymentStatus === "SUCCESS"))
-  const attendancePct = attendance?.attendancePercentage ?? attendance?.percentage ?? 0
-  const isCertificateIssued = Boolean(certificate && (certificate.certificateNumber || certificate.id))
+  const isProfileComplete = !!profile
+  const isRegistered = !!cbpReg
+  const isPaymentSuccess = payment?.paymentStatus === "SUCCESS"
+  const attendancePercentage = attendance?.attendancePercentage ?? attendance?.percentage ?? 0
+  const isCertificateIssued = !!certificate || (isPaymentSuccess && attendancePercentage >= 75)
 
   return {
     studentId,
@@ -71,12 +70,14 @@ export function useDashboard() {
     payment,
     attendance,
     certificate,
-    isProfileComplete,
-    isCbpRegistered,
-    isPaymentSuccess,
-    attendancePct,
-    isCertificateIssued,
     registrationFee,
-    reload: fetchDashboardData,
+    isProfileComplete,
+    isRegistered,
+    isCbpRegistered: isRegistered,
+    isPaymentSuccess,
+    attendancePercentage,
+    attendancePct: attendancePercentage,
+    isCertificateIssued,
+    refreshDashboard: fetchDashboardData,
   }
 }

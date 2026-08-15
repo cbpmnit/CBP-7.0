@@ -1,4 +1,4 @@
-import { attendanceService } from "@/services/attendanceService"
+import { attendanceApi } from "@/features/attendance/services/attendanceApi"
 
-export const sessionApi = attendanceService
+export const sessionApi = attendanceApi
 export default sessionApi

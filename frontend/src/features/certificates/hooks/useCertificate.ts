@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { certificateApi } from "../services/certificateApi"
-import { cbpService } from "@/services/cbpService"
-import { paymentService } from "@/services/paymentService"
-import { attendanceService } from "@/services/attendanceService"
+import { paymentApi } from "@/features/payments/services/paymentApi"
+import { attendanceApi } from "@/features/attendance/services/attendanceApi"
+import { apiClient } from "@/lib/apiClient"
 import { CertificateResponse } from "../types"
 
 export function useCertificate() {
@@ -22,9 +22,9 @@ export function useCertificate() {
     try {
       const [certRes, cbpRes, payRes, attRes] = await Promise.allSettled([
         certificateApi.getMyCertificate(),
-        cbpService.getMyRegistration(),
-        paymentService.getMyPayment(),
-        attendanceService.getMyAttendance(),
+        apiClient.get("/api/v1/cbp/me"),
+        paymentApi.getMyPayment(),
+        attendanceApi.getMyAttendance(),
       ])
 
       if (certRes.status === "fulfilled") setCertificate(certRes.value)

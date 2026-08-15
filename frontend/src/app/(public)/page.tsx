@@ -1,4 +1,4 @@
-import Hero from "@/components/hero/Hero"
+import Hero from "@/components/sections/Hero"
 import CountdownSection from "@/components/sections/CountdownSection"
 import FeedbackSection from "@/components/sections/FeedbackSection"
 import ObjectivesSection from "@/components/sections/ObjectivesSection"

@@ -1,13 +1,38 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { adminService, AdminPaymentOverviewDto } from "@/services/adminService"
+import { apiClient } from "@/lib/apiClient"
+
+export interface AdminPaymentTransactionItem {
+  id?: string
+  studentName?: string
+  studentId?: string
+  registrationId?: string
+  transactionId?: string
+  amount?: number
+  paymentStatus?: string
+  paymentMethod?: string
+  paidAt?: string
+  createdAt?: string
+  [key: string]: unknown
+}
+
+export interface AdminPaymentOverviewDto {
+  totalRegistrations: number
+  successfulPayments: number
+  pendingPayments: number
+  failedPayments: number
+  transactions: AdminPaymentTransactionItem[]
+}
 import { PageHeader } from "@/components/ui/PageHeader"
+import { MetricCard } from "@/components/ui/MetricCard"
 import { DataTable } from "@/components/ui/DataTable"
 import { StatusBadge } from "@/components/ui/StatusBadge"
 import { MobileRecordCard } from "@/components/ui/MobileRecordCard"
 import { ExportCsvButton } from "@/components/ui/ExportCsvButton"
-import { FiRefreshCw, FiAlertCircle } from "react-icons/fi"
+import { Button } from "@/components/ui/Button"
+import { Alert } from "@/components/ui/Alert"
+import { FiRefreshCw, FiUsers, FiCheckCircle, FiClock, FiXCircle } from "react-icons/fi"
 
 export default function AdminPaymentOverview() {
   const [overview, setOverview] = useState<AdminPaymentOverviewDto | null>(null)
@@ -23,7 +48,7 @@ export default function AdminPaymentOverview() {
     setLoading(true)
     setError(null)
     try {
-      const data = await adminService.getPaymentOverview()
+      const data = await apiClient.get<AdminPaymentOverviewDto>("/api/v1/admin/payments")
       setOverview(data)
     } catch (err: any) {
       setError("Unable to load payment overview data.")
@@ -43,7 +68,6 @@ export default function AdminPaymentOverview() {
     )
   })
 
-  // Mobile Cards View
   const mobileCards = transactions.map((tx, idx) => (
     <MobileRecordCard
       key={tx.transactionId || idx}
@@ -60,7 +84,6 @@ export default function AdminPaymentOverview() {
 
   return (
     <div className="space-y-4">
-      {/* Header */}
       <PageHeader
         title="Payment Management"
         count={overview?.totalRegistrations ?? transactions.length}
@@ -73,54 +96,48 @@ export default function AdminPaymentOverview() {
               filenamePrefix="cbp-payments"
               params={{ search }}
             />
-            <button
+            <Button
+              variant="outline"
+              size="sm"
               onClick={fetchPaymentOverview}
               disabled={loading}
-              className="px-3 py-1.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold transition inline-flex items-center gap-1.5 shadow-2xs cursor-pointer"
+              icon={
+                <FiRefreshCw
+                  className={loading ? "animate-spin text-cyan-600 text-xs" : "text-slate-500 text-xs"}
+                />
+              }
             >
-              <FiRefreshCw className={loading ? "animate-spin text-cyan-600" : "text-slate-500"} />
-              <span className="hidden sm:inline">Refresh</span>
-            </button>
+              Refresh
+            </Button>
           </div>
         }
       />
 
-      {error && (
-        <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <FiAlertCircle className="shrink-0 text-base text-amber-700" />
-            <span>{error}</span>
-          </div>
-          <button onClick={fetchPaymentOverview} className="font-bold underline hover:text-amber-950">
-            Retry
-          </button>
-        </div>
-      )}
+      {error && <Alert type="error" message={error} />}
 
-      {/* Metrics Summary Row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
-        <div className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-2xs">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Students</p>
-          <h3 className="text-xl font-extrabold text-slate-900 font-mono mt-0.5">{overview?.totalRegistrations ?? 0}</h3>
-        </div>
-
-        <div className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-2xs">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Paid Students</p>
-          <h3 className="text-xl font-extrabold text-emerald-700 font-mono mt-0.5">{overview?.successfulPayments ?? 0}</h3>
-        </div>
-
-        <div className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-2xs">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Pending Payments</p>
-          <h3 className="text-xl font-extrabold text-amber-700 font-mono mt-0.5">{overview?.pendingPayments ?? 0}</h3>
-        </div>
-
-        <div className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-2xs">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Failed Payments</p>
-          <h3 className="text-xl font-extrabold text-rose-700 font-mono mt-0.5">{overview?.failedPayments ?? 0}</h3>
-        </div>
+        <MetricCard
+          title="Total Students"
+          value={overview?.totalRegistrations ?? 0}
+          icon={<FiUsers className="w-5 h-5 text-cyan-600" />}
+        />
+        <MetricCard
+          title="Paid Students"
+          value={overview?.successfulPayments ?? 0}
+          icon={<FiCheckCircle className="w-5 h-5 text-emerald-600" />}
+        />
+        <MetricCard
+          title="Pending Payments"
+          value={overview?.pendingPayments ?? 0}
+          icon={<FiClock className="w-5 h-5 text-amber-600" />}
+        />
+        <MetricCard
+          title="Failed Payments"
+          value={overview?.failedPayments ?? 0}
+          icon={<FiXCircle className="w-5 h-5 text-rose-600" />}
+        />
       </div>
 
-      {/* Transactions Data Table */}
       <DataTable
         title="Transaction Ledger"
         totalCount={transactions.length}
@@ -149,7 +166,7 @@ export default function AdminPaymentOverview() {
                 <td className="px-4 py-2.5 font-mono text-slate-600">{tx.registrationId}</td>
                 <td className="px-4 py-2.5 font-bold font-mono text-slate-900">₹{tx.amount}</td>
                 <td className="px-4 py-2.5">
-                  <StatusBadge status={tx.paymentStatus} />
+                  <StatusBadge status={tx.paymentStatus || "PENDING"} />
                 </td>
                 <td className="px-4 py-2.5 font-mono text-slate-500 text-[11px]">{tx.transactionId}</td>
               </tr>

@@ -52,12 +52,12 @@ async function request<T>(
   let response: Response
   try {
     response = await fetch(url, config)
-  } catch (networkErr: any) {
+  } catch (networkErr: unknown) {
     const errorData: ApiErrorResponse = {
       success: false,
       status: 0,
       error: "NetworkError",
-      message: networkErr?.message || "Unable to reach the server. Please check your network connection and retry.",
+      message: networkErr instanceof Error ? networkErr.message : "Unable to reach the server. Please check your network connection and retry.",
     }
     throw new ApiError(0, errorData)
   }

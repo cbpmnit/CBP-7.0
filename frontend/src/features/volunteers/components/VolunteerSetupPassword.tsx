@@ -3,7 +3,7 @@
 import React, { useState, useEffect, Suspense } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import Link from "next/link"
-import { volunteerService } from "@/services/volunteerService"
+import { volunteerApi } from "../services/volunteerApi"
 import PageTransition from "@/components/animations/PageTransition"
 import {
   FiShield,
@@ -51,7 +51,7 @@ function SetupPasswordContent() {
     setVerifying(true)
     setStatusMessage(null)
     try {
-      const res = await volunteerService.verifyInvitation(invitationToken)
+      const res = await volunteerApi.verifyInvitation(invitationToken)
       if (res.valid) {
         setValidToken(true)
         setEmail(res.email || "")
@@ -85,10 +85,9 @@ function SetupPasswordContent() {
 
     setSubmitting(true)
     try {
-      await volunteerService.setupPassword({
+      await volunteerApi.setupPassword({
         token,
         password,
-        confirmPassword,
       })
       setSuccessMessage("Account activated successfully! Redirecting to login...")
       setTimeout(() => {

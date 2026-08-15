@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { attendanceService } from "@/services/attendanceService"
+import { attendanceApi } from "@/features/attendance/services/attendanceApi"
 import { DataTable } from "@/components/ui/DataTable"
 import { FilterBar } from "@/components/ui/FilterBar"
 import { StatusBadge } from "@/components/ui/StatusBadge"
@@ -35,7 +35,7 @@ export function StudentSelectionTable({
     }
     setLoading(true)
     try {
-      const data = await attendanceService.getEligibleStudentsForSessionQr(
+      const data = await attendanceApi.getEligibleStudentsForSessionQr(
         selectedSessionId,
         search,
         "ALL",

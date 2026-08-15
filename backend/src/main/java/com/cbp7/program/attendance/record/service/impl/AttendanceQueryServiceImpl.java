@@ -32,6 +32,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -87,8 +88,17 @@ public class AttendanceQueryServiceImpl implements AttendanceQueryService {
         String cleanSearch = search != null && !search.isBlank() ? search.trim().toLowerCase() : null;
         Page<AttendanceRecord> recordsPage = fetchFilteredRecordsPage(sessionId, cleanSearch, status, pageable);
 
+        Set<String> pageStudentIds = recordsPage.getContent().stream()
+                .map(AttendanceRecord::getStudentId)
+                .filter(id -> id != null && !id.isBlank())
+                .collect(Collectors.toSet());
+
+        Map<String, User> userMap = pageStudentIds.isEmpty() ? Map.of() : userRepository.findByStudentIdIgnoreCaseIn(pageStudentIds).stream()
+                .filter(u -> u.getStudentId() != null)
+                .collect(Collectors.toMap(u -> u.getStudentId().toLowerCase(), u -> u, (a, b) -> a));
+
         List<StudentSessionRecordDto> dtos = recordsPage.getContent().stream()
-                .map(this::toStudentSessionRecordDto)
+                .map(r -> toStudentSessionRecordDto(r, userMap))
                 .toList();
 
         return new PageImpl<>(dtos, pageable, recordsPage.getTotalElements());
@@ -335,14 +345,13 @@ public class AttendanceQueryServiceImpl implements AttendanceQueryService {
         return attendanceRecordRepository.findBySessionId(sessionId, pageable);
     }
 
-    private StudentSessionRecordDto toStudentSessionRecordDto(AttendanceRecord r) {
+    private StudentSessionRecordDto toStudentSessionRecordDto(AttendanceRecord r, Map<String, User> userMap) {
         String name = "";
         String email = "";
         String userIdStr = "";
 
-        Optional<User> userOpt = userRepository.findByStudentId(r.getStudentId());
-        if (userOpt.isPresent()) {
-            User user = userOpt.get();
+        User user = r.getStudentId() != null ? userMap.get(r.getStudentId().toLowerCase()) : null;
+        if (user != null) {
             name = user.getName() != null ? user.getName() : "";
             email = user.getEmail() != null ? user.getEmail() : "";
             userIdStr = user.getId() != null ? user.getId().toString() : "";

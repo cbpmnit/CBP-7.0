@@ -5,6 +5,7 @@ import Link from "next/link"
 import Reveal from "@/components/animations/RevealOnScroll"
 import PageTransition from "@/components/animations/PageTransition"
 import { FiMail, FiArrowRight, FiKey, FiCheckCircle, FiArrowLeft } from "react-icons/fi"
+import { Input, Button, Card } from "@/components/ui"
 
 export default function ForgotPasswordForm() {
   const [email, setEmail] = useState("")
@@ -46,7 +47,7 @@ export default function ForgotPasswordForm() {
           <div className="mx-auto max-w-md px-4 sm:px-6">
             <Reveal variant="up">
               {submitted ? (
-                <div className="bg-white rounded-3xl p-6 sm:p-10 border border-slate-200 shadow-xl shadow-slate-200/60 text-center">
+                <Card className="text-center p-6 sm:p-10">
                   <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-200 text-3xl mb-4">
                     <FiCheckCircle />
                   </div>
@@ -54,16 +55,15 @@ export default function ForgotPasswordForm() {
                   <p className="text-xs text-slate-600 mb-6 leading-relaxed">
                     If an account exists for <strong className="text-slate-900">{email}</strong>, a password reset link has been dispatched.
                   </p>
-                  <Link
-                    href="/login"
-                    className="inline-flex items-center justify-center gap-2 w-full rounded-2xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white py-3.5 text-xs font-bold uppercase tracking-wider shadow-md transition"
-                  >
-                    <FiArrowLeft /> Back to Login
+                  <Link href="/login" className="w-full">
+                    <Button icon={<FiArrowLeft />} className="w-full justify-center py-3.5">
+                      Back to Login
+                    </Button>
                   </Link>
-                </div>
+                </Card>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="bg-white rounded-3xl p-6 sm:p-10 border border-slate-200 shadow-xl shadow-slate-200/60 transition-all duration-300">
+                  <Card className="p-6 sm:p-10 transition-all duration-300">
                     <div className="flex items-center gap-3.5 mb-8 pb-6 border-b border-slate-100">
                       <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-600 to-blue-600 text-white text-base font-bold shadow-md shadow-cyan-600/30">
                         <FiKey className="h-6 w-6" />
@@ -79,37 +79,26 @@ export default function ForgotPasswordForm() {
                     </div>
 
                     <div className="space-y-5">
-                      <div>
-                        <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                          <FiMail className="text-cyan-600" />
-                          Registered Email <span className="text-cyan-600">*</span>
-                        </label>
-                        <input
-                          type="email"
-                          required
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          className="mt-2 block w-full rounded-xl bg-slate-50 border border-slate-200 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 transition duration-200 focus:bg-white focus:border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
-                          placeholder="e.g. student@mnit.ac.in"
-                        />
-                      </div>
+                      <Input
+                        label="Registered Email"
+                        icon={<FiMail />}
+                        type="email"
+                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="e.g. student@mnit.ac.in"
+                      />
 
-                      <button
+                      <Button
                         type="submit"
-                        disabled={loading}
-                        className="w-full rounded-2xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white py-4 text-xs font-bold uppercase tracking-wider shadow-lg shadow-cyan-600/30 transition duration-300 transform hover:-translate-y-0.5 disabled:opacity-50 flex items-center justify-center gap-2"
+                        loading={loading}
+                        icon={<FiArrowRight className="h-4 w-4" />}
+                        className="w-full justify-center py-4 text-xs font-bold uppercase tracking-wider shadow-lg shadow-cyan-600/30"
                       >
-                        {loading ? (
-                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                        ) : (
-                          <>
-                            <span>Send Reset Link</span>
-                            <FiArrowRight className="h-4 w-4" />
-                          </>
-                        )}
-                      </button>
+                        Send Reset Link
+                      </Button>
                     </div>
-                  </div>
+                  </Card>
 
                   <div className="text-center text-xs text-slate-600">
                     Remember your credentials?{" "}

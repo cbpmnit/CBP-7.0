@@ -2,8 +2,18 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { sessionApi } from "../services/sessionApi"
-import { adminService, CreateSessionPayload } from "@/services/adminService"
 import { AttendanceSessionDto } from "../types"
+import { apiClient } from "@/lib/apiClient"
+
+export interface CreateSessionPayload {
+  dayNumber: number
+  title: string
+  description?: string
+  sessionDate: string
+  startTime?: string
+  endTime?: string
+  venue?: string
+}
 
 export function useSessions() {
   const [sessions, setSessions] = useState<AttendanceSessionDto[]>([])
@@ -18,21 +28,22 @@ export function useSessions() {
   const [showEditModal, setShowEditModal] = useState(false)
   const [editingSession, setEditingSession] = useState<AttendanceSessionDto | null>(null)
 
-  // Create Modal State
-  const [showCreateModal, setShowCreateModal] = useState(false)
-
   // Delete Modal State
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deletingSession, setDeletingSession] = useState<AttendanceSessionDto | null>(null)
 
+  // Create Modal State
+  const [showCreateModal, setShowCreateModal] = useState(false)
+
   const fetchSessions = useCallback(async () => {
     setLoadingSessions(true)
+    setError(null)
     try {
       const data = await sessionApi.getAllSessions()
       setSessions(data || [])
     } catch (err: any) {
-      console.error("Failed to load sessions", err)
-      setError(err?.message || "Failed to load workshop sessions.")
+      console.error("Failed to load attendance sessions", err)
+      setError("Unable to load sessions list.")
     } finally {
       setLoadingSessions(false)
     }
@@ -43,22 +54,17 @@ export function useSessions() {
   }, [fetchSessions])
 
   const handleActivateSession = async (sessionId: string) => {
-    // Prevent duplicate clicks
-    if (actionLoadingSessionId) return
-
     setActionLoadingSessionId(sessionId)
     setActionType("activate")
+    setMessage(null)
     setError(null)
-
     try {
-      await adminService.activateSession(sessionId)
+      await sessionApi.activateSession(sessionId)
       setMessage("Session activated successfully. Check-in is now open.")
-      setTimeout(() => setMessage(null), 3500)
       await fetchSessions()
     } catch (err: any) {
       console.error("Failed to activate session", err)
       setError(err?.message || "Failed to activate session.")
-      setTimeout(() => setError(null), 4000)
     } finally {
       setActionLoadingSessionId(null)
       setActionType(null)
@@ -66,22 +72,17 @@ export function useSessions() {
   }
 
   const handleCloseSession = async (sessionId: string) => {
-    // Prevent duplicate clicks
-    if (actionLoadingSessionId) return
-
     setActionLoadingSessionId(sessionId)
     setActionType("close")
+    setMessage(null)
     setError(null)
-
     try {
-      await adminService.closeSession(sessionId)
-      setMessage("Session closed successfully. Active QR check-in has been deactivated.")
-      setTimeout(() => setMessage(null), 3500)
+      await sessionApi.closeSession(sessionId)
+      setMessage("Session closed successfully. Check-in is now locked.")
       await fetchSessions()
     } catch (err: any) {
       console.error("Failed to close session", err)
       setError(err?.message || "Failed to close session.")
-      setTimeout(() => setError(null), 4000)
     } finally {
       setActionLoadingSessionId(null)
       setActionType(null)
@@ -90,34 +91,53 @@ export function useSessions() {
 
   const handleCreateSession = async (payload: CreateSessionPayload) => {
     setModalLoading(true)
+    setMessage(null)
     setError(null)
     try {
-      await adminService.createSession(payload)
-      setMessage("New workshop session created successfully.")
-      setTimeout(() => setMessage(null), 3500)
+      await apiClient.post("/api/v1/admin/attendance/sessions", payload)
+      setMessage("New session created successfully.")
       setShowCreateModal(false)
       await fetchSessions()
     } catch (err: any) {
-      setError(err?.message || "Failed to create session.")
-      throw err
+      console.error("Failed to create session", err)
+      setError(err?.message || "Failed to create new session.")
     } finally {
       setModalLoading(false)
     }
   }
 
-  const handleUpdateSession = async (sessionId: string, payload: any) => {
+  const handleUpdateSession = async (sessionId: string, payload: Partial<CreateSessionPayload>) => {
     setModalLoading(true)
+    setMessage(null)
     setError(null)
     try {
-      await adminService.updateSession(sessionId, payload)
+      await sessionApi.updateSession(sessionId, payload)
       setMessage("Session details updated successfully.")
-      setTimeout(() => setMessage(null), 3500)
       setShowEditModal(false)
       setEditingSession(null)
       await fetchSessions()
     } catch (err: any) {
-      setError(err?.message || "Failed to update session.")
-      throw err
+      console.error("Failed to update session", err)
+      setError(err?.message || "Failed to update session details.")
+    } finally {
+      setModalLoading(false)
+    }
+  }
+
+  const handleDeleteSession = async () => {
+    if (!deletingSession) return
+    setModalLoading(true)
+    setMessage(null)
+    setError(null)
+    try {
+      await sessionApi.deleteSession(deletingSession.id)
+      setMessage("Session deleted successfully.")
+      setShowDeleteModal(false)
+      setDeletingSession(null)
+      await fetchSessions()
+    } catch (err: any) {
+      console.error("Failed to delete session", err)
+      setError(err?.message || "Failed to delete session.")
     } finally {
       setModalLoading(false)
     }
@@ -128,38 +148,9 @@ export function useSessions() {
     setShowEditModal(true)
   }
 
-  const closeEditModal = () => {
-    setEditingSession(null)
-    setShowEditModal(false)
-  }
-
   const openDeleteModal = (session: AttendanceSessionDto) => {
     setDeletingSession(session)
     setShowDeleteModal(true)
-  }
-
-  const closeDeleteModal = () => {
-    setDeletingSession(null)
-    setShowDeleteModal(false)
-  }
-
-  const handleDeleteSession = async (sessionId: string) => {
-    setModalLoading(true)
-    setError(null)
-    try {
-      await adminService.deleteSession(sessionId)
-      setMessage("Session and all connected records deleted successfully.")
-      setTimeout(() => setMessage(null), 3500)
-      setShowDeleteModal(false)
-      setDeletingSession(null)
-      await fetchSessions()
-    } catch (err: any) {
-      console.error("Failed to delete session", err)
-      setError(err?.message || "Failed to delete session.")
-      throw err
-    } finally {
-      setModalLoading(false)
-    }
   }
 
   return {
@@ -171,20 +162,29 @@ export function useSessions() {
     message,
     error,
     showEditModal,
+    setShowEditModal,
     editingSession,
+    showDeleteModal,
+    setShowDeleteModal,
+    deletingSession,
     showCreateModal,
     setShowCreateModal,
-    showDeleteModal,
-    deletingSession,
-    openEditModal,
-    closeEditModal,
-    openDeleteModal,
-    closeDeleteModal,
+    fetchSessions,
     handleActivateSession,
     handleCloseSession,
     handleCreateSession,
     handleUpdateSession,
     handleDeleteSession,
+    openEditModal,
+    openDeleteModal,
+    closeEditModal: () => {
+      setShowEditModal(false)
+      setEditingSession(null)
+    },
+    closeDeleteModal: () => {
+      setShowDeleteModal(false)
+      setDeletingSession(null)
+    },
     reload: fetchSessions,
   }
 }

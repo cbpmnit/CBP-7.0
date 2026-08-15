@@ -1,4 +1,4 @@
 "use client"
 
-import AdminDashboardOverview from "@/components/admin/AdminDashboardOverview"
+import AdminDashboardOverview from "./AdminDashboardOverview"
 export default AdminDashboardOverview

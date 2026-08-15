@@ -64,7 +64,7 @@ export function useVolunteers() {
   }, [])
 
   useEffect(() => {
-    loadAllData()
+    void loadAllData()
   }, [loadAllData])
 
   const handleScopeToggle = (scopeId: string) => {

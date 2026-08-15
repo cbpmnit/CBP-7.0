@@ -5,7 +5,7 @@ import { dashboardApi, AdminDashboardSummaryDto } from "@/features/dashboard/ser
 import { DashboardHeader } from "./DashboardHeader"
 import { DashboardMetrics } from "./DashboardMetrics"
 import { ModuleGrid } from "./ModuleGrid"
-import { FiAlertCircle, FiRefreshCw } from "react-icons/fi"
+import { Alert } from "@/components/ui/Alert"
 
 export default function AdminDashboardOverview() {
   const [summary, setSummary] = useState<AdminDashboardSummaryDto | null>(null)
@@ -35,7 +35,6 @@ export default function AdminDashboardOverview() {
 
   return (
     <div className="space-y-6">
-      {/* 1. Institutional Dashboard Header */}
       <DashboardHeader
         title="Administrative Operations & Modules"
         subtitle="MNIT Jaipur Soft Skills Development Program Platform"
@@ -43,27 +42,11 @@ export default function AdminDashboardOverview() {
         refreshing={loading}
       />
 
-      {/* Error Alert */}
-      {error && (
-        <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-950 flex items-center justify-between text-xs">
-          <div className="flex items-center gap-2">
-            <FiAlertCircle className="text-base text-amber-700 shrink-0" />
-            <span className="font-semibold">{error}</span>
-          </div>
-          <button
-            onClick={fetchSummaryData}
-            className="inline-flex items-center gap-1 font-bold underline hover:text-amber-900"
-          >
-            <FiRefreshCw /> Retry
-          </button>
-        </div>
-      )}
+      {error && <Alert type="error" message={error} />}
 
-      {/* 2. Top 5 Metric Cards Horizontally */}
       <DashboardMetrics summary={summary} loading={loading} />
 
-      {/* 3. Administrative Operations & Module Grid */}
-      <ModuleGrid />
+      <ModuleGrid summary={summary} />
     </div>
   )
 }

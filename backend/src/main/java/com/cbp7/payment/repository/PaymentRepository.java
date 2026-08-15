@@ -24,4 +24,5 @@ public interface PaymentRepository extends JpaRepository<Payment, UUID> {
 
     List<Payment> findAllByPaymentStatusAndCreatedAtBefore(PaymentStatus paymentStatus, LocalDateTime thresholdTime);
     List<Payment> findAllByPaymentStatusIn(List<PaymentStatus> statuses);
+    List<Payment> findByPaymentStatus(PaymentStatus paymentStatus);
 }

@@ -19,7 +19,7 @@ public class AdminDashboardController {
     private final AdminDashboardService adminDashboardService;
 
     @GetMapping("/dashboard/summary")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('VOLUNTEER')")
     public ResponseEntity<ApiResponse<AdminDashboardSummaryResponse>> getDashboardSummary() {
         AdminDashboardSummaryResponse response = adminDashboardService.getSummary();
         return ResponseEntity.ok(ApiResponse.success("Admin dashboard summary retrieved successfully", response));

@@ -24,8 +24,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -68,9 +70,16 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         List<CbpRegistration> registrations = cbpRegistrationRepository.findAll();
         long totalSessions = attendanceSessionRepository.count();
 
+        // Preload successful payments to avoid N+1 DB calls inside stream
+        List<Payment> successfulPayments = paymentRepository.findByPaymentStatus(PaymentStatus.SUCCESS);
+        Set<UUID> paidRegIds = successfulPayments.stream()
+                .map(Payment::getRegistrationId)
+                .filter(id -> id != null)
+                .collect(Collectors.toSet());
+
         return registrations.stream()
                 .filter(reg -> matchesSearchQuery(reg, search))
-                .map(reg -> buildStudentDetail(reg, totalSessions))
+                .map(reg -> buildStudentDetail(reg, totalSessions, paidRegIds))
                 .toList();
     }
 
@@ -115,27 +124,35 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
     }
 
     private long countPaidStudents(List<User> studentUsers, List<CbpRegistration> registrations) {
+        List<Payment> successfulPayments = paymentRepository.findByPaymentStatus(PaymentStatus.SUCCESS);
+        Set<UUID> paidUserIds = successfulPayments.stream()
+                .map(Payment::getUserId)
+                .filter(id -> id != null)
+                .collect(Collectors.toSet());
+
+        Set<UUID> paidRegIds = successfulPayments.stream()
+                .map(Payment::getRegistrationId)
+                .filter(id -> id != null)
+                .collect(Collectors.toSet());
+
         return studentUsers.stream()
-                .filter(u -> isStudentPaymentComplete(u, registrations))
+                .filter(u -> isStudentPaymentCompleteFast(u, registrations, paidUserIds, paidRegIds))
                 .count();
     }
 
-    private boolean isStudentPaymentComplete(User user, List<CbpRegistration> registrations) {
-        boolean paidViaRegistration = registrations.stream().anyMatch(r ->
-                isRegistrationLinkedToUser(r, user) && isRegistrationPaid(r)
+    private boolean isStudentPaymentCompleteFast(User user, List<CbpRegistration> registrations, Set<UUID> paidUserIds, Set<UUID> paidRegIds) {
+        if (paidUserIds.contains(user.getId())) {
+            return true;
+        }
+        return registrations.stream().anyMatch(r ->
+                isRegistrationLinkedToUser(r, user) && (r.getRegistrationStatus() == RegistrationStatus.REGISTERED || paidRegIds.contains(r.getId()))
         );
-        return paidViaRegistration || paymentRepository.existsByUserIdAndPaymentStatus(user.getId(), PaymentStatus.SUCCESS);
     }
 
     private boolean isRegistrationLinkedToUser(CbpRegistration reg, User user) {
         boolean matchById = reg.getUser() != null && user.getId().equals(reg.getUser().getId());
         boolean matchByStudentId = user.getStudentId() != null && user.getStudentId().equalsIgnoreCase(reg.getStudentId());
         return matchById || matchByStudentId;
-    }
-
-    private boolean isRegistrationPaid(CbpRegistration reg) {
-        return reg.getRegistrationStatus() == RegistrationStatus.REGISTERED
-                || paymentRepository.existsByRegistrationIdAndPaymentStatus(reg.getId(), PaymentStatus.SUCCESS);
     }
 
     private boolean matchesSearchQuery(CbpRegistration reg, String search) {
@@ -151,10 +168,12 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         return studentId.contains(query) || name.contains(query) || email.contains(query);
     }
 
-    private AdminStudentDetailResponse buildStudentDetail(CbpRegistration reg, long totalSessions) {
-        long attended = attendanceRecordRepository.countByStudentIdAndStatus(reg.getStudentId(), AttendanceStatus.PRESENT);
+    private AdminStudentDetailResponse buildStudentDetail(CbpRegistration reg, long totalSessions, Set<UUID> paidRegIds) {
+        long attended = reg.getStudentId() != null
+                ? attendanceRecordRepository.countByStudentIdAndStatus(reg.getStudentId(), AttendanceStatus.PRESENT)
+                : 0;
         double attendancePercentage = attendanceCalculator.calculatePercentage(attended, totalSessions);
-        boolean isPaid = isRegistrationPaid(reg);
+        boolean isPaid = reg.getRegistrationStatus() == RegistrationStatus.REGISTERED || paidRegIds.contains(reg.getId());
 
         return adminMapper.toStudentDetailResponse(
                 reg.getStudentId(),

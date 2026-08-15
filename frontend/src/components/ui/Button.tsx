@@ -5,14 +5,16 @@ export type ButtonVariant = "primary" | "outline" | "secondary" | "ghost" | "dan
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant
+  size?: "sm" | "md" | "lg"
   icon?: React.ReactNode
   loading?: boolean
-  children: React.ReactNode
+  children?: React.ReactNode
   className?: string
 }
 
 export function Button({
   variant = "primary",
+  size = "md",
   icon,
   loading = false,
   children,
@@ -20,11 +22,17 @@ export function Button({
   disabled,
   ...props
 }: ButtonProps) {
+  const sizeClasses = {
+    sm: "px-3 py-1.5 text-xs",
+    md: "",
+    lg: "px-6 py-4 text-sm",
+  }[size]
+
   const variantClass = themeClasses.button[variant] || themeClasses.button.primary
 
   return (
     <button
-      className={`${variantClass} ${className}`}
+      className={`${variantClass} ${sizeClasses} ${className}`}
       disabled={disabled || loading}
       {...props}
     >

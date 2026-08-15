@@ -1,4 +1,4 @@
 "use client"
 
-import AdminCertificateOverview from "@/components/admin/AdminCertificateOverview"
+import AdminCertificateOverview from "./AdminCertificateOverview"
 export default AdminCertificateOverview

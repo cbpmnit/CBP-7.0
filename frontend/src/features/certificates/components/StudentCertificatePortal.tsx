@@ -4,7 +4,7 @@ import React from "react"
 import Link from "next/link"
 import { useCertificate } from "../hooks/useCertificate"
 import PageTransition from "@/components/animations/PageTransition"
-import CertificateCard from "@/components/cards/CertificateCard"
+import CertificateCard from "./CertificateCard"
 import { FiAward, FiArrowLeft, FiCheckCircle, FiLock, FiInfo } from "react-icons/fi"
 
 export default function StudentCertificatePortal() {

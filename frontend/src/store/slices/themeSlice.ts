@@ -22,8 +22,8 @@ export const themeSlice = createSlice({
         document.documentElement.classList.remove("dark")
       }
     },
-    setTheme: (state, _action: PayloadAction<ThemeMode>) => {
-      state.theme = "light"
+    setTheme: (state, action: PayloadAction<ThemeMode>) => {
+      state.theme = action.payload || "light"
       if (typeof window !== "undefined") {
         localStorage.setItem("cbp-theme", "light")
         document.documentElement.classList.add("light")

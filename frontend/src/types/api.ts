@@ -3,5 +3,5 @@ export interface ApiQueryParams {
   size?: number
   sort?: string
   search?: string
-  [key: string]: any
+  [key: string]: string | number | boolean | undefined | unknown
 }

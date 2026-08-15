@@ -3,8 +3,8 @@
 import React from "react"
 import Link from "next/link"
 import { useDashboard } from "../hooks/useDashboard"
-import StudentSummary from "@/components/dashboard/StudentSummary"
-import ProgressTimeline from "@/components/dashboard/ProgressTimeline"
+import StudentSummary from "./StudentSummary"
+import ProgressTimeline from "./ProgressTimeline"
 import {
   FiUser,
   FiCamera,

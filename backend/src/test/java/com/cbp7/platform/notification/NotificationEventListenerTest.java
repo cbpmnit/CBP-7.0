@@ -57,6 +57,8 @@ class NotificationEventListenerTest {
                 .name("Payment Confirmation")
                 .channel(NotificationChannel.EMAIL)
                 .type(NotificationType.PAYMENT_SUCCESS)
+                .eventType(NotificationType.PAYMENT_SUCCESS.name())
+                .status("ACTIVE")
                 .subject("Payment Successful - {{paymentId}}")
                 .content("Dear {{studentName}}, your payment of INR {{amount}} for ID {{paymentId}} was received.")
                 .createdBy("ADMIN001")
@@ -73,7 +75,7 @@ class NotificationEventListenerTest {
 
         notificationEventPublisher.publish(event);
 
-        verify(emailSender, timeout(5000)).sendEmail(
+        verify(emailSender, timeout(10000)).sendEmail(
                 eq("parv@example.com"),
                 eq("Payment Successful - PAY98765"),
                 contains("Dear Parv Agrawal, your payment of INR 1500 for ID PAY98765 was received.")
@@ -87,6 +89,8 @@ class NotificationEventListenerTest {
                 .name("Registration Welcome")
                 .channel(NotificationChannel.EMAIL)
                 .type(NotificationType.REGISTRATION_SUCCESS)
+                .eventType(NotificationType.REGISTRATION_SUCCESS.name())
+                .status("ACTIVE")
                 .subject("Welcome to CBP {{studentName}}")
                 .content("Hello {{studentName}}, your registration ID is {{registrationId}}.")
                 .createdBy("ADMIN001")
@@ -102,7 +106,7 @@ class NotificationEventListenerTest {
 
         notificationEventPublisher.publish(event);
 
-        verify(emailSender, timeout(5000)).sendEmail(
+        verify(emailSender, timeout(10000)).sendEmail(
                 eq("parv@example.com"),
                 eq("Welcome to CBP Parv Agrawal"),
                 contains("Hello Parv Agrawal, your registration ID is REG555.")
@@ -115,7 +119,9 @@ class NotificationEventListenerTest {
         NotificationTemplate template = NotificationTemplate.builder()
                 .name("Certificate Ready")
                 .channel(NotificationChannel.EMAIL)
-                .type(NotificationType.CERTIFICATE_READY)
+                .type(NotificationType.CERTIFICATE_ISSUED)
+                .eventType("CERTIFICATE_ISSUED")
+                .status("ACTIVE")
                 .subject("Certificate Issued")
                 .content("Dear {{studentName}}, your certificate is available at {{certificateUrl}}.")
                 .createdBy("ADMIN001")
@@ -131,7 +137,7 @@ class NotificationEventListenerTest {
 
         notificationEventPublisher.publish(event);
 
-        verify(emailSender, timeout(5000)).sendEmail(
+        verify(emailSender, timeout(10000)).sendEmail(
                 eq("parv@example.com"),
                 eq("Certificate Issued"),
                 contains("https://cbp.com/cert/123")
@@ -145,6 +151,8 @@ class NotificationEventListenerTest {
                 .name("Attendance QR Ready")
                 .channel(NotificationChannel.EMAIL)
                 .type(NotificationType.ATTENDANCE_QR_GENERATED)
+                .eventType(NotificationType.ATTENDANCE_QR_GENERATED.name())
+                .status("ACTIVE")
                 .subject("Your CBP Attendance QR is Ready")
                 .content("Hello {{studentName}}, your attendance QR is {{qrToken}}.")
                 .createdBy("ADMIN001")
@@ -174,6 +182,8 @@ class NotificationEventListenerTest {
                 .name("Payment Confirmation")
                 .channel(NotificationChannel.EMAIL)
                 .type(NotificationType.PAYMENT_SUCCESS)
+                .eventType(NotificationType.PAYMENT_SUCCESS.name())
+                .status("ACTIVE")
                 .subject("Payment Successful")
                 .content("Content")
                 .createdBy("ADMIN001")

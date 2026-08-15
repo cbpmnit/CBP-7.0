@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useRef } from "react"
-import { attendanceService } from "@/services/attendanceService"
+import { attendanceApi } from "../services/attendanceApi"
 import { AttendanceSessionDto } from "@/types/attendance"
 import { Html5Qrcode } from "html5-qrcode"
 import PageTransition from "@/components/animations/PageTransition"
@@ -63,9 +63,9 @@ export default function VolunteerScannerView() {
     try {
       let data: AttendanceSessionDto[] = []
       try {
-        data = await attendanceService.getVolunteerSessions()
+        data = await attendanceApi.getVolunteerSessions()
       } catch {
-        data = await attendanceService.getAllSessions()
+        data = await attendanceApi.getAllSessions()
       }
       const list = data || []
       setSessions(list)
@@ -157,7 +157,7 @@ export default function VolunteerScannerView() {
     }
 
     try {
-      const result: any = await attendanceService.scanAttendance({
+      const result: any = await attendanceApi.scanAttendance({
         sessionId: selectedSessionId,
         qrToken: cleanToken,
       })

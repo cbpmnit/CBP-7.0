@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { attendanceService } from "@/services/attendanceService"
+import { attendanceApi } from "../services/attendanceApi"
 import { ScanAttendanceResponse } from "@/types/attendance"
 import { Html5Qrcode } from "html5-qrcode"
 import {
@@ -95,7 +95,7 @@ export default function VolunteerAttendanceView() {
     setErrorMessage(null)
     setSuccessMessage(null)
     try {
-      const res = await attendanceService.scanAttendanceQr(token)
+      const res = await attendanceApi.scanAttendanceQr(token)
       setLastScanResult(res)
       setSuccessMessage("Attendance recorded successfully ✓")
       setScanHistory((prev) => [res, ...prev.slice(0, 9)])

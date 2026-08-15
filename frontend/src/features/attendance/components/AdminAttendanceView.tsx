@@ -4,8 +4,8 @@ import { useState, useEffect, useCallback, Suspense } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useAppSelector } from "@/store/hooks"
-import { attendanceService } from "@/services/attendanceService"
-import { adminService } from "@/services/adminService"
+import { attendanceApi } from "../services/attendanceApi"
+
 import { PageHeader } from "@/components/ui/PageHeader"
 import { DataTable } from "@/components/ui/DataTable"
 import { FilterBar } from "@/components/ui/FilterBar"
@@ -77,7 +77,7 @@ function AttendanceContent() {
   const fetchSessions = useCallback(async () => {
     setLoadingSessions(true)
     try {
-      const data = await attendanceService.getAllSessions()
+      const data = await attendanceApi.getAllSessions()
       setSessions(data || [])
     } catch (err) {
       console.error("Failed to load attendance sessions", err)
@@ -116,7 +116,7 @@ function AttendanceContent() {
   const loadSessionDetails = useCallback(async (sessionId: string) => {
     setSummaryLoading(true)
     try {
-      const sumRes = await attendanceService.getSessionSummary(sessionId)
+      const sumRes = await attendanceApi.getSessionSummary(sessionId)
       setSummary(sumRes)
     } catch (err) {
       setSummary(null)
@@ -130,7 +130,7 @@ function AttendanceContent() {
     async (sessionId: string, searchTerm: string, status: string, pageNum: number) => {
       setRecordsLoading(true)
       try {
-        const data = await attendanceService.getSessionRecords(
+        const data = await attendanceApi.getSessionRecords(
           sessionId,
           searchTerm,
           status,
@@ -169,7 +169,7 @@ function AttendanceContent() {
 
   const handleActivateSession = async (sessionId: string) => {
     try {
-      await adminService.activateSession(sessionId)
+      await attendanceApi.activateSession(sessionId)
       setActionMessage("Session activated. Check-in is now open.")
       setTimeout(() => setActionMessage(null), 3500)
       await fetchSessions()
@@ -182,7 +182,7 @@ function AttendanceContent() {
 
   const handleCloseSession = async (sessionId: string) => {
     try {
-      await adminService.closeSession(sessionId)
+      await attendanceApi.closeSession(sessionId)
       setActionMessage("Session closed. Check-in is now locked.")
       setTimeout(() => setActionMessage(null), 3500)
       await fetchSessions()
@@ -204,7 +204,7 @@ function AttendanceContent() {
     setStudentProfileLoading(true)
     setStudentProfile(null)
     try {
-      const data = await attendanceService.getStudentAttendanceProfile(studentId)
+      const data = await attendanceApi.getStudentAttendanceProfile(studentId)
       setStudentProfile(data)
     } catch (err) {
       console.error("Failed to load student profile:", err)
@@ -218,7 +218,7 @@ function AttendanceContent() {
     setUserProfileLoading(true)
     setUserProfile(null)
     try {
-      const data = await attendanceService.getUserAttendanceProfile(userId)
+      const data = await attendanceApi.getUserAttendanceProfile(userId)
       setUserProfile(data)
     } catch (err) {
       console.error("Failed to load user profile:", err)

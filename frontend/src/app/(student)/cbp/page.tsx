@@ -4,8 +4,8 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useAppSelector } from "@/store/hooks"
-import { cbpService } from "@/services/cbpService"
-import { profileService } from "@/services/profileService"
+import { apiClient } from "@/lib/apiClient"
+import { profileApi } from "@/features/profile/services/profileApi"
 import { CbpRegistrationDetailResponse } from "@/types/cbp"
 import PageTransition from "@/components/animations/PageTransition"
 import {
@@ -36,7 +36,7 @@ export default function CbpPage() {
     setLoading(true)
     setError(null)
     try {
-      const data = await cbpService.getMyRegistration()
+      const data = await apiClient.get<CbpRegistrationDetailResponse>("/api/v1/cbp/me")
       setRegistration(data)
     } catch (err: any) {
       if (err?.status !== 404 && err?.message?.indexOf("No CBP registration") === -1) {
@@ -62,7 +62,7 @@ export default function CbpPage() {
       }
 
       // 1. Verify required profile details before triggering backend registration
-      const comp = await profileService.getCompletion().catch(() => null)
+      const comp = await profileApi.getCompletion().catch(() => null)
       if (comp && !comp.completed && comp.registrationEligible === false) {
         const missing = comp.missingRequiredFields?.length
           ? ` Missing required fields: ${comp.missingRequiredFields.join(", ")}.`
@@ -75,7 +75,7 @@ export default function CbpPage() {
       }
 
       // 2. Submit CBP registration
-      const response = await cbpService.register()
+      const response = await apiClient.post<CbpRegistrationDetailResponse>("/api/v1/cbp/register", {})
       if (response) {
         // Immediately load detail view from returned response
         await fetchRegistrationDetails()

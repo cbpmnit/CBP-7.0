@@ -38,7 +38,9 @@ export interface RegisterRequest {
   studentId: string
   name: string
   email: string
+  studentEmail?: string
   password?: string
+  confirmPassword?: string
   phoneNumber?: string
   department?: string
   year?: number

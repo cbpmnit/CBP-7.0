@@ -98,6 +98,8 @@ class EmailNotificationServiceTest {
                 .name("Payment Email")
                 .channel(NotificationChannel.EMAIL)
                 .type(NotificationType.PAYMENT_SUCCESS)
+                .eventType(NotificationType.PAYMENT_SUCCESS.name())
+                .status("ACTIVE")
                 .subject("Payment {{paymentId}}")
                 .content("Amount {{amount}}")
                 .createdBy("ADMIN001")

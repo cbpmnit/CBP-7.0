@@ -6,11 +6,15 @@ import { OperationsTabs } from "@/features/operations/components/OperationsTabs"
 import { QrOperationsPanel } from "@/features/operations/components/qr/QrOperationsPanel"
 import { EmailOperationsPanel } from "@/features/operations/components/email/EmailOperationsPanel"
 import { PageHeader } from "@/components/ui/PageHeader"
+import { MetricCard } from "@/components/ui/MetricCard"
+import { Button } from "@/components/ui/Button"
+import { Alert } from "@/components/ui/Alert"
 import {
   FiRefreshCw,
+  FiUsers,
   FiCheckCircle,
-  FiAlertCircle,
-  FiActivity,
+  FiClock,
+  FiAward,
 } from "react-icons/fi"
 
 export default function OperationsDashboard() {
@@ -59,7 +63,7 @@ export default function OperationsDashboard() {
 
       if (overviewRes.status === "rejected" && sessionsRes.status === "rejected") {
         setStatusMessage({
-          text: "Unable to reach the backend server (http://localhost:8080). Please ensure Spring Boot is running.",
+          text: "Unable to reach the backend server. Please ensure Spring Boot is running.",
           type: "error",
         })
       }
@@ -84,94 +88,68 @@ export default function OperationsDashboard() {
         title="Admin Operations Command Center"
         subtitle="Manage student QR passes, personalized email communications, and administrative workflows"
         actions={
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={loadData}
             disabled={loading}
-            className="px-3.5 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold transition shadow-2xs inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            icon={
+              <FiRefreshCw className={loading ? "animate-spin text-xs" : "text-xs"} />
+            }
           >
-            <FiRefreshCw className={loading ? "animate-spin text-xs" : "text-xs"} />
-            <span>Refresh Data</span>
-          </button>
+            Refresh Data
+          </Button>
         }
       />
 
       {statusMessage && (
-        <div
-          className={`p-3.5 rounded-xl border text-xs font-bold flex items-center justify-between gap-2 animate-in fade-in ${
-            statusMessage.type === "success"
-              ? "bg-emerald-50 border-emerald-200 text-emerald-900"
-              : statusMessage.type === "error"
-              ? "bg-rose-50 border-rose-200 text-rose-900"
-              : "bg-cyan-50 border-cyan-200 text-cyan-900"
-          }`}
-        >
-          <div className="flex items-center gap-2">
-            {statusMessage.type === "success" ? (
-              <FiCheckCircle className="text-emerald-600 shrink-0 text-base" />
-            ) : statusMessage.type === "error" ? (
-              <FiAlertCircle className="text-rose-600 shrink-0 text-base" />
-            ) : (
-              <FiActivity className="text-cyan-600 shrink-0 text-base" />
-            )}
-            <span>{statusMessage.text}</span>
-          </div>
-          <button
-            onClick={() => setStatusMessage(null)}
-            className="text-slate-400 hover:text-slate-700 font-bold text-xs"
-          >
-            Dismiss
-          </button>
-        </div>
+        <Alert
+          type={statusMessage.type}
+          message={statusMessage.text}
+          onClose={() => setStatusMessage(null)}
+        />
       )}
 
-      {/* Metrics Row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="p-4 bg-white border border-slate-200 rounded-xl shadow-2xs">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Registered</span>
-          <p className="text-2xl font-extrabold text-slate-900 font-mono mt-1">
-            {overview?.registeredCount ?? 0}
-          </p>
-        </div>
-        <div className="p-4 bg-white border border-slate-200 rounded-xl shadow-2xs">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">Paid Enrolled</span>
-          <p className="text-2xl font-extrabold text-emerald-700 font-mono mt-1">
-            {overview?.paidCount ?? 0}
-          </p>
-        </div>
-        <div className="p-4 bg-white border border-slate-200 rounded-xl shadow-2xs">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-800">Present Count</span>
-          <p className="text-2xl font-extrabold text-cyan-800 font-mono mt-1">
-            {overview?.attendancePresentCount ?? 0}
-          </p>
-        </div>
-        <div className="p-4 bg-white border border-slate-200 rounded-xl shadow-2xs">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700">Active Session</span>
-          <p className="text-sm font-extrabold text-slate-900 truncate mt-1">
-            {overview?.currentSessionTitle || "None"}
-          </p>
-        </div>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+        <MetricCard
+          title="Total Registered"
+          value={overview?.registeredCount ?? 0}
+          icon={<FiUsers className="w-5 h-5 text-cyan-600" />}
+        />
+        <MetricCard
+          title="Paid Students"
+          value={overview?.paidCount ?? 0}
+          icon={<FiCheckCircle className="w-5 h-5 text-emerald-600" />}
+        />
+        <MetricCard
+          title="Sessions Scheduled"
+          value={overview?.sessionsConfiguredCount ?? 0}
+          icon={<FiClock className="w-5 h-5 text-amber-600" />}
+        />
+        <MetricCard
+          title="Eligible Credentials"
+          value={overview?.certificatesEligibleCount ?? 0}
+          icon={<FiCheckCircle className="w-5 h-5 text-indigo-600" />}
+        />
       </div>
 
-      {/* TAB NAVIGATION: QR PASS OPERATIONS vs EMAIL OPERATIONS */}
-      <OperationsTabs activeTab={activeTab} onTabChange={(tab) => setActiveTab(tab)} />
+      <OperationsTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
-      {/* TAB 1: QR PASS OPERATIONS */}
       {activeTab === "qr" && (
         <QrOperationsPanel
           sessions={sessions}
           selectedSessionId={selectedSessionId}
-          onSessionChange={(id) => setSelectedSessionId(id)}
+          onSessionChange={setSelectedSessionId}
           onRefreshNeeded={loadData}
         />
       )}
 
-      {/* TAB 2: EMAIL OPERATIONS */}
       {activeTab === "email" && (
         <EmailOperationsPanel
           emailTemplates={emailTemplates}
           sessions={sessions}
           selectedSessionId={selectedSessionId}
-          onSessionChange={(id) => setSelectedSessionId(id)}
+          onSessionChange={setSelectedSessionId}
         />
       )}
     </div>

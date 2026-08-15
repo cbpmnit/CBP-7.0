@@ -7,10 +7,10 @@ import { DataTable } from "@/components/ui/DataTable"
 import { StatusBadge } from "@/components/ui/StatusBadge"
 import { MobileRecordCard } from "@/components/ui/MobileRecordCard"
 import { ExportCsvButton } from "@/components/ui/ExportCsvButton"
+import { Button } from "@/components/ui/Button"
+import { Alert } from "@/components/ui/Alert"
 import CertificateTemplateEditor from "./CertificateTemplateEditor"
 import {
-  FiCheckCircle,
-  FiAlertCircle,
   FiRefreshCw,
   FiZap,
   FiAward,
@@ -33,7 +33,6 @@ export default function AdminCertificateOverview() {
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  // Sample status data for admin view
   const [records] = useState<SampleCertRecord[]>([
     {
       studentId: "2024UCH1198",
@@ -80,7 +79,6 @@ export default function AdminCertificateOverview() {
     }
   }
 
-  // Mobile Cards View
   const mobileCards = records.map((rec) => (
     <MobileRecordCard
       key={rec.studentId}
@@ -104,19 +102,21 @@ export default function AdminCertificateOverview() {
         { label: "Certificate", value: rec.certStatus },
       ]}
       actions={
-        <button
+        <Button
+          variant="outline"
+          size="sm"
           onClick={handleGenerateAll}
-          className="w-full py-1.5 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-900 text-xs font-bold inline-flex items-center justify-center gap-1.5 border border-purple-200 cursor-pointer"
+          icon={<FiAward className="text-xs" />}
+          className="w-full"
         >
-          <FiAward className="text-xs" /> View Certificate
-        </button>
+          View Certificate
+        </Button>
       }
     />
   ))
 
   return (
     <div className="space-y-5">
-      {/* Header */}
       <PageHeader
         title="Certificate Management"
         subtitle="Minimal certificate design template configuration, dynamic field positioning, and batch issuance"
@@ -127,20 +127,20 @@ export default function AdminCertificateOverview() {
                 endpoint="/api/v1/admin/certificates/export"
                 filenamePrefix="cbp-certificates"
               />
-              <button
+              <Button
+                variant="primary"
+                size="sm"
                 onClick={handleGenerateAll}
-                disabled={generating}
-                className="px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 disabled:bg-purple-300 text-white text-xs font-bold uppercase tracking-wider transition shadow-2xs inline-flex items-center gap-1.5 cursor-pointer"
+                loading={generating}
+                icon={generating ? <FiRefreshCw className="animate-spin text-xs" /> : <FiZap className="text-xs" />}
               >
-                {generating ? <FiRefreshCw className="animate-spin text-xs" /> : <FiZap className="text-xs" />}
-                <span>{generating ? "Generating..." : "Generate All Eligible"}</span>
-              </button>
+                Generate All Eligible
+              </Button>
             </div>
           ) : undefined
         }
       />
 
-      {/* Module Tabs */}
       <div className="flex items-center gap-1 bg-white p-1 rounded-2xl border border-slate-200 shadow-2xs max-w-sm">
         <button
           type="button"
@@ -169,27 +169,13 @@ export default function AdminCertificateOverview() {
         </button>
       </div>
 
-      {message && (
-        <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs flex items-center gap-2 font-semibold animate-in fade-in">
-          <FiCheckCircle className="text-emerald-600 shrink-0 text-sm" />
-          <span>{message}</span>
-        </div>
-      )}
+      {message && <Alert type="success" message={message} />}
+      {error && <Alert type="error" message={error} />}
 
-      {error && (
-        <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center gap-2 font-semibold animate-in fade-in">
-          <FiAlertCircle className="text-amber-600 shrink-0 text-sm" />
-          <span>{error}</span>
-        </div>
-      )}
-
-      {/* TAB 1: Minimal Certificate Template Configuration */}
       {activeTab === "template" && <CertificateTemplateEditor />}
 
-      {/* TAB 2: Student Issuance & Roster */}
       {activeTab === "issuance" && (
         <div className="space-y-4">
-          {/* Operational Rules Panel */}
           <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 shadow-2xs space-y-3">
             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">
               Certificate Eligibility &amp; Issuance Workflow
@@ -219,7 +205,6 @@ export default function AdminCertificateOverview() {
             </div>
           </div>
 
-          {/* Certificate Roster */}
           <DataTable
             title="Student Certificate Roster"
             totalCount={records.length}
@@ -263,12 +248,14 @@ export default function AdminCertificateOverview() {
                       {rec.certStatus}
                     </td>
                     <td className="px-4 py-2.5 text-right">
-                      <button
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={handleGenerateAll}
-                        className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold transition inline-flex items-center gap-1 border border-slate-200 cursor-pointer"
+                        icon={<FiAward className="text-xs text-slate-600" />}
                       >
-                        <FiAward className="text-xs text-slate-600" /> View
-                      </button>
+                        View
+                      </Button>
                     </td>
                   </tr>
                 ))}

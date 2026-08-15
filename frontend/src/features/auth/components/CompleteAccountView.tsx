@@ -1,105 +1,24 @@
 "use client"
 
-import React, { useState } from "react"
-import { useRouter } from "next/navigation"
-import { useAppDispatch } from "@/store/hooks"
-import { loginSuccess } from "@/store/slices/authSlice"
-import { api, ApiError } from "@/utils/api"
-import { LoginResponse } from "../types"
+import React from "react"
 import Reveal from "@/components/animations/RevealOnScroll"
 import PageTransition from "@/components/animations/PageTransition"
 import { FiUserCheck, FiLock, FiCheckCircle, FiAlertCircle, FiArrowRight, FiShield, FiUser } from "react-icons/fi"
+import { useAccountSetup } from "../hooks/useAccountSetup"
 
 export default function CompleteAccountView() {
-  const router = useRouter()
-  const dispatch = useAppDispatch()
-
-  const [studentId, setStudentId] = useState("")
-  const [password, setPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
-
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState(false)
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError(null)
-
-    const trimmedStudentId = studentId.trim()
-    const trimmedPassword = password.trim()
-    const trimmedConfirm = confirmPassword.trim()
-
-    if (!trimmedStudentId) {
-      setError("Please enter your official Student ID.")
-      return
-    }
-
-    if (!trimmedPassword) {
-      setError("Please create a password for credential login.")
-      return
-    }
-
-    if (trimmedPassword.length < 6) {
-      setError("Password must be at least 6 characters long.")
-      return
-    }
-
-    if (trimmedPassword !== trimmedConfirm) {
-      setError("Passwords do not match. Please verify your password entry.")
-      return
-    }
-
-    setLoading(true)
-
-    try {
-      const response = await api.post<LoginResponse>("/api/v1/auth/complete-account", {
-        studentId: trimmedStudentId,
-        password: trimmedPassword,
-        confirmPassword: trimmedConfirm,
-      })
-
-      if (response && response.token) {
-        if (typeof window !== "undefined") {
-          localStorage.setItem("cbp-token", response.token)
-          if (response.studentId) localStorage.setItem("cbp-studentId", response.studentId)
-          if (response.name) localStorage.setItem("cbp-name", response.name)
-          if (response.role) localStorage.setItem("cbp-role", response.role)
-          if (response.userId) localStorage.setItem("cbp-userId", response.userId)
-        }
-
-        dispatch(
-          loginSuccess({
-            token: response.token,
-            userId: response.userId,
-            studentId: response.studentId,
-            name: response.name,
-            role: response.role,
-            permissions: Array.from(response.permissions || []),
-          })
-        )
-
-        setSuccess(true)
-        setTimeout(() => {
-          if (response.profileCompleted) {
-            router.replace("/dashboard")
-          } else {
-            router.replace("/profile")
-          }
-        }, 1200)
-      } else {
-        setError("Account setup failed. Please try again.")
-      }
-    } catch (err: any) {
-      if (err instanceof ApiError) {
-        setError(err.message || "Failed to complete account setup.")
-      } else {
-        setError("An unexpected error occurred. Please check your credentials and try again.")
-      }
-    } finally {
-      setLoading(false)
-    }
-  }
+  const {
+    studentId,
+    setStudentId,
+    password,
+    setPassword,
+    confirmPassword,
+    setConfirmPassword,
+    loading,
+    error,
+    success,
+    handleSubmit,
+  } = useAccountSetup()
 
   return (
     <PageTransition>
@@ -208,7 +127,7 @@ export default function CompleteAccountView() {
                 <button
                   type="submit"
                   disabled={loading || success}
-                  className="w-full rounded-2xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white py-4 text-xs font-bold uppercase tracking-wider shadow-lg shadow-cyan-600/30 transition duration-300 transform hover:-translate-y-0.5 disabled:opacity-50 flex items-center justify-center gap-2 pt-4"
+                  className="w-full rounded-2xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white py-4 text-xs font-bold uppercase tracking-wider shadow-lg shadow-cyan-600/30 transition duration-300 transform hover:-translate-y-0.5 disabled:opacity-50 flex items-center justify-center gap-2 pt-4 cursor-pointer"
                 >
                   {loading ? (
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />

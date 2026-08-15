@@ -8,7 +8,9 @@ import StudentFilters from "./StudentFilters"
 import StudentTable from "./StudentTable"
 import StudentDetailModal from "./StudentDetailModal"
 import { PageHeader } from "@/components/ui/PageHeader"
-import { FiDownload } from "react-icons/fi"
+import { MetricCard } from "@/components/ui/MetricCard"
+import { Button } from "@/components/ui/Button"
+import { FiDownload, FiUsers, FiCheckCircle, FiClock, FiAward } from "react-icons/fi"
 
 export default function StudentManagement() {
   const {
@@ -42,47 +44,47 @@ export default function StudentManagement() {
     <PageTransition>
       <PermissionGuard requiredPermission="STUDENT_VIEW">
         <div className="space-y-4">
-          {/* Header */}
           <PageHeader
             title="Student Directory"
             count={stats?.totalStudents ?? studentsPage?.totalElements ?? 0}
             countLabel="registered"
             subtitle="Directory and dossiers of registered participants"
             actions={
-              <button
+              <Button
+                variant="primary"
+                size="sm"
                 onClick={handleExportCsv}
-                disabled={exporting}
-                className="px-3.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold uppercase tracking-wider shadow-2xs transition inline-flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                loading={exporting}
+                icon={<FiDownload className="text-xs" />}
               >
-                <FiDownload className="text-xs" /> {exporting ? "Exporting..." : "Export CSV"}
-              </button>
+                Export CSV
+              </Button>
             }
           />
 
-          {/* KPI Metric Summary Row */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
-            <div className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-2xs">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Enrolled</p>
-              <h3 className="text-xl font-extrabold text-slate-900 font-mono mt-0.5">{stats?.totalStudents ?? 0}</h3>
-            </div>
-
-            <div className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-2xs">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Paid Fee</p>
-              <h3 className="text-xl font-extrabold text-emerald-700 font-mono mt-0.5">{stats?.paidStudents ?? 0}</h3>
-            </div>
-
-            <div className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-2xs">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Pending Fee</p>
-              <h3 className="text-xl font-extrabold text-amber-700 font-mono mt-0.5">{stats?.pendingPaymentStudents ?? 0}</h3>
-            </div>
-
-            <div className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-2xs">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Eligible (75%+)</p>
-              <h3 className="text-xl font-extrabold text-cyan-800 font-mono mt-0.5">{stats?.eligibleForCertificateStudents ?? 0}</h3>
-            </div>
+            <MetricCard
+              title="Total Enrolled"
+              value={stats?.totalStudents ?? 0}
+              icon={<FiUsers className="w-5 h-5 text-cyan-600" />}
+            />
+            <MetricCard
+              title="Paid Fee"
+              value={stats?.paidStudents ?? 0}
+              icon={<FiCheckCircle className="w-5 h-5 text-emerald-600" />}
+            />
+            <MetricCard
+              title="Pending Fee"
+              value={stats?.pendingPaymentStudents ?? 0}
+              icon={<FiClock className="w-5 h-5 text-amber-600" />}
+            />
+            <MetricCard
+              title="Eligible (75%+)"
+              value={stats?.eligibleForCertificateStudents ?? 0}
+              icon={<FiAward className="w-5 h-5 text-indigo-600" />}
+            />
           </div>
 
-          {/* Filter Search Bar */}
           <StudentFilters
             search={search}
             setSearch={setSearch}
@@ -95,7 +97,6 @@ export default function StudentManagement() {
             setPage={setPage}
           />
 
-          {/* Student Table */}
           <StudentTable
             studentsPage={studentsPage}
             loading={loading}
@@ -106,7 +107,6 @@ export default function StudentManagement() {
             setPage={setPage}
           />
 
-          {/* Student Detail Slide-over / Modal */}
           <StudentDetailModal
             isOpen={isDetailModalOpen}
             onClose={() => setIsDetailModalOpen(false)}

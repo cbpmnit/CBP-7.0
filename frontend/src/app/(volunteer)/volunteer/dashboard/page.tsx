@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from "react"
 import Link from "next/link"
-import { volunteerProfileService, VolunteerProfileDto } from "@/services/volunteerProfileService"
-import { attendanceService } from "@/services/attendanceService"
+import { volunteerApi } from "@/features/volunteers/services/volunteerApi"
+import { VolunteerProfileDto } from "@/features/volunteers/types"
+import { attendanceApi } from "@/features/attendance/services/attendanceApi"
 import { AttendanceSessionDto } from "@/features/attendance/types"
 import PageTransition from "@/components/animations/PageTransition"
 import Reveal from "@/components/animations/RevealOnScroll"
@@ -28,8 +29,8 @@ export default function VolunteerDashboardPage() {
     async function loadDashboardData() {
       try {
         const [profData, sessData] = await Promise.allSettled([
-          volunteerProfileService.getProfile(),
-          attendanceService.getVolunteerSessions(),
+          volunteerApi.getProfile(),
+          attendanceApi.getVolunteerSessions(),
         ])
 
         if (profData.status === "fulfilled") {

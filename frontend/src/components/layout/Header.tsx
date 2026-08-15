@@ -6,8 +6,9 @@ import { useEffect, useState, useCallback, useMemo, memo } from "react"
 import { useAppDispatch, useAppSelector } from "@/store/hooks"
 import { toggleMobileMenu, setMobileMenuOpen } from "@/store/slices/uiSlice"
 import { logout } from "@/store/slices/authSlice"
-import ProfileDropdown from "@/components/navbar/ProfileDropdown"
-import NotificationDropdown from "@/components/navbar/NotificationDropdown"
+import ProfileDropdown from "./ProfileDropdown"
+import NotificationDropdown from "./NotificationDropdown"
+import { getAccessibleModules, renderModuleIcon } from "@/config/adminModules"
 import {
   FiMenu,
   FiX,
@@ -36,6 +37,23 @@ function HeaderComponent() {
   const isMenuOpen = useAppSelector((state) => state.ui.mobileMenuOpen)
   const { isAuthenticated, name, studentId, role } = useAppSelector((state) => state.auth)
   const [scrolled, setScrolled] = useState(false)
+  const [userPermissions, setUserPermissions] = useState<string[]>([])
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem("cbp-permissions")
+        setUserPermissions(raw ? JSON.parse(raw) : [])
+      } catch {
+        setUserPermissions([])
+      }
+    }
+  }, [])
+
+  const accessibleModules = useMemo(
+    () => getAccessibleModules(role || "", userPermissions),
+    [role, userPermissions]
+  )
 
   const handleLogout = useCallback(() => {
     dispatch(logout())
@@ -299,31 +317,52 @@ function HeaderComponent() {
                 Account & Workspace
               </span>
 
-              {normalizedRole === "ROLE_ADMIN" || normalizedRole === "ADMIN" ? (
-                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3 shadow-2xs">
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-900">Admin Portal</h4>
+              {normalizedRole === "ROLE_ADMIN" || normalizedRole === "ADMIN" || normalizedRole === "ROLE_VOLUNTEER" || normalizedRole === "VOLUNTEER" ? (
+                <div className="space-y-3">
+                  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3 shadow-2xs">
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-900">
+                        {normalizedRole.includes("ADMIN") ? "Admin Portal" : "Volunteer Workspace"}
+                      </h4>
+                    </div>
+                    <Link
+                      href={normalizedRole.includes("ADMIN") ? "/admin/dashboard" : "/volunteer/dashboard"}
+                      onClick={handleCloseMobileMenu}
+                      className="block w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold text-center uppercase tracking-wider transition shadow-sm active-press"
+                    >
+                      Open Dashboard
+                    </Link>
                   </div>
-                  <Link
-                    href="/admin/dashboard"
-                    onClick={handleCloseMobileMenu}
-                    className="block w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold text-center uppercase tracking-wider transition shadow-sm active-press"
-                  >
-                    Open Dashboard
-                  </Link>
-                </div>
-              ) : normalizedRole === "ROLE_VOLUNTEER" || normalizedRole === "VOLUNTEER" ? (
-                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3 shadow-2xs">
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-900">Volunteer Dashboard</h4>
-                  </div>
-                  <Link
-                    href="/volunteer/dashboard"
-                    onClick={handleCloseMobileMenu}
-                    className="block w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold text-center uppercase tracking-wider transition shadow-sm active-press"
-                  >
-                    Open Dashboard
-                  </Link>
+
+                  {accessibleModules.length > 0 && (
+                    <div className="pt-2">
+                      <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">
+                        Assigned Modules
+                      </span>
+                      <div className="grid grid-cols-1 gap-1.5">
+                        {accessibleModules.map((module) => {
+                          const isActive = pathname === module.route
+                          return (
+                            <Link
+                              key={module.id}
+                              href={module.route}
+                              onClick={handleCloseMobileMenu}
+                              className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition ${
+                                isActive
+                                  ? "bg-cyan-50 text-cyan-800 font-bold border border-cyan-200"
+                                  : "text-slate-700 bg-slate-50/70 hover:bg-slate-100 border border-slate-200/60"
+                              }`}
+                            >
+                              <span className="text-cyan-700 text-sm">
+                                {renderModuleIcon(module.iconName)}
+                              </span>
+                              <span className="truncate">{module.title}</span>
+                            </Link>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3 shadow-2xs">

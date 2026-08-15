@@ -4,7 +4,7 @@ import React from "react"
 import Link from "next/link"
 import { useAppSelector } from "@/store/hooks"
 import { useStudentProfile } from "../hooks/useStudentProfile"
-import ProfileAvatar from "@/components/navbar/ProfileAvatar"
+import { ProfileAvatar } from "@/components/ui/ProfileAvatar"
 import PageTransition from "@/components/animations/PageTransition"
 import {
   FiUser,

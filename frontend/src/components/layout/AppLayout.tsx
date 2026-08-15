@@ -1,5 +1,5 @@
 import React from "react"
-import SidebarNavigation from "@/components/navigation/SidebarNavigation"
+import SidebarNavigation from "./SidebarNavigation"
 
 export interface AppLayoutProps {
   children: React.ReactNode
