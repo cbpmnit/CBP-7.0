@@ -10,9 +10,9 @@ import com.cbp7.program.registration.repository.CbpRegistrationRepository;
 import com.cbp7.payment.entity.Payment;
 import com.cbp7.payment.entity.PaymentStatus;
 import com.cbp7.payment.repository.PaymentRepository;
-import com.cbp7.identity.profile.entity.Branch;
-import com.cbp7.identity.profile.entity.Course;
 import com.cbp7.identity.profile.entity.Gender;
+import com.cbp7.identity.profile.entity.ProgramLevel;
+import com.cbp7.identity.profile.entity.StudentType;
 import com.cbp7.identity.profile.entity.UserProfile;
 import com.cbp7.identity.profile.repository.UserProfileRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -107,9 +107,11 @@ class AdminStudentManagementControllerTest {
                         .sameAsWhatsapp(true)
                         .gender(Gender.FEMALE)
                         .dateOfBirth(LocalDate.of(2003, 5, 15))
-                        .course(Course.BTECH)
-                        .branch(Branch.COMPUTER_SCIENCE_ENGINEERING)
+                        .programLevel(ProgramLevel.UNDERGRADUATE)
+                        .department("Computer Science and Engineering")
                         .year(3)
+                        .studentType(StudentType.DAY_SCHOLAR)
+                        .address("123 Jaipur Road")
                         .hosteller(false)
                         .institute("MNIT Jaipur")
                         .build()));
@@ -126,9 +128,11 @@ class AdminStudentManagementControllerTest {
                 .email("alice@mnit.ac.in")
                 .phoneNumber("9876543210")
                 .institute("MNIT Jaipur")
-                .branch("Computer Engineering")
-                .course("B.Tech")
+                .department("Computer Science and Engineering")
+                .programLevel("UNDERGRADUATE")
                 .year(3)
+                .studentType("DAY_SCHOLAR")
+                .address("123 Jaipur Road")
                 .hosteller(false)
                 .registrationStatus(RegistrationStatus.REGISTERED)
                 .build();

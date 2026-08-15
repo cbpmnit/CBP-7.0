@@ -103,8 +103,8 @@ public class AdminStudentDirectoryAggregator {
             String effectiveName = identityResolver.resolveEffectiveName(user, reg, profile);
             String effectiveEmail = user.getEmail();
             String effectivePhone = identityResolver.resolveEffectivePhone(user, reg, profile);
-            String effectiveCourse = identityResolver.resolveEffectiveCourse(reg, profile);
-            String effectiveBranch = identityResolver.resolveEffectiveBranch(reg, profile);
+            String effectiveProgramLevel = identityResolver.resolveEffectiveProgramLevel(reg, profile);
+            String effectiveDepartment = identityResolver.resolveEffectiveDepartment(reg, profile);
             String effectiveYear = identityResolver.resolveEffectiveYear(reg, profile);
 
             String effectiveRegStatus = reg != null && reg.getRegistrationStatus() != null
@@ -120,7 +120,7 @@ public class AdminStudentDirectoryAggregator {
                 attended = attendanceRecordRepository.countByStudentIdAndStatus(effectiveStudentId, AttendanceStatus.PRESENT);
             }
             double attendancePct = attendanceCalculator.calculatePercentage(attended, totalSessions);
-            int profilePct = identityResolver.calculateBasicProfileCompletion(effectiveEmail, effectivePhone, effectiveBranch, effectiveCourse);
+            int profilePct = identityResolver.calculateBasicProfileCompletion(effectiveEmail, effectivePhone, effectiveDepartment, effectiveProgramLevel);
 
             LocalDateTime createdAt = user.getCreatedAt() != null ? user.getCreatedAt() : LocalDateTime.now();
 
@@ -130,8 +130,8 @@ public class AdminStudentDirectoryAggregator {
                     effectiveName,
                     effectiveEmail,
                     effectivePhone,
-                    effectiveCourse,
-                    effectiveBranch,
+                    effectiveProgramLevel,
+                    effectiveDepartment,
                     effectiveYear,
                     effectiveRegStatus,
                     effectivePayStatus,
@@ -165,8 +165,8 @@ public class AdminStudentDirectoryAggregator {
             double attendancePct = attendanceCalculator.calculatePercentage(attended, totalSessions);
 
             int profilePct = (r.getPhoneNumber() != null && !r.getPhoneNumber().isBlank() ? 25 : 0)
-                    + (r.getBranch() != null && !r.getBranch().isBlank() ? 25 : 0)
-                    + (r.getCourse() != null && !r.getCourse().isBlank() ? 25 : 0)
+                    + (r.getDepartment() != null && !r.getDepartment().isBlank() ? 25 : 0)
+                    + (r.getProgramLevel() != null && !r.getProgramLevel().isBlank() ? 25 : 0)
                     + (r.getEmail() != null && !r.getEmail().isBlank() ? 25 : 0);
 
             allItems.add(studentMapper.toListItemResponse(
@@ -175,8 +175,8 @@ public class AdminStudentDirectoryAggregator {
                     sName.trim(),
                     r.getEmail() != null ? r.getEmail() : "-",
                     r.getPhoneNumber() != null ? r.getPhoneNumber() : "-",
-                    r.getCourse() != null ? r.getCourse() : "-",
-                    r.getBranch() != null ? r.getBranch() : "-",
+                    r.getProgramLevel() != null ? r.getProgramLevel() : "-",
+                    r.getDepartment() != null ? r.getDepartment() : "-",
                     r.getYear() != null ? r.getYear().toString() : "-",
                     r.getRegistrationStatus() != null ? r.getRegistrationStatus().name() : "REGISTERED",
                     payStatus,

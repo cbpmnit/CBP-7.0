@@ -12,7 +12,7 @@ public class AdminStudentCsvExporter {
 
     private static final List<String> HEADERS = List.of(
             "Student ID", "Full Name", "Email", "Phone",
-            "Course", "Branch", "Year", "Registration Status",
+            "Program Level", "Department", "Year", "Registration Status",
             "Payment Status", "Attendance (%)", "Profile Completion (%)"
     );
 
@@ -24,8 +24,8 @@ public class AdminStudentCsvExporter {
                     s.name() != null ? s.name() : "",
                     s.email() != null ? s.email() : "",
                     s.phone() != null ? s.phone() : "",
-                    s.course() != null ? s.course() : "",
-                    s.branch() != null ? s.branch() : "",
+                    s.programLevel() != null ? s.programLevel() : "",
+                    s.department() != null ? s.department() : "",
                     s.year() != null ? s.year() : "",
                     s.registrationStatus() != null ? s.registrationStatus() : "",
                     s.paymentStatus() != null ? s.paymentStatus() : "",

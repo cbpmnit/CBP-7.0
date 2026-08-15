@@ -12,9 +12,9 @@ import com.cbp7.program.registration.repository.CbpRegistrationRepository;
 import com.cbp7.program.certificate.repository.CertificateRepository;
 import com.cbp7.program.certificate.service.CertificateService;
 import com.cbp7.platform.notification.events.NotificationEventPublisher;
-import com.cbp7.identity.profile.entity.Branch;
-import com.cbp7.identity.profile.entity.Course;
 import com.cbp7.identity.profile.entity.Gender;
+import com.cbp7.identity.profile.entity.ProgramLevel;
+import com.cbp7.identity.profile.entity.StudentType;
 import com.cbp7.identity.profile.entity.UserProfile;
 import com.cbp7.identity.profile.repository.UserProfileRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -132,10 +132,13 @@ class CertificateControllerTest {
                 .gender(Gender.MALE)
                 .phoneNumber("9999999999")
                 .sameAsWhatsapp(true)
-                .course(Course.BTECH)
-                .branch(Branch.COMPUTER_SCIENCE_ENGINEERING)
+                .programLevel(ProgramLevel.UNDERGRADUATE)
+                .department("Computer Science and Engineering")
                 .year(4)
+                .studentType(StudentType.HOSTELLER)
+                .hostelNumber("H1")
                 .hosteller(true)
+                .roomNumber("H-101")
                 .build());
 
         cbpRegistrationRepository.findByUserStudentIdIgnoreCase("2024certstudent01")
@@ -150,10 +153,13 @@ class CertificateControllerTest {
                         .email("certstudent@mnit.ac.in")
                         .phoneNumber("9999999999")
                         .institute("MNIT")
-                        .course("B.Tech")
-                        .branch("CSE")
+                        .programLevel("UNDERGRADUATE")
+                        .department("Computer Science and Engineering")
                         .year(4)
+                        .studentType("HOSTELLER")
+                        .hostelNumber("H1")
                         .hosteller(true)
+                        .roomNumber("H-101")
                         .build()));
 
         adminToken = jwtProvider.generateToken(adminUser);

@@ -64,10 +64,10 @@ public class StudentProfilePdfGenerator {
             t2.setSpacingAfter(15);
 
             addCellPair(t2, "Institute:", details.profile() != null ? details.profile().institute() : "MNIT Jaipur", fontBold, fontRegular);
-            addCellPair(t2, "Course:", details.profile() != null ? details.profile().course() : "-", fontBold, fontRegular);
-            addCellPair(t2, "Branch:", details.profile() != null ? details.profile().branch() : "-", fontBold, fontRegular);
+            addCellPair(t2, "Program Level:", details.profile() != null ? details.profile().programLevel() : "-", fontBold, fontRegular);
+            addCellPair(t2, "Department:", details.profile() != null ? details.profile().department() : "-", fontBold, fontRegular);
             addCellPair(t2, "Academic Year:", details.profile() != null ? details.profile().year() : "-", fontBold, fontRegular);
-            addCellPair(t2, "Hosteller:", details.profile() != null && Boolean.TRUE.equals(details.profile().hosteller()) ? "Yes" : "No", fontBold, fontRegular);
+            addCellPair(t2, "Student Type:", details.profile() != null ? details.profile().studentType() : "-", fontBold, fontRegular);
             addCellPair(t2, "Room / Hostel:", details.profile() != null ? details.profile().roomNumber() : "-", fontBold, fontRegular);
             document.add(t2);
 

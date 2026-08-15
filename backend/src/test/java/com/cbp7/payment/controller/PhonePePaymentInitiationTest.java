@@ -11,9 +11,9 @@ import com.cbp7.payment.entity.PaymentMode;
 import com.cbp7.payment.entity.PaymentStatus;
 import com.cbp7.payment.repository.PaymentRepository;
 import com.cbp7.identity.profile.dto.request.CreateProfileRequest;
-import com.cbp7.identity.profile.entity.Branch;
-import com.cbp7.identity.profile.entity.Course;
 import com.cbp7.identity.profile.entity.Gender;
+import com.cbp7.identity.profile.entity.ProgramLevel;
+import com.cbp7.identity.profile.entity.StudentType;
 import com.cbp7.payment.config.PhonePeConfig;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -108,8 +108,8 @@ public class PhonePePaymentInitiationTest {
     private void createProfile(String token) throws Exception {
         CreateProfileRequest request = new CreateProfileRequest(
                 "Parv", null, "Agrawal", null, Gender.MALE, LocalDate.of(2002, 5, 15),
-                "9876543210", true, null, "MNIT Jaipur", Course.BTECH,
-                Branch.COMPUTER_SCIENCE_ENGINEERING, 3, "A", true, "H-101", "Jaipur", "Rajasthan"
+                "9876543210", true, null, "MNIT Jaipur", ProgramLevel.UNDERGRADUATE,
+                "Computer Science and Engineering", 3, "A", StudentType.HOSTELLER, null, "H-10", true, "H-101", "Jaipur", "Rajasthan"
         );
         mockMvc.perform(post("/api/v1/profile")
                 .header("Authorization", "Bearer " + token)

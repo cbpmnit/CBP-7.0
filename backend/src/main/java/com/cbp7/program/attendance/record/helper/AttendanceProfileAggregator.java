@@ -45,7 +45,7 @@ public class AttendanceProfileAggregator {
         String name = "";
         String email = "";
         String phoneNumber = "";
-        String branch = "N/A";
+        String department = "N/A";
         Integer year = 1;
         String registrationDate = "N/A";
         UUID userId = null;
@@ -56,7 +56,7 @@ public class AttendanceProfileAggregator {
             name = (reg.getFirstName() != null ? reg.getFirstName() : "") + " " + (reg.getLastName() != null ? reg.getLastName() : "");
             email = reg.getEmail();
             phoneNumber = reg.getPhoneNumber();
-            branch = reg.getBranch();
+            department = reg.getDepartment();
             year = reg.getYear();
             registrationDate = reg.getCreatedAt() != null ? reg.getCreatedAt().toString() : "N/A";
             if (reg.getUser() != null) {
@@ -123,7 +123,7 @@ public class AttendanceProfileAggregator {
                 studentId,
                 email,
                 phoneNumber,
-                branch,
+                department,
                 year,
                 registrationDate,
                 paymentStatus,

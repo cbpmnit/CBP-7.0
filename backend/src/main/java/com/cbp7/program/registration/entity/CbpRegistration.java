@@ -2,7 +2,6 @@ package com.cbp7.program.registration.entity;
 
 import com.cbp7.identity.auth.entity.BaseEntity;
 import com.cbp7.identity.auth.entity.User;
-import com.cbp7.program.registration.entity.RegistrationStatus;
 import com.cbp7.identity.profile.entity.UserProfile;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -64,17 +63,26 @@ public class CbpRegistration extends BaseEntity {
     @Column(nullable = false)
     private String institute;
 
-    @Column(nullable = false)
-    private String course;
+    @Column(name = "program_level", nullable = false)
+    private String programLevel;
 
-    @Column(nullable = false)
-    private String branch;
+    @Column(name = "department", nullable = false)
+    private String department;
 
     @Column(nullable = false)
     private Integer year;
 
     @Column
     private String section;
+
+    @Column(name = "student_type")
+    private String studentType;
+
+    @Column
+    private String address;
+
+    @Column(name = "hostel_number")
+    private String hostelNumber;
 
     @Column(nullable = false)
     private Boolean hosteller;

@@ -3,6 +3,7 @@ package com.cbp7.identity.profile;
 import com.cbp7.identity.auth.entity.User;
 import com.cbp7.identity.profile.dto.request.CreateProfileRequest;
 import com.cbp7.identity.profile.dto.response.ProfileResponse;
+import com.cbp7.identity.profile.entity.StudentType;
 import com.cbp7.identity.profile.entity.UserProfile;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -23,6 +24,9 @@ public class ProfileMapper {
             fullName = profile.getUser().getName();
         }
 
+        StudentType type = resolveStudentType(profile.getStudentType(), profile.getHosteller());
+        boolean isHosteller = type == StudentType.HOSTELLER;
+
         return new ProfileResponse(
                 fullName,
                 studentId,
@@ -37,11 +41,14 @@ public class ProfileMapper {
                 profile.getSameAsWhatsapp(),
                 profile.getWhatsappNumber(),
                 profile.getInstitute(),
-                profile.getCourse(),
-                profile.getBranch(),
+                profile.getProgramLevel(),
+                profile.getDepartment(),
                 profile.getYear(),
                 profile.getSection(),
-                profile.getHosteller(),
+                type,
+                profile.getAddress(),
+                profile.getHostelNumber(),
+                isHosteller,
                 profile.getRoomNumber(),
                 profile.getCity(),
                 profile.getState()
@@ -49,6 +56,9 @@ public class ProfileMapper {
     }
 
     public UserProfile toUserProfile(CreateProfileRequest request, User user, String whatsappNumber, String institute) {
+        StudentType type = resolveStudentType(request.studentType(), request.hosteller());
+        boolean isHosteller = type == StudentType.HOSTELLER;
+
         return UserProfile.builder()
                 .user(user)
                 .firstName(request.firstName().trim())
@@ -61,15 +71,25 @@ public class ProfileMapper {
                 .sameAsWhatsapp(Boolean.TRUE.equals(request.sameAsWhatsapp()))
                 .whatsappNumber(whatsappNumber)
                 .institute(institute)
-                .course(request.course())
-                .branch(request.branch())
+                .programLevel(request.programLevel())
+                .department(request.department().trim())
                 .year(request.year())
                 .section(request.section() != null ? request.section().trim() : null)
-                .hosteller(request.hosteller())
-                .roomNumber(Boolean.TRUE.equals(request.hosteller()) ? request.roomNumber().trim() : null)
+                .studentType(type)
+                .address(type == StudentType.DAY_SCHOLAR && request.address() != null ? request.address().trim() : null)
+                .hostelNumber(isHosteller && request.hostelNumber() != null ? request.hostelNumber().trim() : null)
+                .hosteller(isHosteller)
+                .roomNumber(isHosteller && request.roomNumber() != null ? request.roomNumber().trim() : null)
                 .city(request.city() != null ? request.city().trim() : null)
                 .state(request.state() != null ? request.state().trim() : null)
                 .build();
+    }
+
+    public StudentType resolveStudentType(StudentType inputType, Boolean hosteller) {
+        if (inputType != null) {
+            return inputType;
+        }
+        return Boolean.TRUE.equals(hosteller) ? StudentType.HOSTELLER : StudentType.DAY_SCHOLAR;
     }
 
     private String buildFullName(String first, String middle, String last) {

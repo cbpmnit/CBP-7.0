@@ -1,3 +1,6 @@
+export type ProgramLevel = "UNDERGRADUATE" | "POSTGRADUATE" | "RESEARCH"
+export type StudentType = "DAY_SCHOLAR" | "HOSTELLER"
+
 export interface UserProfileResponse {
   id?: string
   name?: string
@@ -13,10 +16,13 @@ export interface UserProfileResponse {
   sameAsWhatsapp: boolean
   whatsappNumber?: string | null
   institute: string
-  course: string
-  branch: string
+  programLevel: ProgramLevel
+  department: string
   year: number
   section?: string | null
+  studentType: StudentType
+  address?: string | null
+  hostelNumber?: string | null
   hosteller: boolean
   roomNumber?: string | null
   city?: string | null
@@ -36,10 +42,13 @@ export interface UserProfileRequest {
   sameAsWhatsapp: boolean
   whatsappNumber?: string | null
   institute: string
-  course: string
-  branch: string
+  programLevel: ProgramLevel
+  department: string
   year: number
   section?: string | null
+  studentType: StudentType
+  address?: string | null
+  hostelNumber?: string | null
   hosteller: boolean
   roomNumber?: string | null
   city?: string | null

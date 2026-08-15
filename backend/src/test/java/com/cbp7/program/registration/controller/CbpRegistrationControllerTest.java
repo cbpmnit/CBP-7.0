@@ -9,9 +9,9 @@ import com.cbp7.program.registration.entity.RegistrationStatus;
 import com.cbp7.program.registration.repository.CbpRegistrationRepository;
 import com.cbp7.identity.profile.dto.request.CreateProfileRequest;
 import com.cbp7.identity.profile.dto.request.UpdateProfileRequest;
-import com.cbp7.identity.profile.entity.Branch;
-import com.cbp7.identity.profile.entity.Course;
 import com.cbp7.identity.profile.entity.Gender;
+import com.cbp7.identity.profile.entity.ProgramLevel;
+import com.cbp7.identity.profile.entity.StudentType;
 import com.cbp7.identity.profile.entity.ProfileCompletion;
 import com.cbp7.identity.profile.entity.UserProfile;
 import com.cbp7.identity.profile.repository.ProfileCompletionRepository;
@@ -103,8 +103,8 @@ public class CbpRegistrationControllerTest {
     private void createCompletedProfile(String token) throws Exception {
         CreateProfileRequest request = new CreateProfileRequest(
                 "Parv", null, "Agrawal", null, Gender.MALE, LocalDate.of(2002, 5, 15),
-                "9876543210", true, null, "MNIT Jaipur", Course.BTECH,
-                Branch.COMPUTER_SCIENCE_ENGINEERING, 3, "A", true, "H-101", "Jaipur", "Rajasthan"
+                "9876543210", true, null, "MNIT Jaipur", ProgramLevel.UNDERGRADUATE,
+                "Computer Science and Engineering", 3, "A", StudentType.HOSTELLER, null, "H-10", true, "H-101", "Jaipur", "Rajasthan"
         );
         mockMvc.perform(post("/api/v1/profile")
                 .header("Authorization", "Bearer " + token)
@@ -195,9 +195,11 @@ public class CbpRegistrationControllerTest {
                 .phoneNumber("9876543210")
                 .sameAsWhatsapp(true)
                 .institute("MNIT Jaipur")
-                .course(Course.BTECH)
-                .branch(Branch.COMPUTER_SCIENCE_ENGINEERING)
+                .programLevel(ProgramLevel.UNDERGRADUATE)
+                .department("Computer Science and Engineering")
                 .year(3)
+                .studentType(StudentType.DAY_SCHOLAR)
+                .address("123 Tonk Road")
                 .hosteller(false)
                 .build();
         userProfileRepository.save(userProfile);
@@ -287,7 +289,7 @@ public class CbpRegistrationControllerTest {
                 .andExpect(jsonPath("$.data.email", equalTo("student1008@mnit.ac.in")))
                 .andExpect(jsonPath("$.data.firstName", equalTo("Parv")))
                 .andExpect(jsonPath("$.data.lastName", equalTo("Agrawal")))
-                .andExpect(jsonPath("$.data.branch", equalTo("COMPUTER_SCIENCE_ENGINEERING")))
+                .andExpect(jsonPath("$.data.department", equalTo("Computer Science and Engineering")))
                 .andReturn();
 
         printResponse("FETCH REGISTRATION ME RESPONSE", result);
@@ -324,8 +326,8 @@ public class CbpRegistrationControllerTest {
         // Update profile
         UpdateProfileRequest updateRequest = new UpdateProfileRequest(
                 "ParvUpdated", null, "AgrawalUpdated", null, Gender.MALE, LocalDate.of(2002, 5, 15),
-                "9876543210", true, null, "MNIT Jaipur", Course.BTECH,
-                Branch.ARTIFICIAL_INTELLIGENCE_DATA_SCIENCE, 4, "B", true, "H-202", "Mumbai", "Maharashtra"
+                "9876543210", true, null, "MNIT Jaipur", ProgramLevel.POSTGRADUATE,
+                "Artificial Intelligence and Data Science", 4, "B", StudentType.HOSTELLER, null, "H-12", true, "H-202", "Mumbai", "Maharashtra"
         );
         mockMvc.perform(put("/api/v1/profile")
                 .header("Authorization", "Bearer " + token)
@@ -339,7 +341,7 @@ public class CbpRegistrationControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.firstName", equalTo("ParvUpdated")))
                 .andExpect(jsonPath("$.data.lastName", equalTo("AgrawalUpdated")))
-                .andExpect(jsonPath("$.data.branch", equalTo("COMPUTER_SCIENCE_ENGINEERING"))) // Unchanged snapshot
+                .andExpect(jsonPath("$.data.department", equalTo("Computer Science and Engineering"))) // Unchanged snapshot
                 .andExpect(jsonPath("$.data.city", equalTo("Jaipur"))) // Unchanged snapshot
                 .andExpect(jsonPath("$.data.roomNumber", equalTo("H-101"))) // Unchanged snapshot
                 .andReturn();

@@ -46,22 +46,22 @@ public class StudentIdentityResolver {
         return "-";
     }
 
-    public String resolveEffectiveCourse(CbpRegistration reg, UserProfile profile) {
-        if (reg != null && reg.getCourse() != null && !reg.getCourse().isBlank()) {
-            return reg.getCourse();
+    public String resolveEffectiveProgramLevel(CbpRegistration reg, UserProfile profile) {
+        if (reg != null && reg.getProgramLevel() != null && !reg.getProgramLevel().isBlank()) {
+            return reg.getProgramLevel();
         }
-        if (profile != null && profile.getCourse() != null) {
-            return profile.getCourse().name();
+        if (profile != null && profile.getProgramLevel() != null) {
+            return profile.getProgramLevel().name();
         }
         return "-";
     }
 
-    public String resolveEffectiveBranch(CbpRegistration reg, UserProfile profile) {
-        if (reg != null && reg.getBranch() != null && !reg.getBranch().isBlank()) {
-            return reg.getBranch();
+    public String resolveEffectiveDepartment(CbpRegistration reg, UserProfile profile) {
+        if (reg != null && reg.getDepartment() != null && !reg.getDepartment().isBlank()) {
+            return reg.getDepartment();
         }
-        if (profile != null && profile.getBranch() != null) {
-            return profile.getBranch().name();
+        if (profile != null && profile.getDepartment() != null) {
+            return profile.getDepartment();
         }
         return "-";
     }
@@ -76,10 +76,10 @@ public class StudentIdentityResolver {
         return "-";
     }
 
-    public int calculateBasicProfileCompletion(String email, String phone, String branch, String course) {
+    public int calculateBasicProfileCompletion(String email, String phone, String department, String programLevel) {
         return (phone != null && !"-".equals(phone) ? 25 : 0)
-                + (branch != null && !"-".equals(branch) ? 25 : 0)
-                + (course != null && !"-".equals(course) ? 25 : 0)
+                + (department != null && !"-".equals(department) ? 25 : 0)
+                + (programLevel != null && !"-".equals(programLevel) ? 25 : 0)
                 + (email != null && !email.isBlank() ? 25 : 0);
     }
 }

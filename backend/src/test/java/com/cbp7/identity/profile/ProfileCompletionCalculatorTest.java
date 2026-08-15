@@ -1,10 +1,10 @@
 package com.cbp7.identity.profile;
 
 import com.cbp7.identity.auth.entity.User;
-import com.cbp7.identity.profile.entity.Branch;
-import com.cbp7.identity.profile.entity.Course;
 import com.cbp7.identity.profile.entity.Gender;
 import com.cbp7.identity.profile.entity.ProfileCompletion;
+import com.cbp7.identity.profile.entity.ProgramLevel;
+import com.cbp7.identity.profile.entity.StudentType;
 import com.cbp7.identity.profile.entity.UserProfile;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -44,9 +44,11 @@ class ProfileCompletionCalculatorTest {
                 .dateOfBirth(LocalDate.of(2002, 5, 15))
                 .phoneNumber("9876543210")
                 .institute("MNIT Jaipur")
-                .course(Course.BTECH)
-                .branch(Branch.COMPUTER_SCIENCE_ENGINEERING)
+                .programLevel(ProgramLevel.UNDERGRADUATE)
+                .department("Computer Science and Engineering")
                 .year(3)
+                .studentType(StudentType.DAY_SCHOLAR)
+                .address("123 Tonk Road, Jaipur")
                 .hosteller(false)
                 .build();
 
@@ -67,13 +69,15 @@ class ProfileCompletionCalculatorTest {
                 .phoneNumber("9876543210")
                 .sameAsWhatsapp(true)
                 .institute("MNIT Jaipur")
-                .course(Course.BTECH)
-                .branch(Branch.COMPUTER_SCIENCE_ENGINEERING)
+                .programLevel(ProgramLevel.UNDERGRADUATE)
+                .department("Computer Science and Engineering")
                 .year(3)
                 .section("A")
                 .city("Jaipur")
                 .state("Rajasthan")
                 .profilePhotoUrl("https://example.com/photo.jpg")
+                .studentType(StudentType.HOSTELLER)
+                .hostelNumber("H10")
                 .hosteller(true)
                 .roomNumber("H-101")
                 .build();
@@ -95,13 +99,15 @@ class ProfileCompletionCalculatorTest {
                 .phoneNumber("9876543210")
                 .sameAsWhatsapp(true)
                 .institute("MNIT Jaipur")
-                .course(Course.BTECH)
-                .branch(Branch.COMPUTER_SCIENCE_ENGINEERING)
+                .programLevel(ProgramLevel.UNDERGRADUATE)
+                .department("Computer Science and Engineering")
                 .year(3)
                 .section("A")
                 .city("Jaipur")
                 .state("Rajasthan")
                 .profilePhotoUrl("https://example.com/photo.jpg")
+                .studentType(StudentType.DAY_SCHOLAR)
+                .address("123 Malviya Nagar, Jaipur")
                 .hosteller(false)
                 .build();
 

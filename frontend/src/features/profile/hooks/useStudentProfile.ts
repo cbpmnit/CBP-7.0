@@ -5,7 +5,7 @@ import { useAppDispatch, useAppSelector } from "@/store/hooks"
 import { updateUserIdentity } from "@/store/slices/authSlice"
 import { validateAndSyncSession } from "@/features/auth/services/authSync"
 import { profileApi } from "../services/profileApi"
-import { UserProfileRequest } from "../types"
+import { UserProfileRequest, StudentType, ProgramLevel } from "../types"
 import { ApiError } from "@/utils/api"
 
 export function useStudentProfile() {
@@ -26,10 +26,32 @@ export function useStudentProfile() {
     identity: true,
     academic: true,
     personal: true,
-    hostel: true,
+    residence: true,
   })
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    studentId: string
+    firstName: string
+    middleName: string
+    lastName: string
+    profilePhotoUrl: string
+    gender: string
+    dateOfBirth: string
+    phoneNumber: string
+    sameAsWhatsapp: boolean
+    whatsappNumber: string
+    institute: string
+    programLevel: ProgramLevel
+    department: string
+    year: number
+    section: string
+    studentType: StudentType
+    address: string
+    hostelNumber: string
+    roomNumber: string
+    city: string
+    state: string
+  }>({
     studentId: auth.studentId || "",
     firstName: "",
     middleName: "",
@@ -41,11 +63,13 @@ export function useStudentProfile() {
     sameAsWhatsapp: true,
     whatsappNumber: "",
     institute: "MNIT Jaipur",
-    course: "BTECH",
-    branch: "COMPUTER_SCIENCE_ENGINEERING",
+    programLevel: "UNDERGRADUATE",
+    department: "Computer Science and Engineering",
     year: 1,
     section: "",
-    hosteller: false,
+    studentType: "DAY_SCHOLAR",
+    address: "",
+    hostelNumber: "",
     roomNumber: "",
     city: "",
     state: "",
@@ -80,6 +104,11 @@ export function useStudentProfile() {
         profileExists = true
         setHasProfile(true)
         const data = profData.value
+        const resolvedStudentType: StudentType = data.studentType
+          ? data.studentType
+          : data.hosteller
+          ? "HOSTELLER"
+          : "DAY_SCHOLAR"
 
         if (!hasInitializedRef.current) {
           setFormData((prev) => ({
@@ -95,11 +124,13 @@ export function useStudentProfile() {
             sameAsWhatsapp: data.sameAsWhatsapp !== undefined ? Boolean(data.sameAsWhatsapp) : true,
             whatsappNumber: data.whatsappNumber || "",
             institute: data.institute || "MNIT Jaipur",
-            course: data.course || "BTECH",
-            branch: data.branch || "COMPUTER_SCIENCE_ENGINEERING",
+            programLevel: data.programLevel || ((data as any).course as ProgramLevel) || "UNDERGRADUATE",
+            department: data.department || (data as any).branch || "Computer Science and Engineering",
             year: data.year || 1,
             section: data.section || "",
-            hosteller: Boolean(data.hosteller),
+            studentType: resolvedStudentType,
+            address: data.address || "",
+            hostelNumber: data.hostelNumber || "",
             roomNumber: data.roomNumber || "",
             city: data.city || "",
             state: data.state || "",
@@ -152,7 +183,7 @@ export function useStudentProfile() {
     fetchProfileData()
   }, [fetchProfileData])
 
-  const toggleSection = (sec: "identity" | "academic" | "personal" | "hostel") => {
+  const toggleSection = (sec: "identity" | "academic" | "personal" | "residence") => {
     setOpenSections((prev) => ({ ...prev, [sec]: !prev[sec] }))
   }
 
@@ -164,6 +195,8 @@ export function useStudentProfile() {
       type === "checkbox"
         ? (e.target as HTMLInputElement).checked
         : type === "number"
+        ? parseInt(value, 10) || 1
+        : name === "year"
         ? parseInt(value, 10) || 1
         : value
 
@@ -193,6 +226,8 @@ export function useStudentProfile() {
       ? formData.whatsappNumber.trim()
       : null
 
+    const isHosteller = formData.studentType === "HOSTELLER"
+
     return {
       firstName: formData.firstName.trim(),
       middleName: formData.middleName && formData.middleName.trim() ? formData.middleName.trim() : null,
@@ -204,12 +239,15 @@ export function useStudentProfile() {
       sameAsWhatsapp: sameWhatsapp,
       whatsappNumber: whatsapp,
       institute: formData.institute && formData.institute.trim() ? formData.institute.trim() : "MNIT Jaipur",
-      course: formData.course,
-      branch: formData.branch,
+      programLevel: formData.programLevel || "UNDERGRADUATE",
+      department: formData.department || "Computer Science and Engineering",
       year: Number(formData.year) || 1,
       section: formData.section && formData.section.trim() ? formData.section.trim() : null,
-      hosteller: Boolean(formData.hosteller),
-      roomNumber: formData.hosteller && formData.roomNumber && formData.roomNumber.trim() ? formData.roomNumber.trim() : null,
+      studentType: formData.studentType,
+      address: !isHosteller && formData.address && formData.address.trim() ? formData.address.trim() : null,
+      hostelNumber: isHosteller && formData.hostelNumber && formData.hostelNumber.trim() ? formData.hostelNumber.trim() : null,
+      hosteller: isHosteller,
+      roomNumber: isHosteller && formData.roomNumber && formData.roomNumber.trim() ? formData.roomNumber.trim() : null,
       city: formData.city && formData.city.trim() ? formData.city.trim() : null,
       state: formData.state && formData.state.trim() ? formData.state.trim() : null,
     }
@@ -236,8 +274,22 @@ export function useStudentProfile() {
       }
     }
 
-    if (formData.hosteller && (!formData.roomNumber || !formData.roomNumber.trim())) {
-      newErrors.roomNumber = "Room number is required for hostellers"
+    const numericYear = Number(formData.year)
+    if (!numericYear || numericYear < 1 || numericYear > 5) {
+      newErrors.year = "Year of study must be between 1 and 5"
+    }
+
+    if (formData.studentType === "DAY_SCHOLAR") {
+      if (!formData.address || !formData.address.trim()) {
+        newErrors.address = "Address is required for Day Scholars"
+      }
+    } else if (formData.studentType === "HOSTELLER") {
+      if (!formData.hostelNumber || !formData.hostelNumber.trim()) {
+        newErrors.hostelNumber = "Hostel number is required for Hostellers"
+      }
+      if (!formData.roomNumber || !formData.roomNumber.trim()) {
+        newErrors.roomNumber = "Room number is required for Hostellers"
+      }
     }
 
     if (Object.keys(newErrors).length > 0) {

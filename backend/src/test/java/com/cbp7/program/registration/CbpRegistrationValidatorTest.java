@@ -7,9 +7,9 @@ import com.cbp7.common.exception.ProfileIncompleteException;
 import com.cbp7.common.exception.RegistrationAlreadyExistsException;
 import com.cbp7.common.exception.UnauthorizedException;
 import com.cbp7.identity.profile.ProfileEligibilityValidator;
-import com.cbp7.identity.profile.entity.Branch;
-import com.cbp7.identity.profile.entity.Course;
 import com.cbp7.identity.profile.entity.Gender;
+import com.cbp7.identity.profile.entity.ProgramLevel;
+import com.cbp7.identity.profile.entity.StudentType;
 import com.cbp7.identity.profile.entity.UserProfile;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -65,9 +65,11 @@ class CbpRegistrationValidatorTest {
                 .dateOfBirth(LocalDate.of(2002, 5, 15))
                 .phoneNumber("9876543210")
                 .institute("MNIT Jaipur")
-                .course(Course.BTECH)
-                .branch(Branch.COMPUTER_SCIENCE_ENGINEERING)
+                .programLevel(ProgramLevel.UNDERGRADUATE)
+                .department("Computer Science and Engineering")
                 .year(3)
+                .studentType(StudentType.DAY_SCHOLAR)
+                .address("123 Tonk Road, Jaipur")
                 .hosteller(false)
                 .build();
     }

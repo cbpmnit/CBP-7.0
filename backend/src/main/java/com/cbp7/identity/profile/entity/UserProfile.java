@@ -65,12 +65,11 @@ public class UserProfile extends BaseEntity {
     private String institute = "MNIT Jaipur";
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private Course course;
+    @Column(name = "program_level", nullable = false)
+    private ProgramLevel programLevel;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private Branch branch;
+    @Column(name = "department", nullable = false)
+    private String department;
 
     @Column(nullable = false)
     private Integer year;
@@ -78,8 +77,20 @@ public class UserProfile extends BaseEntity {
     @Column
     private String section;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "student_type", nullable = false)
+    @Builder.Default
+    private StudentType studentType = StudentType.DAY_SCHOLAR;
+
+    @Column
+    private String address;
+
+    @Column(name = "hostel_number")
+    private String hostelNumber;
+
     @Column(nullable = false)
-    private Boolean hosteller;
+    @Builder.Default
+    private Boolean hosteller = false;
 
     @Column(name = "room_number")
     private String roomNumber;

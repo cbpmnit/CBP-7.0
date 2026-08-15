@@ -13,9 +13,9 @@ import com.cbp7.common.exception.ProfileIncompleteException;
 import com.cbp7.common.exception.ResourceNotFoundException;
 import com.cbp7.common.exception.UnauthorizedException;
 import com.cbp7.identity.profile.ProfileEligibilityValidator;
-import com.cbp7.identity.profile.entity.Branch;
-import com.cbp7.identity.profile.entity.Course;
 import com.cbp7.identity.profile.entity.Gender;
+import com.cbp7.identity.profile.entity.ProgramLevel;
+import com.cbp7.identity.profile.entity.StudentType;
 import com.cbp7.identity.profile.entity.UserProfile;
 import com.cbp7.identity.profile.repository.UserProfileRepository;
 import jakarta.persistence.EntityManager;
@@ -90,10 +90,12 @@ class CbpRegistrationServiceTest {
                 .dateOfBirth(LocalDate.of(2002, 5, 15))
                 .phoneNumber("9876543210")
                 .institute("MNIT Jaipur")
-                .course(Course.BTECH)
-                .branch(Branch.COMPUTER_SCIENCE_ENGINEERING)
+                .programLevel(ProgramLevel.UNDERGRADUATE)
+                .department("Computer Science and Engineering")
                 .year(3)
                 .section("A")
+                .studentType(StudentType.HOSTELLER)
+                .hostelNumber("H-10")
                 .hosteller(true)
                 .roomNumber("H-101")
                 .city("Jaipur")
@@ -130,7 +132,7 @@ class CbpRegistrationServiceTest {
         assertEquals("student@mnit.ac.in", saved.getEmail());
         assertEquals("Parv", saved.getFirstName());
         assertEquals("Agrawal", saved.getLastName());
-        assertEquals("COMPUTER_SCIENCE_ENGINEERING", saved.getBranch());
+        assertEquals("Computer Science and Engineering", saved.getDepartment());
         assertEquals(RegistrationStatus.PAYMENT_PENDING, saved.getRegistrationStatus());
     }
 
@@ -147,8 +149,8 @@ class CbpRegistrationServiceTest {
                 .lastName("Agrawal")
                 .phoneNumber("9876543210")
                 .institute("MNIT Jaipur")
-                .course("BTECH")
-                .branch("COMPUTER_SCIENCE_ENGINEERING")
+                .programLevel("UNDERGRADUATE")
+                .department("Computer Science and Engineering")
                 .year(3)
                 .hosteller(true)
                 .build();
@@ -159,7 +161,7 @@ class CbpRegistrationServiceTest {
 
         assertNotNull(response);
         assertEquals("CBP7000010", response.registrationId());
-        verify(cbpRegistrationRepository, never()).save(any(CbpRegistration.class));
+        verify(cbpRegistrationRepository, never()).save(any());
     }
 
     @Test
@@ -205,8 +207,8 @@ class CbpRegistrationServiceTest {
                 .lastName("Agrawal")
                 .phoneNumber("9876543210")
                 .institute("MNIT Jaipur")
-                .course("BTECH")
-                .branch("COMPUTER_SCIENCE_ENGINEERING")
+                .programLevel("UNDERGRADUATE")
+                .department("Computer Science and Engineering")
                 .year(3)
                 .hosteller(true)
                 .roomNumber("H-101")

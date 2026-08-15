@@ -60,9 +60,16 @@ public class ProfileServiceImpl implements ProfileService {
             throw new DuplicateResourceException("Profile already exists for current user");
         }
 
+        com.cbp7.identity.profile.entity.StudentType studentType = profileMapper.resolveStudentType(request.studentType(), request.hosteller());
+
         profileValidator.validateProfileFields(
                 request.dateOfBirth(),
-                request.hosteller(),
+                request.programLevel(),
+                request.department(),
+                request.year(),
+                studentType,
+                request.address(),
+                request.hostelNumber(),
                 request.roomNumber(),
                 request.phoneNumber(),
                 request.sameAsWhatsapp(),
@@ -91,9 +98,16 @@ public class ProfileServiceImpl implements ProfileService {
         UserProfile profile = findUserProfileForUser(user)
                 .orElseThrow(() -> new ResourceNotFoundException("Profile not found for current user"));
 
+        com.cbp7.identity.profile.entity.StudentType studentType = profileMapper.resolveStudentType(request.studentType(), request.hosteller());
+
         profileValidator.validateProfileFields(
                 request.dateOfBirth(),
-                request.hosteller(),
+                request.programLevel(),
+                request.department(),
+                request.year(),
+                studentType,
+                request.address(),
+                request.hostelNumber(),
                 request.roomNumber(),
                 request.phoneNumber(),
                 request.sameAsWhatsapp(),
@@ -219,6 +233,9 @@ public class ProfileServiceImpl implements ProfileService {
     }
 
     private void applyProfileUpdates(UserProfile profile, UpdateProfileRequest request, String whatsappNumber, String institute) {
+        com.cbp7.identity.profile.entity.StudentType type = profileMapper.resolveStudentType(request.studentType(), request.hosteller());
+        boolean isHosteller = type == com.cbp7.identity.profile.entity.StudentType.HOSTELLER;
+
         profile.setFirstName(request.firstName().trim());
         profile.setMiddleName(request.middleName() != null ? request.middleName().trim() : null);
         profile.setLastName(request.lastName().trim());
@@ -229,12 +246,15 @@ public class ProfileServiceImpl implements ProfileService {
         profile.setSameAsWhatsapp(Boolean.TRUE.equals(request.sameAsWhatsapp()));
         profile.setWhatsappNumber(whatsappNumber);
         profile.setInstitute(institute);
-        profile.setCourse(request.course());
-        profile.setBranch(request.branch());
+        profile.setProgramLevel(request.programLevel());
+        profile.setDepartment(request.department().trim());
         profile.setYear(request.year());
         profile.setSection(request.section() != null ? request.section().trim() : null);
-        profile.setHosteller(request.hosteller());
-        profile.setRoomNumber(Boolean.TRUE.equals(request.hosteller()) ? request.roomNumber().trim() : null);
+        profile.setStudentType(type);
+        profile.setAddress(type == com.cbp7.identity.profile.entity.StudentType.DAY_SCHOLAR && request.address() != null ? request.address().trim() : null);
+        profile.setHostelNumber(isHosteller && request.hostelNumber() != null ? request.hostelNumber().trim() : null);
+        profile.setHosteller(isHosteller);
+        profile.setRoomNumber(isHosteller && request.roomNumber() != null ? request.roomNumber().trim() : null);
         profile.setCity(request.city() != null ? request.city().trim() : null);
         profile.setState(request.state() != null ? request.state().trim() : null);
     }

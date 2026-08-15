@@ -9,7 +9,7 @@ public record StudentAttendanceProfileResponse(
         String studentId,
         String email,
         String phoneNumber,
-        String branch,
+        String department,
         Integer year,
         String registrationDate,
         String paymentStatus,

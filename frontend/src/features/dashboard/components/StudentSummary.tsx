@@ -15,8 +15,8 @@ export function StudentSummary({ name, studentId, profile }: StudentSummaryProps
   const fullName = profile ? `${profile.firstName} ${profile.lastName}`.trim() : (name || "Student")
   const firstName = profile?.firstName || name?.split(" ")[0] || "Student"
   const isProfileComplete = !!profile
-  const branchName = profile?.branch ? profile.branch.replace(/_/g, " ") : "Engineering"
-  const courseName = profile?.course || "B.Tech"
+  const deptName = profile?.department || (profile as any)?.branch || "Computer Science and Engineering"
+  const progLevel = profile?.programLevel || (profile as any)?.course || "Undergraduate"
 
   return (
     <div className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -27,7 +27,7 @@ export function StudentSummary({ name, studentId, profile }: StudentSummaryProps
             Welcome, {firstName}
           </h1>
           <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-1.5 text-xs sm:text-sm font-semibold text-slate-600 mt-1">
-            <span>{courseName} in {branchName}</span>
+            <span>{progLevel} in {deptName}</span>
             <span className="hidden sm:inline text-slate-400">&middot;</span>
             <span className="font-mono text-cyan-800 font-bold break-all">{safeText(studentId)}</span>
           </div>

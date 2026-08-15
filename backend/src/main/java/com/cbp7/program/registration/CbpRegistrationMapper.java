@@ -25,10 +25,13 @@ public class CbpRegistrationMapper {
                 registration.getEmail(),
                 registration.getPhoneNumber(),
                 registration.getInstitute(),
-                registration.getCourse(),
-                registration.getBranch(),
+                registration.getProgramLevel(),
+                registration.getDepartment(),
                 registration.getYear(),
                 registration.getSection(),
+                registration.getStudentType(),
+                registration.getAddress(),
+                registration.getHostelNumber(),
                 registration.getHosteller(),
                 registration.getRoomNumber(),
                 registration.getCity(),
@@ -54,10 +57,13 @@ public class CbpRegistrationMapper {
                 savedRegistration.getEmail(),
                 savedRegistration.getPhoneNumber(),
                 savedRegistration.getInstitute(),
-                savedRegistration.getCourse(),
-                savedRegistration.getBranch(),
+                savedRegistration.getProgramLevel(),
+                savedRegistration.getDepartment(),
                 savedRegistration.getYear(),
                 savedRegistration.getSection(),
+                savedRegistration.getStudentType(),
+                savedRegistration.getAddress(),
+                savedRegistration.getHostelNumber(),
                 savedRegistration.getHosteller(),
                 savedRegistration.getRoomNumber(),
                 savedRegistration.getCity(),
@@ -85,10 +91,13 @@ public class CbpRegistrationMapper {
                 registration.getEmail(),
                 registration.getPhoneNumber(),
                 registration.getInstitute(),
-                registration.getCourse(),
-                registration.getBranch(),
+                registration.getProgramLevel(),
+                registration.getDepartment(),
                 registration.getYear(),
                 registration.getSection(),
+                registration.getStudentType(),
+                registration.getAddress(),
+                registration.getHostelNumber(),
                 registration.getHosteller(),
                 registration.getRoomNumber(),
                 registration.getCity(),
@@ -111,10 +120,13 @@ public class CbpRegistrationMapper {
                 .lastName(profile.getLastName())
                 .phoneNumber(profile.getPhoneNumber())
                 .institute(profile.getInstitute())
-                .course(profile.getCourse() != null ? profile.getCourse().name() : null)
-                .branch(profile.getBranch() != null ? profile.getBranch().name() : null)
+                .programLevel(profile.getProgramLevel() != null ? profile.getProgramLevel().name() : "UNDERGRADUATE")
+                .department(profile.getDepartment() != null ? profile.getDepartment() : "Computer Science and Engineering")
                 .year(profile.getYear())
                 .section(profile.getSection())
+                .studentType(profile.getStudentType() != null ? profile.getStudentType().name() : "DAY_SCHOLAR")
+                .address(profile.getAddress())
+                .hostelNumber(profile.getHostelNumber())
                 .hosteller(profile.getHosteller())
                 .roomNumber(profile.getRoomNumber())
                 .city(profile.getCity())

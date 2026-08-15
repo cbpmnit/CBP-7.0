@@ -25,8 +25,8 @@ public class AdminStudentMapper {
             String name,
             String email,
             String phone,
-            String course,
-            String branch,
+            String programLevel,
+            String department,
             String year,
             String registrationStatus,
             String paymentStatus,
@@ -40,8 +40,8 @@ public class AdminStudentMapper {
                 name,
                 email,
                 phone,
-                course,
-                branch,
+                programLevel,
+                department,
                 year,
                 registrationStatus,
                 paymentStatus,
@@ -80,17 +80,20 @@ public class AdminStudentMapper {
         String gender = profileOpt.map(p -> p.getGender() != null ? p.getGender().name() : "MALE").orElse("MALE");
         String dob = profileOpt.map(p -> p.getDateOfBirth() != null ? p.getDateOfBirth().toString() : "Not specified").orElse("Not specified");
         String institute = reg != null && reg.getInstitute() != null ? reg.getInstitute() : profileOpt.map(UserProfile::getInstitute).orElse("MNIT Jaipur");
-        String course = reg != null ? reg.getCourse() : profileOpt.map(p -> p.getCourse() != null ? p.getCourse().name() : "-").orElse("-");
-        String branch = reg != null ? reg.getBranch() : profileOpt.map(p -> p.getBranch() != null ? p.getBranch().name() : "-").orElse("-");
+        String programLevel = reg != null ? reg.getProgramLevel() : profileOpt.map(p -> p.getProgramLevel() != null ? p.getProgramLevel().name() : "-").orElse("-");
+        String department = reg != null ? reg.getDepartment() : profileOpt.map(p -> p.getDepartment() != null ? p.getDepartment() : "-").orElse("-");
         String year = reg != null && reg.getYear() != null ? reg.getYear().toString() : profileOpt.map(p -> p.getYear() != null ? p.getYear().toString() : "1").orElse("1");
         String section = profileOpt.map(UserProfile::getSection).orElse(reg != null && reg.getSection() != null ? reg.getSection() : "A");
+        String studentType = profileOpt.map(p -> p.getStudentType() != null ? p.getStudentType().name() : "DAY_SCHOLAR").orElse("DAY_SCHOLAR");
+        String address = profileOpt.map(UserProfile::getAddress).orElse("-");
+        String hostelNumber = profileOpt.map(UserProfile::getHostelNumber).orElse("-");
         boolean hosteller = profileOpt.map(UserProfile::getHosteller).orElse(reg != null && reg.getHosteller() != null ? reg.getHosteller() : false);
         String room = profileOpt.map(UserProfile::getRoomNumber).orElse(reg != null && reg.getRoomNumber() != null ? reg.getRoomNumber() : "-");
         String city = profileOpt.map(UserProfile::getCity).orElse(reg != null && reg.getCity() != null ? reg.getCity() : "Jaipur");
         String state = profileOpt.map(UserProfile::getState).orElse(reg != null && reg.getState() != null ? reg.getState() : "Rajasthan");
 
         var profileDto = new AdminFullStudentDetailResponse.ProfileDetailDto(
-                fName, lName, gender, dob, institute, course, branch, year, section, hosteller, room, city, state
+                fName, lName, gender, dob, institute, programLevel, department, year, section, studentType, address, hostelNumber, hosteller, room, city, state
         );
 
         var regDto = new AdminFullStudentDetailResponse.RegistrationDetailDto(

@@ -5,8 +5,8 @@ public record AdminStudentDetailResponse(
         String firstName,
         String lastName,
         String email,
-        String branch,
-        String course,
+        String department,
+        String programLevel,
         boolean paymentCompleted,
         double attendancePercentage,
         String registrationId

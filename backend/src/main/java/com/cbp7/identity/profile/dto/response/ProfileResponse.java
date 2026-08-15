@@ -1,8 +1,8 @@
 package com.cbp7.identity.profile.dto.response;
 
-import com.cbp7.identity.profile.entity.Branch;
-import com.cbp7.identity.profile.entity.Course;
 import com.cbp7.identity.profile.entity.Gender;
+import com.cbp7.identity.profile.entity.ProgramLevel;
+import com.cbp7.identity.profile.entity.StudentType;
 
 import java.time.LocalDate;
 
@@ -20,10 +20,13 @@ public record ProfileResponse(
         Boolean sameAsWhatsapp,
         String whatsappNumber,
         String institute,
-        Course course,
-        Branch branch,
+        ProgramLevel programLevel,
+        String department,
         Integer year,
         String section,
+        StudentType studentType,
+        String address,
+        String hostelNumber,
         Boolean hosteller,
         String roomNumber,
         String city,
@@ -42,10 +45,13 @@ public record ProfileResponse(
             Boolean sameAsWhatsapp,
             String whatsappNumber,
             String institute,
-            Course course,
-            Branch branch,
+            ProgramLevel programLevel,
+            String department,
             Integer year,
             String section,
+            StudentType studentType,
+            String address,
+            String hostelNumber,
             Boolean hosteller,
             String roomNumber,
             String city,
@@ -65,10 +71,13 @@ public record ProfileResponse(
                 sameAsWhatsapp,
                 whatsappNumber,
                 institute,
-                course,
-                branch,
+                programLevel,
+                department,
                 year,
                 section,
+                studentType,
+                address,
+                hostelNumber,
                 hosteller,
                 roomNumber,
                 city,

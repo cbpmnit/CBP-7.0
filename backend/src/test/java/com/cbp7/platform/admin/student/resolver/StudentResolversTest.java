@@ -5,8 +5,6 @@ import com.cbp7.program.registration.entity.CbpRegistration;
 import com.cbp7.program.registration.entity.RegistrationStatus;
 import com.cbp7.payment.entity.Payment;
 import com.cbp7.payment.entity.PaymentStatus;
-import com.cbp7.identity.profile.entity.Branch;
-import com.cbp7.identity.profile.entity.Course;
 import com.cbp7.identity.profile.entity.UserProfile;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

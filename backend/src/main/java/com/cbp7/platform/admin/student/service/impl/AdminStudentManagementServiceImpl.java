@@ -221,8 +221,11 @@ public class AdminStudentManagementServiceImpl implements AdminStudentManagement
         if (request.lastName() != null && !request.lastName().isBlank()) reg.setLastName(request.lastName().trim());
         if (request.phone() != null) reg.setPhoneNumber(request.phone().trim());
         if (request.email() != null) reg.setEmail(request.email().trim());
-        if (request.course() != null) reg.setCourse(request.course().trim());
-        if (request.branch() != null) reg.setBranch(request.branch().trim());
+        if (request.programLevel() != null) reg.setProgramLevel(request.programLevel().trim());
+        if (request.department() != null) reg.setDepartment(request.department().trim());
+        if (request.studentType() != null) reg.setStudentType(request.studentType().trim());
+        if (request.address() != null) reg.setAddress(request.address().trim());
+        if (request.hostelNumber() != null) reg.setHostelNumber(request.hostelNumber().trim());
         if (request.year() != null) {
             try {
                 reg.setYear(Integer.parseInt(request.year().replaceAll("[^0-9]", "")));
@@ -248,6 +251,19 @@ public class AdminStudentManagementServiceImpl implements AdminStudentManagement
         if (request.firstName() != null) prof.setFirstName(request.firstName().trim());
         if (request.lastName() != null) prof.setLastName(request.lastName().trim());
         if (request.phone() != null) prof.setPhoneNumber(request.phone().trim());
+        if (request.programLevel() != null) {
+            try {
+                prof.setProgramLevel(com.cbp7.identity.profile.entity.ProgramLevel.valueOf(request.programLevel().toUpperCase()));
+            } catch (Exception ignored) {}
+        }
+        if (request.department() != null) prof.setDepartment(request.department().trim());
+        if (request.studentType() != null) {
+            try {
+                prof.setStudentType(com.cbp7.identity.profile.entity.StudentType.valueOf(request.studentType().toUpperCase()));
+            } catch (Exception ignored) {}
+        }
+        if (request.address() != null) prof.setAddress(request.address().trim());
+        if (request.hostelNumber() != null) prof.setHostelNumber(request.hostelNumber().trim());
         if (request.gender() != null) {
             try {
                 prof.setGender(Gender.valueOf(request.gender().toUpperCase()));

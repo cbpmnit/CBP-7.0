@@ -1,8 +1,10 @@
 package com.cbp7.identity.profile.dto.request;
 
-import com.cbp7.identity.profile.entity.Branch;
-import com.cbp7.identity.profile.entity.Course;
 import com.cbp7.identity.profile.entity.Gender;
+import com.cbp7.identity.profile.entity.ProgramLevel;
+import com.cbp7.identity.profile.entity.StudentType;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Past;
@@ -38,18 +40,25 @@ public record CreateProfileRequest(
 
         String institute,
 
-        @NotNull(message = "Course is required")
-        Course course,
+        @NotNull(message = "Program level is required")
+        ProgramLevel programLevel,
 
-        @NotNull(message = "Branch is required")
-        Branch branch,
+        @NotBlank(message = "Department is required")
+        String department,
 
         @NotNull(message = "Year is required")
+        @Min(value = 1, message = "Year must be at least 1")
+        @Max(value = 5, message = "Year must be at most 5")
         Integer year,
 
         String section,
 
-        @NotNull(message = "Hosteller status is required")
+        StudentType studentType,
+
+        String address,
+
+        String hostelNumber,
+
         Boolean hosteller,
 
         String roomNumber,

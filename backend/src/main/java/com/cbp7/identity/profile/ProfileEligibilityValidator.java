@@ -1,5 +1,6 @@
 package com.cbp7.identity.profile;
 
+import com.cbp7.identity.profile.entity.StudentType;
 import com.cbp7.identity.profile.entity.UserProfile;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -42,9 +43,9 @@ public class ProfileEligibilityValidator {
 
         // Academic
         if (!StringUtils.hasText(profile.getInstitute())) missing.add("Institute / College");
-        if (profile.getCourse() == null) missing.add("Course");
-        if (profile.getBranch() == null) missing.add("Branch");
-        if (profile.getYear() == null || profile.getYear() < 1) missing.add("Year of Study");
+        if (profile.getProgramLevel() == null) missing.add("Program Level");
+        if (!StringUtils.hasText(profile.getDepartment())) missing.add("Department");
+        if (profile.getYear() == null || profile.getYear() < 1 || profile.getYear() > 5) missing.add("Year of Study (1-5)");
 
         // Personal
         if (profile.getGender() == null) missing.add("Gender");
@@ -55,9 +56,23 @@ public class ProfileEligibilityValidator {
             missing.add("Phone Number");
         }
 
-        // Hostel requirement if hosteller is true
-        if (Boolean.TRUE.equals(profile.getHosteller()) && !StringUtils.hasText(profile.getRoomNumber())) {
-            missing.add("Hostel Room Number");
+        // Student Type & Residence Requirements
+        StudentType studentType = profile.getStudentType();
+        if (studentType == null) {
+            studentType = Boolean.TRUE.equals(profile.getHosteller()) ? StudentType.HOSTELLER : StudentType.DAY_SCHOLAR;
+        }
+
+        if (studentType == StudentType.DAY_SCHOLAR) {
+            if (!StringUtils.hasText(profile.getAddress())) {
+                missing.add("Residential Address");
+            }
+        } else if (studentType == StudentType.HOSTELLER) {
+            if (!StringUtils.hasText(profile.getHostelNumber())) {
+                missing.add("Hostel Number");
+            }
+            if (!StringUtils.hasText(profile.getRoomNumber())) {
+                missing.add("Hostel Room Number");
+            }
         }
 
         return missing;

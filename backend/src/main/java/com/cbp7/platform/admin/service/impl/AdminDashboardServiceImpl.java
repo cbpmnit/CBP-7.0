@@ -180,8 +180,8 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
                 reg.getFirstName(),
                 reg.getLastName(),
                 reg.getEmail(),
-                reg.getBranch(),
-                reg.getCourse(),
+                reg.getDepartment(),
+                reg.getProgramLevel(),
                 isPaid,
                 attendancePercentage,
                 reg.getRegistrationId()

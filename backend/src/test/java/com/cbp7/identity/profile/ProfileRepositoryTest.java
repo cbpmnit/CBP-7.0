@@ -2,78 +2,67 @@ package com.cbp7.identity.profile;
 
 import com.cbp7.identity.auth.entity.Role;
 import com.cbp7.identity.auth.entity.User;
-import com.cbp7.identity.auth.repository.UserRepository;
-import com.cbp7.identity.profile.entity.Branch;
-import com.cbp7.identity.profile.entity.Course;
 import com.cbp7.identity.profile.entity.Gender;
-import com.cbp7.identity.profile.entity.ProfileCompletion;
+import com.cbp7.identity.profile.entity.ProgramLevel;
+import com.cbp7.identity.profile.entity.StudentType;
 import com.cbp7.identity.profile.entity.UserProfile;
-import com.cbp7.identity.profile.repository.ProfileCompletionRepository;
 import com.cbp7.identity.profile.repository.UserProfileRepository;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
 import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+@ExtendWith(MockitoExtension.class)
 class ProfileRepositoryTest {
 
+    @Mock
+    private UserProfileRepository userProfileRepository;
+
     @Test
-    void userProfileRepository_OneProfilePerUser() {
-        UserProfileRepository repository = mock(UserProfileRepository.class);
-        User user = User.builder().studentId("2023ucp1234").email("student@mnit.ac.in").build();
-        user.setId(UUID.randomUUID());
+    void saveAndFindByUserId_Success() {
+        UUID userId = UUID.randomUUID();
+        User user = User.builder()
+                .studentId("2023ucp9999")
+                .email("testrepo@mnit.ac.in")
+                .name("Repo Test User")
+                .password("password123")
+                .role(Role.ROLE_STUDENT)
+                .enabled(true)
+                .build();
+        user.setId(userId);
 
         UserProfile profile = UserProfile.builder()
                 .user(user)
-                .firstName("Parv")
-                .lastName("Agrawal")
+                .firstName("Repo")
+                .lastName("User")
                 .gender(Gender.MALE)
-                .dateOfBirth(LocalDate.of(2002, 5, 15))
-                .phoneNumber("9876543210")
+                .dateOfBirth(LocalDate.of(2001, 1, 1))
+                .phoneNumber("9999988888")
                 .sameAsWhatsapp(true)
                 .institute("MNIT Jaipur")
-                .course(Course.BTECH)
-                .branch(Branch.COMPUTER_SCIENCE_ENGINEERING)
-                .year(3)
-                .hosteller(false)
+                .programLevel(ProgramLevel.UNDERGRADUATE)
+                .department("Computer Science and Engineering")
+                .year(2)
+                .studentType(StudentType.HOSTELLER)
+                .hostelNumber("H5")
+                .hosteller(true)
+                .roomNumber("H-505")
                 .build();
 
-        when(repository.findByUser(user)).thenReturn(Optional.of(profile));
-        when(repository.existsByUser(user)).thenReturn(true);
+        when(userProfileRepository.findByUserId(userId)).thenReturn(Optional.of(profile));
 
-        assertTrue(repository.existsByUser(user));
-
-        Optional<UserProfile> found = repository.findByUser(user);
+        Optional<UserProfile> found = userProfileRepository.findByUserId(userId);
         assertTrue(found.isPresent());
-        assertEquals("Parv", found.get().getFirstName());
-        assertEquals(Gender.MALE, found.get().getGender());
-        assertEquals(Course.BTECH, found.get().getCourse());
-        assertEquals(Branch.COMPUTER_SCIENCE_ENGINEERING, found.get().getBranch());
-    }
-
-    @Test
-    void profileCompletionRepository_FindsByUser() {
-        ProfileCompletionRepository repository = mock(ProfileCompletionRepository.class);
-        User user = User.builder().studentId("2023ucp1234").email("student@mnit.ac.in").build();
-        user.setId(UUID.randomUUID());
-
-        ProfileCompletion completion = ProfileCompletion.builder()
-                .user(user)
-                .profileCompleted(true)
-                .completionPercentage(100)
-                .lastCompletedStep("PROFILE_COMPLETE")
-                .build();
-
-        when(repository.findByUser(user)).thenReturn(Optional.of(completion));
-
-        Optional<ProfileCompletion> found = repository.findByUser(user);
-        assertTrue(found.isPresent());
-        assertTrue(found.get().getProfileCompleted());
-        assertEquals(100, found.get().getCompletionPercentage());
-        assertEquals("PROFILE_COMPLETE", found.get().getLastCompletedStep());
+        assertEquals("Repo", found.get().getFirstName());
+        assertEquals(ProgramLevel.UNDERGRADUATE, found.get().getProgramLevel());
+        assertEquals("Computer Science and Engineering", found.get().getDepartment());
     }
 }

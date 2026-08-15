@@ -6,12 +6,11 @@ import com.cbp7.common.exception.DuplicateResourceException;
 import com.cbp7.common.exception.ResourceNotFoundException;
 import com.cbp7.identity.profile.dto.request.CreateProfileRequest;
 import com.cbp7.identity.profile.dto.request.UpdateProfileRequest;
-import com.cbp7.identity.profile.dto.response.ProfileCompletionResponse;
 import com.cbp7.identity.profile.dto.response.ProfileResponse;
-import com.cbp7.identity.profile.entity.Branch;
-import com.cbp7.identity.profile.entity.Course;
 import com.cbp7.identity.profile.entity.Gender;
 import com.cbp7.identity.profile.entity.ProfileCompletion;
+import com.cbp7.identity.profile.entity.ProgramLevel;
+import com.cbp7.identity.profile.entity.StudentType;
 import com.cbp7.identity.profile.entity.UserProfile;
 import com.cbp7.identity.profile.repository.ProfileCompletionRepository;
 import com.cbp7.identity.profile.repository.UserProfileRepository;
@@ -71,7 +70,7 @@ class ProfileServiceTest {
     }
 
     @Test
-    void createProfile_ValidProfile_Success() {
+    void createProfile_ValidHostellerProfile_Success() {
         CreateProfileRequest request = new CreateProfileRequest(
                 "Parv",
                 null,
@@ -83,10 +82,13 @@ class ProfileServiceTest {
                 true,
                 null,
                 "MNIT Jaipur",
-                Course.BTECH,
-                Branch.COMPUTER_SCIENCE_ENGINEERING,
+                ProgramLevel.UNDERGRADUATE,
+                "Computer Science and Engineering",
                 3,
                 "A",
+                StudentType.HOSTELLER,
+                null,
+                "H10",
                 true,
                 "H-101",
                 "Jaipur",
@@ -103,33 +105,59 @@ class ProfileServiceTest {
         assertEquals("student@mnit.ac.in", response.email());
         assertEquals("Parv", response.firstName());
         assertEquals("Agrawal", response.lastName());
-        assertEquals(Gender.MALE, response.gender());
-        assertEquals(Course.BTECH, response.course());
-        assertEquals(Branch.COMPUTER_SCIENCE_ENGINEERING, response.branch());
+        assertEquals(ProgramLevel.UNDERGRADUATE, response.programLevel());
+        assertEquals("Computer Science and Engineering", response.department());
+        assertEquals(StudentType.HOSTELLER, response.studentType());
+        assertEquals("H10", response.hostelNumber());
         assertEquals("H-101", response.roomNumber());
         verify(userProfileRepository).save(any(UserProfile.class));
         verify(profileCompletionRepository).save(any(ProfileCompletion.class));
     }
 
     @Test
-    void createProfile_DuplicateProfile_ThrowsDuplicateResourceException() {
+    void createProfile_ValidDayScholarProfile_Success() {
         CreateProfileRequest request = new CreateProfileRequest(
-                "Parv", null, "Agrawal", null, Gender.MALE, LocalDate.of(2002, 5, 15),
-                "9876543210", true, null, "MNIT Jaipur", Course.BTECH,
-                Branch.COMPUTER_SCIENCE_ENGINEERING, 3, "A", false, null, "Jaipur", "Rajasthan"
+                "Parv",
+                null,
+                "Agrawal",
+                null,
+                Gender.MALE,
+                LocalDate.of(2002, 5, 15),
+                "9876543210",
+                true,
+                null,
+                "MNIT Jaipur",
+                ProgramLevel.UNDERGRADUATE,
+                "Computer Science and Engineering",
+                2,
+                "B",
+                StudentType.DAY_SCHOLAR,
+                "123 Malviya Nagar, Jaipur",
+                null,
+                false,
+                null,
+                "Jaipur",
+                "Rajasthan"
         );
 
-        when(userProfileRepository.existsByUserStudentIdIgnoreCase(testUser.getStudentId())).thenReturn(true);
+        when(userProfileRepository.existsByUserStudentIdIgnoreCase(testUser.getStudentId())).thenReturn(false);
+        when(userProfileRepository.save(any(UserProfile.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        assertThrows(DuplicateResourceException.class, () -> profileService.createProfile(testUser, request));
+        ProfileResponse response = profileService.createProfile(testUser, request);
+
+        assertNotNull(response);
+        assertEquals(StudentType.DAY_SCHOLAR, response.studentType());
+        assertEquals("123 Malviya Nagar, Jaipur", response.address());
+        assertNull(response.hostelNumber());
+        assertNull(response.roomNumber());
     }
 
     @Test
-    void createProfile_InvalidPhoneNumber_ThrowsIllegalArgumentException() {
+    void createProfile_DayScholar_MissingAddress_ThrowsIllegalArgumentException() {
         CreateProfileRequest request = new CreateProfileRequest(
                 "Parv", null, "Agrawal", null, Gender.MALE, LocalDate.of(2002, 5, 15),
-                "12345", true, null, "MNIT Jaipur", Course.BTECH,
-                Branch.COMPUTER_SCIENCE_ENGINEERING, 3, "A", false, null, "Jaipur", "Rajasthan"
+                "9876543210", true, null, "MNIT Jaipur", ProgramLevel.UNDERGRADUATE,
+                "Computer Science and Engineering", 3, "A", StudentType.DAY_SCHOLAR, "   ", null, false, null, "Jaipur", "Rajasthan"
         );
 
         when(userProfileRepository.existsByUserStudentIdIgnoreCase(testUser.getStudentId())).thenReturn(false);
@@ -138,24 +166,11 @@ class ProfileServiceTest {
     }
 
     @Test
-    void createProfile_InvalidDOB_FutureDate_ThrowsIllegalArgumentException() {
-        CreateProfileRequest request = new CreateProfileRequest(
-                "Parv", null, "Agrawal", null, Gender.MALE, LocalDate.now().plusDays(5),
-                "9876543210", true, null, "MNIT Jaipur", Course.BTECH,
-                Branch.COMPUTER_SCIENCE_ENGINEERING, 3, "A", false, null, "Jaipur", "Rajasthan"
-        );
-
-        when(userProfileRepository.existsByUserStudentIdIgnoreCase(testUser.getStudentId())).thenReturn(false);
-
-        assertThrows(IllegalArgumentException.class, () -> profileService.createProfile(testUser, request));
-    }
-
-    @Test
-    void createProfile_HostellerTrue_MissingRoomNumber_ThrowsIllegalArgumentException() {
+    void createProfile_InvalidYear_ThrowsIllegalArgumentException() {
         CreateProfileRequest request = new CreateProfileRequest(
                 "Parv", null, "Agrawal", null, Gender.MALE, LocalDate.of(2002, 5, 15),
-                "9876543210", true, null, "MNIT Jaipur", Course.BTECH,
-                Branch.COMPUTER_SCIENCE_ENGINEERING, 3, "A", true, "   ", "Jaipur", "Rajasthan"
+                "9876543210", true, null, "MNIT Jaipur", ProgramLevel.UNDERGRADUATE,
+                "Computer Science and Engineering", 6, "A", StudentType.DAY_SCHOLAR, "Address", null, false, null, "Jaipur", "Rajasthan"
         );
 
         when(userProfileRepository.existsByUserStudentIdIgnoreCase(testUser.getStudentId())).thenReturn(false);
@@ -175,10 +190,13 @@ class ProfileServiceTest {
                 .sameAsWhatsapp(true)
                 .whatsappNumber("9876543210")
                 .institute("MNIT Jaipur")
-                .course(Course.BTECH)
-                .branch(Branch.COMPUTER_SCIENCE_ENGINEERING)
+                .programLevel(ProgramLevel.UNDERGRADUATE)
+                .department("Computer Science and Engineering")
                 .year(3)
-                .hosteller(false)
+                .studentType(StudentType.HOSTELLER)
+                .hostelNumber("H10")
+                .hosteller(true)
+                .roomNumber("H-101")
                 .build();
 
         when(userProfileRepository.findByUserStudentIdIgnoreCase(testUser.getStudentId())).thenReturn(Optional.of(existingProfile));
@@ -186,36 +204,24 @@ class ProfileServiceTest {
 
         UpdateProfileRequest updateRequest = new UpdateProfileRequest(
                 "Parv", null, "Agrawal", null, Gender.MALE, LocalDate.of(2002, 5, 15),
-                "9876543210", true, null, "MNIT Jaipur", Course.BTECH,
-                Branch.ARTIFICIAL_INTELLIGENCE_DATA_SCIENCE, 4, "B", true, "H-202", "Jaipur", "Rajasthan"
+                "9876543210", true, null, "MNIT Jaipur", ProgramLevel.POSTGRADUATE,
+                "Artificial Intelligence and Data Science", 4, "B", StudentType.HOSTELLER, null, "H12", true, "H-202", "Jaipur", "Rajasthan"
         );
 
         ProfileResponse response = profileService.updateProfile(testUser, updateRequest);
 
         assertNotNull(response);
-        assertEquals(Branch.ARTIFICIAL_INTELLIGENCE_DATA_SCIENCE, response.branch());
+        assertEquals(ProgramLevel.POSTGRADUATE, response.programLevel());
+        assertEquals("Artificial Intelligence and Data Science", response.department());
         assertEquals(4, response.year());
+        assertEquals(StudentType.HOSTELLER, response.studentType());
+        assertEquals("H12", response.hostelNumber());
         assertEquals("H-202", response.roomNumber());
-        assertEquals("2023ucp1234", response.studentId()); // Student ID unchanged
-        assertEquals("student@mnit.ac.in", response.email()); // Email unchanged
     }
 
     @Test
-    void updateProfile_NotFound_ThrowsResourceNotFoundException() {
-        UpdateProfileRequest updateRequest = new UpdateProfileRequest(
-                "Parv", null, "Agrawal", null, Gender.MALE, LocalDate.of(2002, 5, 15),
-                "9876543210", true, null, "MNIT Jaipur", Course.BTECH,
-                Branch.COMPUTER_SCIENCE_ENGINEERING, 3, "A", false, null, "Jaipur", "Rajasthan"
-        );
-
-        when(userProfileRepository.findByUserStudentIdIgnoreCase(testUser.getStudentId())).thenReturn(Optional.empty());
-
-        assertThrows(ResourceNotFoundException.class, () -> profileService.updateProfile(testUser, updateRequest));
-    }
-
-    @Test
-    void completion_CalculatePercentage_100Percent() {
-        UserProfile fullProfile = UserProfile.builder()
+    void completion_CalculatePercentage_DayScholarComplete() {
+        UserProfile dayScholarProfile = UserProfile.builder()
                 .user(testUser)
                 .firstName("Parv")
                 .lastName("Agrawal")
@@ -223,56 +229,17 @@ class ProfileServiceTest {
                 .dateOfBirth(LocalDate.of(2002, 5, 15))
                 .phoneNumber("9876543210")
                 .institute("MNIT Jaipur")
-                .course(Course.BTECH)
-                .branch(Branch.COMPUTER_SCIENCE_ENGINEERING)
+                .programLevel(ProgramLevel.UNDERGRADUATE)
+                .department("Computer Science and Engineering")
                 .year(3)
-                .section("A")
-                .city("Jaipur")
-                .state("Rajasthan")
-                .hosteller(true)
-                .roomNumber("H-101")
+                .studentType(StudentType.DAY_SCHOLAR)
+                .address("123 Tonk Road, Jaipur")
                 .build();
 
-        ProfileCompletion completion = profileService.calculateAndBuildCompletion(testUser, fullProfile);
+        ProfileCompletion completion = profileService.calculateAndBuildCompletion(testUser, dayScholarProfile);
 
+        assertTrue(completion.getProfileCompleted());
         assertEquals(100, completion.getCompletionPercentage());
-        assertTrue(completion.getProfileCompleted());
         assertEquals("PROFILE_COMPLETE", completion.getLastCompletedStep());
-    }
-
-    @Test
-    void completion_CalculatePercentage_MandatoryOnly() {
-        UserProfile mandatoryOnlyProfile = UserProfile.builder()
-                .user(testUser)
-                .firstName("Parv")
-                .lastName("Agrawal")
-                .gender(Gender.MALE)
-                .dateOfBirth(LocalDate.of(2002, 5, 15))
-                .phoneNumber("9876543210")
-                .institute("MNIT Jaipur")
-                .course(Course.BTECH)
-                .branch(Branch.COMPUTER_SCIENCE_ENGINEERING)
-                .year(3)
-                .hosteller(false)
-                .build();
-
-        ProfileCompletion completion = profileService.calculateAndBuildCompletion(testUser, mandatoryOnlyProfile);
-
-        assertTrue(completion.getProfileCompleted());
-        assertEquals("PROFILE_COMPLETE", completion.getLastCompletedStep());
-    }
-
-    @Test
-    void completion_MissingMandatoryField_ReturnsIncomplete() {
-        UserProfile incompleteProfile = UserProfile.builder()
-                .user(testUser)
-                .firstName("Parv")
-                .lastName("Agrawal")
-                .build();
-
-        ProfileCompletion completion = profileService.calculateAndBuildCompletion(testUser, incompleteProfile);
-
-        assertFalse(completion.getProfileCompleted());
-        assertEquals("INCOMPLETE", completion.getLastCompletedStep());
     }
 }

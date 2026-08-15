@@ -103,10 +103,10 @@ export default function CbpPage() {
   }
 
   // Defensive Helper field extraction
-  const getFieldValue = (field: "studentId" | "firstName" | "lastName" | "email" | "course" | "branch") => {
+  const getFieldValue = (field: string) => {
     if (!registration) return null
-    const directVal = registration[field]
-    const profileVal = registration.profile?.[field]
+    const directVal = (registration as Record<string, any>)[field]
+    const profileVal = (registration.profile as Record<string, any>)?.[field]
     return directVal || profileVal || null
   }
 
@@ -114,9 +114,9 @@ export default function CbpPage() {
   const firstName = getFieldValue("firstName") || ""
   const lastName = getFieldValue("lastName") || ""
   const fullName = [firstName, lastName].filter(Boolean).join(" ") || "Profile information incomplete"
-  const course = getFieldValue("course")
-  const branch = getFieldValue("branch")
-  const courseBranch = course && branch ? `${course} - ${branch}` : course || branch || "Profile information incomplete"
+  const programLevel = getFieldValue("programLevel") || getFieldValue("course")
+  const department = getFieldValue("department") || getFieldValue("branch")
+  const levelDept = programLevel && department ? `${programLevel} - ${department}` : programLevel || department || "Profile information incomplete"
   const email = getFieldValue("email") || "Profile information incomplete"
 
   if (loading) {
@@ -272,7 +272,7 @@ export default function CbpPage() {
                 {[
                   ["Student Name", fullName],
                   ["Student ID", studentId],
-                  ["Branch & Course", courseBranch],
+                  ["Program Level & Department", levelDept],
                   ["Official Email", email],
                 ].map(([label, value]) => (
                   <div key={label} className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
