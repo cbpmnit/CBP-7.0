@@ -32,10 +32,13 @@ public class PublicRegistrationAuditServiceImpl implements PublicRegistrationAud
                     .build();
 
             auditLogRepository.save(logEntry);
-            log.info("[PUBLIC_REGISTRATION] {} merchantOrderId={} registrationId={}: {}",
+            log.info("[PUBLIC_REGISTRATION] {} {} merchantOrderId={} registrationId={}: {}",
+                    com.cbp7.registration.util.PublicRegistrationTimeUtil.nowIstString(),
                     eventType, merchantOrderId, registrationId, message);
         } catch (Exception e) {
-            log.error("[PUBLIC_REGISTRATION] Failed to save audit log event {}: {}", eventType, e.getMessage(), e);
+            log.error("[PUBLIC_REGISTRATION] {} Failed to save audit log event {}: {}",
+                    com.cbp7.registration.util.PublicRegistrationTimeUtil.nowIstString(),
+                    eventType, e.getMessage(), e);
         }
     }
 }

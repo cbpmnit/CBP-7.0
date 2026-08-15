@@ -17,4 +17,5 @@ public interface PublicRegistrationService {
     PublicRegistrationStatusResponse processPaymentCallback(PublicPaymentCallbackRequest request);
     PublicRegistrationStatusResponse getRegistrationStatus(UUID registrationId);
     PublicRegistrationStatusResponse getPaymentStatusByMerchantOrderId(String merchantOrderId);
+    com.cbp7.registration.dto.response.PublicStatusCheckResponse checkRegistrationStatus(com.cbp7.registration.dto.request.PublicStatusCheckRequest request);
 }

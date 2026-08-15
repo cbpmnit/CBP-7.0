@@ -267,4 +267,56 @@ public class PublicRegistrationServiceImpl implements PublicRegistrationService 
 
         return publicRegistrationMapper.toStatusResponse(registration, transaction.getAmount());
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public com.cbp7.registration.dto.response.PublicStatusCheckResponse checkRegistrationStatus(com.cbp7.registration.dto.request.PublicStatusCheckRequest request) {
+        String studentId = request != null && request.studentId() != null ? request.studentId().trim() : null;
+        String mobileNumber = request != null && request.mobileNumber() != null ? request.mobileNumber().trim() : null;
+
+        String identifierType = (studentId != null && !studentId.isEmpty()) ? "STUDENT_ID" : "MOBILE_NUMBER";
+        log.info("[PUBLIC_REGISTRATION] {} STATUS_CHECK_REQUEST identifierType={}",
+                com.cbp7.registration.util.PublicRegistrationTimeUtil.nowIstString(), identifierType);
+
+        if ((studentId == null || studentId.isEmpty()) && (mobileNumber == null || mobileNumber.isEmpty())) {
+            return com.cbp7.registration.dto.response.PublicStatusCheckResponse.notFound("Please provide either a Student ID or Mobile Number.");
+        }
+
+        java.util.Optional<PublicRegistration> regOpt = java.util.Optional.empty();
+        if (studentId != null && !studentId.isEmpty()) {
+            regOpt = publicRegistrationRepository.findTopByStudentIdIgnoreCaseOrderByCreatedAtDesc(studentId);
+        }
+        if (regOpt.isEmpty() && mobileNumber != null && !mobileNumber.isEmpty()) {
+            regOpt = publicRegistrationRepository.findTopByMobileNumberOrderByCreatedAtDesc(mobileNumber);
+        }
+
+        if (regOpt.isEmpty()) {
+            log.info("[PUBLIC_REGISTRATION] {} STATUS_NOT_FOUND identifierType={}",
+                    com.cbp7.registration.util.PublicRegistrationTimeUtil.nowIstString(), identifierType);
+            return com.cbp7.registration.dto.response.PublicStatusCheckResponse.notFound("No registration found with provided details.");
+        }
+
+        PublicRegistration reg = regOpt.get();
+        String formattedDate = com.cbp7.registration.util.PublicRegistrationTimeUtil.formatUserFacing(reg.getCreatedAt());
+
+        log.info("[PUBLIC_REGISTRATION] {} STATUS_FOUND identifierType={} paymentStatus={} accountVerified={}",
+                com.cbp7.registration.util.PublicRegistrationTimeUtil.nowIstString(), identifierType, reg.getPaymentStatus(), reg.isAccountVerified());
+
+        boolean isRegistered = reg.getPaymentStatus() == PublicRegistrationStatus.REGISTERED;
+        String message = isRegistered
+                ? "You are successfully registered for CBP 7.0"
+                : "Your registration status is " + reg.getPaymentStatus();
+
+        return new com.cbp7.registration.dto.response.PublicStatusCheckResponse(
+                true,
+                reg.getFullName(),
+                reg.getStudentId(),
+                reg.getDepartment(),
+                reg.getProgramLevel() != null ? reg.getProgramLevel().name() : "",
+                reg.getPaymentStatus() != null ? reg.getPaymentStatus().name() : "PENDING",
+                reg.isAccountVerified(),
+                formattedDate,
+                message
+        );
+    }
 }

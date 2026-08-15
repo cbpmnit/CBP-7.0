@@ -91,4 +91,31 @@ public class PublicRegistrationController {
         PublicRegistrationStatusResponse response = publicRegistrationService.getPaymentStatusByMerchantOrderId(merchantOrderId);
         return ResponseEntity.ok(ApiResponse.success("Payment status retrieved successfully", response));
     }
+
+    @PostMapping("/status/check")
+    public ResponseEntity<ApiResponse<com.cbp7.registration.dto.response.PublicStatusCheckResponse>> checkRegistrationStatus(
+            @RequestBody com.cbp7.registration.dto.request.PublicStatusCheckRequest request
+    ) {
+        com.cbp7.registration.dto.response.PublicStatusCheckResponse response = publicRegistrationService.checkRegistrationStatus(request);
+        return ResponseEntity.ok(ApiResponse.success("Registration status checked", response));
+    }
+
+    @GetMapping("/status")
+    public ResponseEntity<ApiResponse<com.cbp7.registration.dto.response.PublicStatusCheckResponse>> checkRegistrationStatusGet(
+            @org.springframework.web.bind.annotation.RequestParam(name = "studentId", required = false) String studentId,
+            @org.springframework.web.bind.annotation.RequestParam(name = "mobileNumber", required = false) String mobileNumber
+    ) {
+        com.cbp7.registration.dto.request.PublicStatusCheckRequest request =
+                new com.cbp7.registration.dto.request.PublicStatusCheckRequest(studentId, mobileNumber);
+        com.cbp7.registration.dto.response.PublicStatusCheckResponse response = publicRegistrationService.checkRegistrationStatus(request);
+        return ResponseEntity.ok(ApiResponse.success("Registration status checked", response));
+    }
+
+    @PostMapping("/status")
+    public ResponseEntity<ApiResponse<com.cbp7.registration.dto.response.PublicStatusCheckResponse>> checkRegistrationStatusPost(
+            @RequestBody com.cbp7.registration.dto.request.PublicStatusCheckRequest request
+    ) {
+        com.cbp7.registration.dto.response.PublicStatusCheckResponse response = publicRegistrationService.checkRegistrationStatus(request);
+        return ResponseEntity.ok(ApiResponse.success("Registration status checked", response));
+    }
 }

@@ -191,4 +191,99 @@ class PublicRegistrationServiceTest {
         assertEquals("REGISTERED", res.paymentStatus());
         assertEquals("PUB_ORD_12345", res.paymentTransactionId());
     }
+
+    @Test
+    void checkRegistrationStatus_ByStudentId_Found_ReturnsRegistered() {
+        PublicRegistration reg = PublicRegistration.builder()
+                .fullName("Parv Agarwal")
+                .studentId("2024PUB001")
+                .email("parv@example.com")
+                .mobileNumber("9876543210")
+                .programLevel(ProgramLevel.UNDERGRADUATE)
+                .department("CSE")
+                .year(3)
+                .studentType(StudentType.DAY_SCHOLAR)
+                .paymentStatus(PublicRegistrationStatus.REGISTERED)
+                .accountVerified(true)
+                .build();
+        reg.setCreatedAt(java.time.LocalDateTime.now());
+
+        when(publicRegistrationRepository.findTopByStudentIdIgnoreCaseOrderByCreatedAtDesc("2024PUB001"))
+                .thenReturn(Optional.of(reg));
+
+        com.cbp7.registration.dto.request.PublicStatusCheckRequest req =
+                new com.cbp7.registration.dto.request.PublicStatusCheckRequest("2024PUB001", null);
+
+        com.cbp7.registration.dto.response.PublicStatusCheckResponse res =
+                publicRegistrationService.checkRegistrationStatus(req);
+
+        assertNotNull(res);
+        assertTrue(res.registrationExists());
+        assertEquals("Parv Agarwal", res.fullName());
+        assertEquals("2024PUB001", res.studentId());
+        assertEquals("CSE", res.department());
+        assertEquals("UNDERGRADUATE", res.programLevel());
+        assertTrue(res.accountVerified());
+        assertNotNull(res.registrationDate());
+        assertTrue(res.registrationDate().contains("IST"));
+    }
+
+    @Test
+    void checkRegistrationStatus_ByMobileNumber_Found_ReturnsRegistered() {
+        PublicRegistration reg = PublicRegistration.builder()
+                .fullName("John Doe")
+                .studentId("2024PUB002")
+                .email("john@example.com")
+                .mobileNumber("9876543210")
+                .programLevel(ProgramLevel.UNDERGRADUATE)
+                .department("ECE")
+                .year(2)
+                .studentType(StudentType.DAY_SCHOLAR)
+                .paymentStatus(PublicRegistrationStatus.REGISTERED)
+                .accountVerified(true)
+                .build();
+        reg.setCreatedAt(java.time.LocalDateTime.now());
+
+        when(publicRegistrationRepository.findTopByMobileNumberOrderByCreatedAtDesc("9876543210"))
+                .thenReturn(Optional.of(reg));
+
+        com.cbp7.registration.dto.request.PublicStatusCheckRequest req =
+                new com.cbp7.registration.dto.request.PublicStatusCheckRequest(null, "9876543210");
+
+        com.cbp7.registration.dto.response.PublicStatusCheckResponse res =
+                publicRegistrationService.checkRegistrationStatus(req);
+
+        assertNotNull(res);
+        assertTrue(res.registrationExists());
+        assertEquals("John Doe", res.fullName());
+        assertTrue(res.accountVerified());
+    }
+
+    @Test
+    void checkRegistrationStatus_NotFound_ReturnsNotRegistered() {
+        when(publicRegistrationRepository.findTopByStudentIdIgnoreCaseOrderByCreatedAtDesc("UNKNOWN"))
+                .thenReturn(Optional.empty());
+
+        com.cbp7.registration.dto.request.PublicStatusCheckRequest req =
+                new com.cbp7.registration.dto.request.PublicStatusCheckRequest("UNKNOWN", null);
+
+        com.cbp7.registration.dto.response.PublicStatusCheckResponse res =
+                publicRegistrationService.checkRegistrationStatus(req);
+
+        assertNotNull(res);
+        assertFalse(res.registrationExists());
+        assertNotNull(res.message());
+    }
+
+    @Test
+    void checkRegistrationStatus_EmptyRequest_ReturnsNotRegistered() {
+        com.cbp7.registration.dto.request.PublicStatusCheckRequest req =
+                new com.cbp7.registration.dto.request.PublicStatusCheckRequest("", "");
+
+        com.cbp7.registration.dto.response.PublicStatusCheckResponse res =
+                publicRegistrationService.checkRegistrationStatus(req);
+
+        assertNotNull(res);
+        assertFalse(res.registrationExists());
+    }
 }

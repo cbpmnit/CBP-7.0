@@ -11,6 +11,7 @@ const PUBLIC_EXACT_ROUTES = [
   "/login",
   "/register",
   "/registration",
+  "/registration/status",
   "/registration/success",
   "/registration/payment-failed",
   "/payment/status",

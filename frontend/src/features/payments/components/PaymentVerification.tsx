@@ -6,6 +6,7 @@ import { useParams } from "next/navigation"
 import { publicRegistrationApi } from "@/features/public-registration/services/publicRegistrationApi"
 import { paymentApi } from "../services/paymentApi"
 import { PaymentStatusResponse } from "../types"
+import { formatToIST } from "@/features/public-registration/utils/formatDate"
 import PageTransition from "@/components/animations/PageTransition"
 import {
   FiCheckCircle,
@@ -137,18 +138,7 @@ export default function PaymentVerification() {
 
   const formatDate = (isoString?: string) => {
     if (!isoString) return "—"
-    try {
-      const date = new Date(isoString)
-      return date.toLocaleDateString("en-IN", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit"
-      })
-    } catch {
-      return "—"
-    }
+    return formatToIST(isoString)
   }
 
   // Timeline completion checks
@@ -309,23 +299,58 @@ export default function PaymentVerification() {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-3 pt-2">
-            <Link
-              href="/registration"
-              className="flex-1 py-3 bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition inline-flex items-center justify-center gap-1.5 shadow-3xs text-center cursor-pointer"
-            >
-              <FiCreditCard />
-              <span>Retry Payment</span>
-            </Link>
-            
-            <button
-              onClick={verifyTransaction}
-              disabled={loading}
-              className="flex-1 py-3 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold uppercase tracking-wider rounded-xl transition inline-flex items-center justify-center gap-1.5 border border-slate-200 shadow-3xs cursor-pointer disabled:opacity-50"
-            >
-              <FiRefreshCw className={loading ? "animate-spin" : ""} />
-              <span>{loading ? "Verifying..." : "Refresh Status"}</span>
-            </button>
+          <div className="flex flex-col gap-2 pt-2">
+            {status === "SUCCESS" ? (
+              <div className="space-y-2">
+                <Link
+                  href="/registration/status"
+                  className="w-full py-3 bg-cyan-800 hover:bg-cyan-900 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition inline-flex items-center justify-center gap-1.5 shadow-sm text-center"
+                >
+                  <FiCheckCircle />
+                  <span>Check Registration Status</span>
+                </Link>
+                <Link
+                  href="/registration"
+                  className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition inline-flex items-center justify-center gap-1.5 text-center"
+                >
+                  <FiArrowLeft />
+                  <span>Return to Portal</span>
+                </Link>
+              </div>
+            ) : status === "FAILED" ? (
+              <div className="space-y-2">
+                <Link
+                  href="/registration"
+                  className="w-full py-3 bg-cyan-800 hover:bg-cyan-900 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition inline-flex items-center justify-center gap-1.5 shadow-sm text-center"
+                >
+                  <FiCreditCard />
+                  <span>Retry Payment</span>
+                </Link>
+                <Link
+                  href="/registration/status"
+                  className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition inline-flex items-center justify-center gap-1.5 text-center"
+                >
+                  <span>Check Existing Status</span>
+                </Link>
+              </div>
+            ) : (
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={verifyTransaction}
+                  disabled={loading}
+                  className="flex-1 py-3 bg-cyan-800 hover:bg-cyan-900 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition inline-flex items-center justify-center gap-1.5 shadow-sm cursor-pointer disabled:opacity-50"
+                >
+                  <FiRefreshCw className={loading ? "animate-spin" : ""} />
+                  <span>{loading ? "Verifying..." : "Refresh Status"}</span>
+                </button>
+                <Link
+                  href="/registration/status"
+                  className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition inline-flex items-center justify-center gap-1.5 text-center"
+                >
+                  <span>Lookup Status</span>
+                </Link>
+              </div>
+            )}
           </div>
 
         </div>

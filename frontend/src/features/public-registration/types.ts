@@ -65,4 +65,24 @@ export interface PublicRegistrationStatusResponse {
   paymentTransactionId: string
   amount?: number
   createdAt: string
+  accountVerified?: boolean
+}
+
+export interface PublicStatusCheckRequest {
+  studentId?: string
+  mobileNumber?: string
+}
+
+export interface PublicStatusCheckResponse {
+  registrationExists: boolean
+  registered?: boolean
+  fullName?: string
+  name?: string
+  studentId?: string
+  department?: string
+  programLevel?: string
+  paymentStatus?: string
+  accountVerified?: boolean
+  registrationDate?: string
+  message: string
 }

@@ -5,6 +5,8 @@ import {
   CompletePublicRegistrationRequest,
   PublicRegistrationStatusResponse,
   PaymentConfigResponse,
+  PublicStatusCheckRequest,
+  PublicStatusCheckResponse,
 } from "../types"
 
 export const publicRegistrationApi = {
@@ -32,6 +34,9 @@ export const publicRegistrationApi = {
 
   getPaymentStatus: (merchantOrderId: string) =>
     apiClient.get<PublicRegistrationStatusResponse>(`/api/v1/public/registration/payment/${merchantOrderId}/status`),
+
+  checkStatus: (payload: PublicStatusCheckRequest) =>
+    apiClient.post<PublicStatusCheckResponse>("/api/v1/public/registration/status/check", payload),
 }
 
 export default publicRegistrationApi
