@@ -146,7 +146,7 @@ export default function SpeakersPage() {
           <div className="mx-auto max-w-7xl px-5 lg:px-8 text-center relative z-10">
             <Reveal delay={80}>
               <h1 className="mt-4 text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl lg:text-6xl">
-                Our <span className="gradient-text-cyan">Speakers</span>
+                Past <span className="gradient-text-cyan">Speakers</span>
               </h1>
             </Reveal>
             <Reveal delay={120}>

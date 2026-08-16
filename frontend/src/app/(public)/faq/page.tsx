@@ -15,7 +15,7 @@ const faqs = [
   {
     question: "What is the duration and format of the program?",
     answer:
-      "CBP 7.0 is a comprehensive 5-day intensive program held at the MNIT Jaipur campus. Sessions run during regular academic hours and include a mix of lectures, hands-on workshops, group activities, and interactive discussions.",
+      "CBP 7.0 is a comprehensive 4-day intensive program held at the MNIT Jaipur campus. Sessions run during regular academic hours and include a mix of lectures, hands-on workshops, group activities, and interactive discussions.",
   },
   {
     question: "Is there a registration fee?",

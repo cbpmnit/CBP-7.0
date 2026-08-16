@@ -30,7 +30,7 @@ export const isPublicRoute = (pathname: string): boolean => {
     path.startsWith("/about") ||
     path.startsWith("/schedule") ||
     path.startsWith("/speakers") ||
-    path.startsWith("/gallery") ||
+    path.startsWith("/team") ||
     path.startsWith("/faq") ||
     path.startsWith("/contact") ||
     path.startsWith("/register") ||
@@ -132,7 +132,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
           router.replace(targetHome)
           return
         }
-        // All other public routes (/register, /about, /schedule, /speakers, /gallery, etc.) remain open
+        // All other public routes (/register, /about, /schedule, /speakers, /team, etc.) remain open
         setLoading(false)
         return
       }

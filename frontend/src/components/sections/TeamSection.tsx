@@ -7,41 +7,44 @@ import { FiChevronLeft, FiChevronRight } from "react-icons/fi"
 import { motion, AnimatePresence } from "framer-motion"
 
 const team = [
-  {
-    name: "Dr. Niraja Saraswat",
-    role: "Assistant Professor",
-    department: "Dept. of Humanities & Social Sciences",
-    image: "/assets/advisors/doctor niraja saraswat, assistant professor, department of humanities and social sciences , mnit jaipur.jpeg",
-  },
-  {
-    name: "Dr. Meena Nemiwal",
-    role: "Assistant Professor",
-    department: "Dept. of Chemistry, MNIT Jaipur",
-    image: "/assets/advisors/dr. meena nemiwal , assistant professor , department of chemistry mnit jaipur.jpeg",
-  },
-  {
-    name: "Dr. Nidhi Sharma",
-    role: "Assistant Professor",
-    department: "Dept. of HSS, MNIT Jaipur",
-    image: "/assets/advisors/dr. nidhi sharma , assistant professor, department of hss , mnit jaipur.jpeg",
-  },
-  {
-    name: "Dr. Priyanka Harjule",
-    role: "Assistant Professor",
-    department: "Dept. of Mathematics, MNIT Jaipur",
-    image: "/assets/advisors/dr. priyanka harjule , assistant professor , department of mathematics, mnit jaipur.jpeg",
-  },
+  // Advisors
   {
     name: "Prof. Nupur Tandon",
-    role: "Head, Dept. of HSS",
-    department: "MNIT Jaipur",
+    role: "Advisor",
+    department: "Head, Dept. of HSS, MNIT Jaipur",
     image: "/assets/advisors/professor nupur tondon, head department of hss, mnit jaipur.jpeg",
   },
   {
     name: "Prof. Rakesh Jain",
-    role: "In-charge, T&P Cell",
-    department: "MNIT Jaipur",
+    role: "Advisor",
+    department: "In-charge, T&P Cell, MNIT Jaipur",
     image: "/assets/advisors/professor rakesh jain, in-charge, t&p cell , mnit jaipur.jpeg",
+  },
+  // Convenor
+  {
+    name: "Dr. Niraja Saraswat",
+    role: "Convenor",
+    department: "Assistant Professor, Dept. of HSS, MNIT Jaipur",
+    image: "/assets/advisors/doctor niraja saraswat, assistant professor, department of humanities and social sciences , mnit jaipur.jpeg",
+  },
+  // Coordinators
+  {
+    name: "Dr. Nidhi Sharma",
+    role: "Coordinator",
+    department: "Assistant Professor, Dept. of HSS, MNIT Jaipur",
+    image: "/assets/advisors/dr. nidhi sharma , assistant professor, department of hss , mnit jaipur.jpeg",
+  },
+  {
+    name: "Dr. Priyanka Harjule",
+    role: "Coordinator",
+    department: "Assistant Professor, Dept. of Mathematics, MNIT Jaipur",
+    image: "/assets/advisors/dr. meena nemiwal , assistant professor , department of chemistry mnit jaipur.jpeg",
+  },
+  {
+    name: "Dr. Meena Nemiwal",
+    role: "Coordinator",
+    department: "Assistant Professor, Dept. of Chemistry, MNIT Jaipur",
+    image: "/assets/advisors/dr. priyanka harjule , assistant professor , department of mathematics, mnit jaipur.jpeg",
   },
 ]
 
@@ -62,7 +65,7 @@ export default function TeamSection() {
         <div className="mx-auto max-w-2xl text-center">
           <Reveal variant="up">
             <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
-              Meet the <span className="gradient-text-cyan">Advisers</span>
+              Meet the <span className="gradient-text-cyan">Advisors</span>
             </h2>
           </Reveal>
 

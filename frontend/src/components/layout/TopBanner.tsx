@@ -15,7 +15,7 @@ function TopBannerComponent() {
         {/* Left Logo Container */}
         <div className="shrink-0">
           <div className="top-banner-logo-bg relative w-10 h-10 xs:w-12 xs:h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-gradient-to-br from-cyan-600 to-blue-600 rounded-full border border-white/40 shadow-md shadow-cyan-600/20 overflow-hidden group hover:scale-105 transition-transform duration-300">
-            <div className="w-full h-full relative animate-direct-flip rounded-full overflow-hidden p-1">
+            <div className="w-full h-full relative rounded-full overflow-hidden p-1">
               <Image
                 src="/favicon/cbp-primary-logo-icon-navy-background-bg-removed.webp"
                 alt="CBP Logo Left"
@@ -42,7 +42,7 @@ function TopBannerComponent() {
         {/* Right Logo Container */}
         <div className="shrink-0">
           <div className="top-banner-logo-bg relative w-10 h-10 xs:w-12 xs:h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-gradient-to-br from-cyan-600 to-blue-600 rounded-full border border-white/40 shadow-md shadow-cyan-600/20 overflow-hidden group hover:scale-105 transition-transform duration-300">
-            <div className="w-full h-full relative animate-direct-flip rounded-full overflow-hidden p-1">
+            <div className="w-full h-full relative rounded-full overflow-hidden p-1">
               <Image
                 src="/favicon/cbp-primary-full-logo-navy-background.webp"
                 alt="CBP Logo Right"

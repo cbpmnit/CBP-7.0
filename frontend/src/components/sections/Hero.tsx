@@ -9,7 +9,7 @@ const SLIDES = [
     title: "Capacity Building Program",
     subtitle: "CBP 7.0",
     description:
-      "A transformative 5-day journey designed to equip first-year students with industry-demanding soft skills, delivered by the Department of Humanities & Social Sciences alongside the Training & Placement Cell.",
+      "A transformative 4-day journey designed to equip first-year students with industry-demanding soft skills, delivered by the Department of Humanities & Social Sciences alongside the Training & Placement Cell.",
   },
   {
     title: "Soft Skills Development",

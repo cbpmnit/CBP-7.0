@@ -4,8 +4,8 @@ const footerLinks = {
   Program: [
     { name: "About", href: "/about" },
     { name: "Schedule", href: "/schedule" },
-    { name: "Speakers", href: "/speakers" },
-    { name: "Gallery", href: "/gallery" },
+    { name: "Past Speakers", href: "/speakers" },
+    { name: "Team", href: "/team" },
   ],
   QuickLinks: [
     { name: "FAQ", href: "/faq" },
@@ -32,7 +32,7 @@ export default function Footer() {
               </div>
             </div>
             <p className="mt-3 text-xs leading-relaxed text-slate-600">
-              A 5-day Soft Skills Development Program by the Department of
+              A 4-day Soft Skills Development Program by the Department of
               Humanities &amp; Social Sciences and Training &amp; Placement Cell,
               MNIT Jaipur.
             </p>

@@ -2,7 +2,7 @@ import Reveal from "@/components/animations/RevealOnScroll"
 
 const stats = [
   { value: "1000+", label: "First-Year Students" },
-  { value: "6", label: "Intensive Days" },
+  { value: "4", label: "Intensive Days" },
   { value: "30+", label: "Expert Speakers" },
 ]
 

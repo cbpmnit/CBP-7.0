@@ -26,7 +26,10 @@ export const metadata: Metadata = {
     template: "%s | CBP 7.0 MNIT Jaipur",
   },
   description:
-    "CBP 7.0 — A comprehensive 5-day Soft Skills Development Program by the Department of Humanities & Social Sciences and the Training & Placement Cell, MNIT Jaipur.",
+    "CBP 7.0 — A comprehensive 4-day Soft Skills Development Program by the Department of Humanities & Social Sciences and the Training & Placement Cell, MNIT Jaipur.",
+  icons: {
+    icon: "/favicon/cbp-primary-full-logo-transparent-background.webp",
+  },
   keywords: [
     "CBP 7.0",
     "MNIT Jaipur",
@@ -39,7 +42,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "CBP 7.0 — Capacity Building Program | MNIT Jaipur",
     description:
-      "A 5-day Soft Skills Development Program by the Department of Humanities & Social Sciences and Training & Placement Cell, MNIT Jaipur.",
+      "A 4-day Soft Skills Development Program by the Department of Humanities & Social Sciences and Training & Placement Cell, MNIT Jaipur.",
     type: "website",
     locale: "en_IN",
     siteName: "CBP 7.0 MNIT Jaipur",

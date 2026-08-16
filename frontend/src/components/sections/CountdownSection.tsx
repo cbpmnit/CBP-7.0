@@ -58,11 +58,9 @@ function CountdownSectionComponent() {
       <div className="max-w-4xl mx-auto text-center relative z-10">
         <Reveal variant="up">
           <h2 className="text-3xl font-extrabold text-slate-900 sm:text-4xl lg:text-5xl tracking-tight">
-            CBP 7.0 <span className="gradient-text-cyan">Registration Countdown</span>
+            CBP 7.0 <span className="gradient-text-cyan">registration will close in</span>
           </h2>
-          <p className="mt-2 text-sm text-slate-600 font-sans">
-            Target Date: 31 August 2026, 6:00 PM
-          </p>
+
         </Reveal>
 
         <Reveal variant="scale" delay={120}>

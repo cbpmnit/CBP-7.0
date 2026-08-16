@@ -1,7 +1,7 @@
 import Hero from "@/components/sections/Hero"
 import CountdownSection from "@/components/sections/CountdownSection"
 import FeedbackSection from "@/components/sections/FeedbackSection"
-import ObjectivesSection from "@/components/sections/ObjectivesSection"
+
 import StatsSection from "@/components/sections/StatsSection"
 import CTASection from "@/components/sections/CTASection"
 import TeamSection from "@/components/sections/TeamSection"
@@ -75,7 +75,7 @@ export default function Home() {
                   CBP 7.0 — <span className="gradient-text-cyan">Capacity Building Program</span>
                 </h2>
                 <p className="mt-4 text-base leading-relaxed text-slate-600 max-w-2xl mx-auto">
-                  MNIT CBPT 7.0 is a comprehensive 5-day Soft Skills Development
+                  MNIT CBPT 7.0 is a comprehensive 4-day Soft Skills Development
                   Program organized by the{" "}
                   <strong className="text-cyan-700 font-semibold">
                     Department of Humanities and Social Sciences
@@ -118,7 +118,7 @@ export default function Home() {
         </section>
 
         <FeedbackSection />
-        <ObjectivesSection />
+
         <TeamSection />
         <CTASection />
       </main>

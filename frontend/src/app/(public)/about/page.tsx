@@ -4,47 +4,53 @@ import Reveal from "@/components/animations/RevealOnScroll"
 import PageTransition from "@/components/animations/PageTransition"
 
 export const metadata = {
-  title: "About CBP 7.0",
+  title: "About Us | CBP 7.0",
   description:
-    "Learn about the Capacity Building Program 7.0 at MNIT Jaipur — a centralized event management system for 400+ first-year students.",
+    "Learn about the Capacity Building Program — an immersive journey from academic knowledge to professional mastery.",
 }
 
-const platformFeatures = [
+const skillsList = [
   {
-    title: "Student Registration",
-    desc: "Online self-registration with secure authentication, profile setup, and instant program enrollment for all 400+ first-year students.",
+    title: "Communication",
+    desc: "Articulate complex ideas and build consensus.",
   },
   {
-    title: "Secure Fee Payments",
-    desc: "Integrated payment gateway supporting multiple methods with instant digital receipt generation and complete payment history tracking.",
+    title: "Teamwork",
+    desc: "Navigate group dynamics and drive success.",
   },
   {
-    title: "Attendance Tracking",
-    desc: "Real-time attendance monitoring across all sessions with QR code and manual verification options. Auto-absent marking for seamless management.",
+    title: "Adaptability",
+    desc: "Embrace change and bounce back with resilience.",
   },
   {
-    title: "Communication Hub",
-    desc: "Centralized announcements, session reminders, and targeted notifications delivered directly to all participants without any missed updates.",
-  },
-  {
-    title: "Certificate Generation",
-    desc: "Automated personalized certificates with unique QR codes for instant verification. Download immediately upon meeting all completion criteria.",
-  },
-  {
-    title: "Admin Dashboard",
-    desc: "Comprehensive admin panel with role-based access, full student management, session scheduling, and complete program analytics at your fingertips.",
+    title: "Leadership",
+    desc: "Inspire action and guide teams towards vision.",
   },
 ]
 
-const objectivesList = [
-  { title: "Digitize Workflow", desc: "Replace manual, paper-based processes with a fully digital platform for seamless program management." },
-  { title: "Automate Tasks", desc: "Eliminate repetitive admin work through automated registration, attendance, fee collection, and certificate generation." },
-  { title: "Enhance Engagement", desc: "Keep all 400+ students connected with real-time announcements and interactive platform features." },
-  { title: "Professional Presence", desc: "Deliver an institution-grade, polished digital experience that reflects MNIT Jaipur's commitment to excellence." },
-  { title: "Reduce Paperwork", desc: "Go fully paperless with digital forms, e-tickets, QR-based attendance, and downloadable e-certificates." },
-  { title: "Enable Analytics", desc: "Gain powerful, actionable insights from attendance rates, engagement metrics, and performance data." },
-  { title: "Auto Certificates", desc: "Instantly generate and distribute personalized, QR-verified certificates to every eligible participant." },
-  { title: "Streamline Communication", desc: "Send targeted announcements and reminders to all students and coordinators through a unified hub." },
+const commitmentList = [
+  {
+    title: "Expert Talks",
+    desc: "Engage with seasoned industry leaders.",
+  },
+  {
+    title: "Interactive Workshops",
+    desc: "Hands-on simulations, role-play, and case studies.",
+  },
+  {
+    title: "Exclusive Resources",
+    desc: "A digital library of eBooks and curated materials.",
+  },
+  {
+    title: "Networking",
+    desc: "Forge connections with future leaders.",
+  },
+]
+
+const legacyList = [
+  { title: "Strategic Partnerships", desc: "Forging strategic partnerships with industry." },
+  { title: "High-Impact Programs", desc: "Orchestrating high-impact programs." },
+  { title: "Exceptional Careers", desc: "Guiding students to exceptional careers." },
 ]
 
 export default function AboutPage() {
@@ -58,62 +64,53 @@ export default function AboutPage() {
           <div className="relative mx-auto max-w-3xl px-5 lg:px-8 text-center z-10">
             <Reveal>
               <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl md:text-6xl lg:text-7xl">
-                About CBP <span className="gradient-text-cyan">7.0</span>
+                About <span className="gradient-text-cyan">Us</span>
               </h1>
             </Reveal>
             <Reveal delay={100}>
+              <h2 className="mt-4 text-2xl font-semibold text-slate-800">
+                Architecting the Leaders of Tomorrow
+              </h2>
+            </Reveal>
+            <Reveal delay={150}>
               <p className="mt-6 max-w-2xl mx-auto text-base leading-relaxed text-slate-600 sm:text-lg">
-                A centralized platform built to manage the entire Capacity
-                Building Program lifecycle — from registration to certification.
-                Serving 400+ first-year students with a seamless digital
-                experience.
+                Welcome to the Capacity Building Program, a premier 4-day initiative crafted by the Department of Humanities and Social Sciences in collaboration with the Training & Placement Cell of MNIT Jaipur. More than a workshop — an immersive journey from academic knowledge to professional mastery.
               </p>
             </Reveal>
           </div>
         </section>
 
-        {/* Overview & High-Tech Video Showcase */}
+        {/* The Modern Imperative */}
         <section className="py-24 sm:py-32 relative">
           <div className="mx-auto max-w-7xl px-5 lg:px-8">
             <div className="grid gap-12 lg:grid-cols-2 lg:gap-16 items-center">
               <Reveal variant="left">
                 <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
-                  A Centralized Event <span className="gradient-text-cyan">Management System</span>
+                  The Modern Imperative: <span className="gradient-text-cyan">Why Soft Skills Define Success</span>
                 </h2>
-                <div className="mt-6 space-y-4 text-sm leading-relaxed text-slate-600">
+                <div className="mt-6 space-y-4 text-base leading-relaxed text-slate-600">
                   <p>
-                    The CBP 7.0 website is a comprehensive centralized event
-                    management system designed specifically for managing the
-                    Capacity Building Program at MNIT Jaipur. Built to serve{" "}
-                    <strong className="text-cyan-700 font-semibold">400+ first-year students</strong>,
-                    the platform streamlines every aspect of program
-                    administration and student participation.
+                    The world&apos;s most innovative and influential leaders unanimously agree that soft skills are indispensable. They are the underlying operating system for a successful career and a fulfilling life.
                   </p>
-                  <p>
-                    From the moment a student registers online to receiving their
-                    digital completion certificate, the CBP platform handles it
-                    all — eliminating paperwork, reducing administrative
-                    overhead, and creating a seamless digital experience for
-                    organizers and participants alike.
-                  </p>
-                  <p>
-                    Developed in partnership between the{" "}
-                    <strong className="text-cyan-700 font-semibold">
-                      Department of Humanities and Social Sciences
-                    </strong>{" "}
-                    and the{" "}
-                    <strong className="text-cyan-700 font-semibold">
-                      Training &amp; Placement Cell
-                    </strong>{" "}
-                    at MNIT Jaipur.
-                  </p>
+                  
+                  <blockquote className="mt-6 border-l-4 border-cyan-500 pl-4 italic text-slate-700 bg-slate-100/50 p-4 rounded-r-lg">
+                    “Your degree can get you the interview. Your soft skills will get you the job.”<br/>
+                    <span className="font-semibold text-sm text-cyan-700 block mt-2">— Satya Nadella</span>
+                  </blockquote>
+                  <blockquote className="mt-4 border-l-4 border-blue-500 pl-4 italic text-slate-700 bg-slate-100/50 p-4 rounded-r-lg">
+                    “Emotional intelligence is more important than IQ in achieving success.”<br/>
+                    <span className="font-semibold text-sm text-blue-700 block mt-2">— Daniel Goleman</span>
+                  </blockquote>
+                  <blockquote className="mt-4 border-l-4 border-indigo-500 pl-4 italic text-slate-700 bg-slate-100/50 p-4 rounded-r-lg">
+                    “The ability to communicate effectively is the most important skill any engineer can have.”<br/>
+                    <span className="font-semibold text-sm text-indigo-700 block mt-2">— Elon Musk</span>
+                  </blockquote>
                 </div>
               </Reveal>
 
               {/* High-Tech Video Showcase Frame */}
               <Reveal variant="right" delay={100}>
                 <div className="relative group">
-                  {/* Glowing backdrop frame */}
                   <div className="absolute -inset-1 rounded-3xl bg-gradient-to-r from-cyan-600 to-blue-600 opacity-30 blur-xl transition duration-500 group-hover:opacity-50" />
                   
                   <div className="relative aspect-video overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl shadow-slate-200/60">
@@ -135,33 +132,32 @@ export default function AboutPage() {
           </div>
         </section>
 
-        {/* Platform Features */}
+        {/* The Architecture of Excellence */}
         <section className="bg-white py-24 sm:py-32 border-t border-b border-slate-200">
           <div className="mx-auto max-w-7xl px-5 lg:px-8">
             <div className="mx-auto max-w-3xl text-center">
               <Reveal>
                 <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
-                  Built for Efficiency &amp; <span className="gradient-text-cyan">Impact</span>
+                  The Architecture of Excellence: <span className="gradient-text-cyan">Deconstructing Soft Skills</span>
                 </h2>
               </Reveal>
               <Reveal delay={80}>
                 <p className="mt-4 text-base leading-relaxed text-slate-600 max-w-2xl mx-auto">
-                  Every feature is designed to make program management effortless
-                  and student engagement meaningful and measurable.
+                  Soft skills are the sophisticated personal and interpersonal attributes that govern how we interact, perform, and lead.
                 </p>
               </Reveal>
             </div>
 
-            <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {platformFeatures.map((feature, i) => (
-                <Reveal key={feature.title} delay={i * 80}>
-                  <div className="glass-card glass-card-hover rounded-2xl p-7 flex flex-col justify-between h-full group text-center sm:text-left">
+            <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {skillsList.map((skill, i) => (
+                <Reveal key={skill.title} delay={i * 80}>
+                  <div className="glass-card glass-card-hover rounded-2xl p-7 flex flex-col justify-between h-full group text-center sm:text-left border-t-4 border-t-cyan-500">
                     <div>
                       <h3 className="text-lg font-bold text-slate-900 group-hover:text-cyan-700 transition duration-300">
-                        {feature.title}
+                        {skill.title}
                       </h3>
                       <p className="mt-3 text-sm leading-relaxed text-slate-600">
-                        {feature.desc}
+                        {skill.desc}
                       </p>
                     </div>
                   </div>
@@ -171,32 +167,63 @@ export default function AboutPage() {
           </div>
         </section>
 
-        {/* Key Objectives */}
-        <section className="py-24 sm:py-32">
+        {/* Your Journey of Growth */}
+        <section className="py-24 sm:py-32 bg-slate-50">
           <div className="mx-auto max-w-7xl px-5 lg:px-8">
             <div className="mx-auto max-w-3xl text-center">
               <Reveal>
                 <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
-                  Driving Digital <span className="gradient-text-cyan">Transformation</span>
+                  Your Journey of Growth: <span className="gradient-text-cyan">Our Commitment</span>
                 </h2>
               </Reveal>
               <Reveal delay={80}>
                 <p className="mt-4 text-base leading-relaxed text-slate-600 max-w-2xl mx-auto">
-                  The CBP platform pursues clear, measurable objectives to
-                  transform how MNIT Jaipur manages its flagship soft skills
-                  program for the modern era.
+                  We don’t just teach soft skills — we provide a structured environment where you can practice, refine, and master them.
                 </p>
               </Reveal>
             </div>
 
             <div className="mt-16 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-              {objectivesList.map((item, i) => (
+              {commitmentList.map((item, i) => (
                 <Reveal key={item.title} delay={i * 60}>
-                  <div className="glass-card glass-card-hover rounded-2xl p-6 text-center sm:text-left">
+                  <div className="glass-card glass-card-hover rounded-2xl p-6 text-center sm:text-left bg-white shadow-sm border border-slate-100">
                     <h3 className="text-base font-bold text-slate-900">
                       {item.title}
                     </h3>
-                    <p className="mt-2 text-xs leading-relaxed text-slate-600">
+                    <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                      {item.desc}
+                    </p>
+                  </div>
+                </Reveal>
+              ))}
+            </div>
+          </div>
+        </section>
+        
+        {/* Our Foundation */}
+        <section className="bg-white py-24 sm:py-32 border-t border-slate-200">
+          <div className="mx-auto max-w-7xl px-5 lg:px-8">
+            <div className="mx-auto max-w-3xl text-center">
+              <Reveal>
+                <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
+                  Our Foundation: <span className="gradient-text-cyan">The Training & Placement Cell, MNIT</span>
+                </h2>
+              </Reveal>
+              <Reveal delay={80}>
+                <p className="mt-4 text-base leading-relaxed text-slate-600 max-w-2xl mx-auto">
+                  The T&amp;P Cell is the central nervous system for career development at MNIT, with a legacy of:
+                </p>
+              </Reveal>
+            </div>
+
+            <div className="mt-16 grid gap-5 sm:grid-cols-1 md:grid-cols-3">
+              {legacyList.map((item, i) => (
+                <Reveal key={item.title} delay={i * 60}>
+                  <div className="flex flex-col items-center p-6 text-center rounded-2xl bg-slate-50 border border-slate-100">
+                    <h3 className="text-lg font-bold text-slate-900 mb-2">
+                      {item.title}
+                    </h3>
+                    <p className="text-sm leading-relaxed text-slate-600">
                       {item.desc}
                     </p>
                   </div>
@@ -207,22 +234,44 @@ export default function AboutPage() {
         </section>
 
         {/* CTA */}
-        <section className="bg-white py-20 border-t border-slate-200">
-          <div className="mx-auto max-w-7xl px-5 lg:px-8 text-center">
+        {/* CTA */}
+        <section className="relative py-32 overflow-hidden border-t border-slate-200">
+          {/* Ascent Vibe Background Orbs (Light Mode) */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-7xl overflow-hidden pointer-events-none">
+            <div className="absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full bg-cyan-300/30 blur-[120px]" />
+            <div className="absolute -bottom-40 -left-40 w-[600px] h-[600px] rounded-full bg-blue-300/30 blur-[130px]" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] rounded-full bg-indigo-200/40 blur-[150px] animate-pulse" />
+          </div>
+
+          <div className="relative mx-auto max-w-5xl px-5 lg:px-8 z-10">
             <Reveal>
-              <h2 className="text-3xl font-extrabold text-slate-900 sm:text-4xl">
-                Ready to Join <span className="gradient-text-cyan">CBP 7.0?</span>
-              </h2>
-              <p className="mt-4 text-base text-slate-600 max-w-xl mx-auto">
-                Register now and start your journey toward becoming
-                industry-ready.
-              </p>
-              <Link
-                href="/register"
-                className="mt-8 inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white px-9 py-4 text-sm font-bold uppercase tracking-wider shadow-lg shadow-cyan-600/30 transition duration-300 transform hover:-translate-y-0.5"
-              >
-                Register Now
-              </Link>
+              <div className="glass-card rounded-[2.5rem] p-10 sm:p-16 md:p-20 border border-white/40 bg-white/40 backdrop-blur-2xl text-center shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden group">
+                {/* Subtle Inner Glow */}
+                <div className="absolute inset-0 bg-gradient-to-b from-cyan-50/50 to-transparent opacity-50 transition-opacity duration-700 group-hover:opacity-100" />
+                
+                <h2 className="relative text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 tracking-tight">
+                  Our Mission: <br className="sm:hidden" />
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 drop-shadow-sm">
+                    Empowering Your Ascent 🚀
+                  </span>
+                </h2>
+                
+                <p className="relative mt-8 text-base sm:text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed font-medium">
+                  True capacity is built at the intersection of knowledge and character. Leave with confidence, a strategic network, and a roadmap for your ascent.
+                </p>
+                
+                <div className="relative mt-12 flex justify-center">
+                  <Link
+                    href="/register"
+                    className="group/btn flex items-center gap-3 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 px-9 py-4 text-sm font-bold uppercase tracking-wider text-white transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(6,182,212,0.4)] focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 focus:ring-offset-white"
+                  >
+                    <span>Join Us & Architect Your Future</span>
+                    <svg className="h-5 w-5 transition-transform duration-300 group-hover/btn:translate-x-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                  </Link>
+                </div>
+              </div>
             </Reveal>
           </div>
         </section>

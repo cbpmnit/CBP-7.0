@@ -24,8 +24,8 @@ import {
 const NAV_LINKS = [
   { name: "About", path: "/about" },
   { name: "Schedule", path: "/schedule" },
-  { name: "Speakers", path: "/speakers" },
-  { name: "Gallery", path: "/gallery" },
+  { name: "Past Speakers", path: "/speakers" },
+  { name: "Team", path: "/team" },
   { name: "FAQ", path: "/faq" },
   { name: "Contact", path: "/contact" },
 ]
